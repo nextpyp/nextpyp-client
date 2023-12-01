@@ -1,0 +1,47 @@
+
+# pyproject.toml reference:
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#writing-pyproject-toml
+
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+[project]
+name = "nextpyp-client"
+version = "0.1.0"
+authors = [
+    { name="Jeff Martin", email="jeff@cuchazinteractive.com" },
+]
+maintainers = [
+    { name = "Alberto Bartesaghi", email = "alberto.bartesaghi@duke.edu" }
+]
+description = "A client library for connecting to a NextPYP instance."
+readme = "README.md"
+# TODO: can this be relaxed to an earlier version?
+#       how to test? I only have v3.10 installed locally
+requires-python = ">=3.10"
+classifiers = [
+    # https://pypi.org/classifiers/
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
+dependencies = [
+    "jsonrpcclient",
+]
+
+[project.urls]
+# TODO: change to project-specific URL
+Homepage = "https://github.com/nextpyp"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# https://docs.pytest.org/en/7.4.x/reference/customize.html
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+testpaths = [
+    "tests"
+]
