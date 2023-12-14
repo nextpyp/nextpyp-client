@@ -6,7 +6,7 @@ import requests  # https://requests.readthedocs.io/en/latest/
 
 from typing import cast, List, Any, Dict, Optional
 
-from nextpyp.client import Credentials
+from nextpyp.client.credentials import Credentials
 
 
 def call(url_base: str, endpoint: str, credentials: Optional[Credentials], params: List[Any]) -> Optional[Any]:
@@ -109,29 +109,3 @@ class RpcError(Exception):
                  Type:  {self.exception_type}
               Message:  {self.args[0]}
         ''')
-
-
-def dev() -> None:
-
-    credentials = Credentials(
-        userid='jeff',
-        token='nope'
-    )
-
-    url = 'http://192.168.56.5:8080'
-    #response = call(url, '/kv/apps/version', None, [])
-    response = call(url, '/kv/apps/version', credentials, [])
-    #response = call(url, '/kv/admin/info', None, [])
-    #response = call(url, '/kv/admin/users', None, [])
-    #response = call(url, '/kv/projects/list', credentials, ['userid'])
-    #response = call(url, '/kv/projects/list', credentials, ['jeff'])
-    #response = call(url, '/kv/projects/list', None, ['jeff'])
-    #response = call(url, '/kv/apps/requestToken', None, ['jeff', 'test client', ['foo']])
-    #response = call(url, '/kv/apps/requestToken', None, ['jeff', 'test client', ['project_list']])
-    print(f'response = {response}')
-
-
-# invoke with:
-# tox run -e dev -- python -m nextpyp.client.jsonrpc
-if __name__ == '__main__':
-    dev()

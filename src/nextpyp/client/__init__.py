@@ -1,12 +1,17 @@
 
+from typing import Optional, List, Any
 
-class Credentials:
-    def __init__(self, userid: str, token: str):
-        self.userid = userid
-        self.token = token
+import nextpyp.client.jsonrpc as jsonrpc
+from nextpyp.client.credentials import Credentials
+from nextpyp.client.gen import Services
 
 
 class Client:
 
-    def __init__(self, credentials: Credentials):
+    def __init__(self, url_base: str, credentials: Optional[Credentials]) -> None:
+        self.url_base = url_base
         self.credentials = credentials
+        self.services = Services(self)
+
+    def _call(self, endpoint: str, params: List[Any]) -> Optional[Any]:
+        return jsonrpc.call(self.url_base, endpoint, self.credentials, params)
