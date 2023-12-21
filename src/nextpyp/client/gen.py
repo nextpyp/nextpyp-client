@@ -1,10 +1,12 @@
 
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING
+from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING, Union, cast
 
-from nextpyp.client.realtime import RealtimeService
+import json
+from websockets.legacy.client import WebSocketClientProtocol
 
+from nextpyp.client.realtime import RealtimeService, RealtimeServiceConnection, RealtimeServiceUnexpectedMessage
 if TYPE_CHECKING:
     from nextpyp.client import Client
 
@@ -12,7 +14,30 @@ if TYPE_CHECKING:
 class Services:
 
     def __init__(self, client: Client) -> None:
+        self.apps = AppsService(client)
         self.projects = ProjectsService(client)
+
+
+
+
+class AppsService:
+
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def version(self) -> str:
+        path = '/kv/apps/version'
+        response = self.client._call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+    def request_token(self, user_id: str, app_name: str, app_permission_ids: List[str]) -> AppTokenRequestData:
+        path = '/kv/apps/requestToken'
+        response = self.client._call(path, [user_id, app_name, app_permission_ids])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return AppTokenRequestData.from_json(response)
 
 
 class ProjectsService:
@@ -31,7 +56,92 @@ class ProjectsService:
 class RealtimeServices:
 
     def __init__(self, client: Client) -> None:
-        self.project = RealtimeService(client, '/ws/project')
+        self.project = RealtimeService(client, '/ws/project', ProjectRealtimeServiceConnection)
+
+
+class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
+
+    def __init__(self, websocket: WebSocketClientProtocol) -> None:
+        super(ProjectRealtimeServiceConnection, self).__init__(websocket)
+
+    async def send_listen_to_project(self, msg: RealTimeC2S.ListenToProject) -> None:
+        j = msg.to_json()
+        j['type'] = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToProject'
+        json_str = json.dumps(j)
+        await self._send(json_str)
+
+    async def recv(self) -> Union[RealTimeS2C.ProjectStatus, RealTimeS2C.ProjectRunInit, RealTimeS2C.ProjectRunStart, RealTimeS2C.JobStart, RealTimeS2C.JobUpdate, RealTimeS2C.JobFinish, RealTimeS2C.ProjectRunFinish, RealTimeS2C.ClusterJobSubmit, RealTimeS2C.ClusterJobStart, RealTimeS2C.ClusterJobArrayStart, RealTimeS2C.ClusterJobArrayEnd, RealTimeS2C.ClusterJobEnd]:
+        json_str = await self._recv()
+        j = json.loads(json_str)
+        type = j['type']
+        match type:
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectStatus':
+                return RealTimeS2C.ProjectStatus.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunInit':
+                return RealTimeS2C.ProjectRunInit.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunStart':
+                return RealTimeS2C.ProjectRunStart.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobStart':
+                return RealTimeS2C.JobStart.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobUpdate':
+                return RealTimeS2C.JobUpdate.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish':
+                return RealTimeS2C.JobFinish.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunFinish':
+                return RealTimeS2C.ProjectRunFinish.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobSubmit':
+                return RealTimeS2C.ClusterJobSubmit.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobStart':
+                return RealTimeS2C.ClusterJobStart.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayStart':
+                return RealTimeS2C.ClusterJobArrayStart.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayEnd':
+                return RealTimeS2C.ClusterJobArrayEnd.from_json(j)
+            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobEnd':
+                return RealTimeS2C.ClusterJobEnd.from_json(j)
+            case _:
+                raise RealtimeServiceUnexpectedMessage(type)
+
+
+class AppTokenRequestData:
+
+    def __init__(self, request_id: str, app_name: str, permissions: List[AppPermissionData]) -> None:
+        self.request_id = request_id
+        self.app_name = app_name
+        self.permissions = permissions
+
+    def to_json(self) -> Dict[str,Any]:
+        return {
+            'requestId': self.request_id,
+            'appName': self.app_name,
+            'permissions': [x.to_json() for x in self.permissions],
+        }
+
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> AppTokenRequestData:
+        return cls(
+            request_id=cast(str, json['requestId']),
+            app_name=cast(str, json['appName']),
+            permissions=[AppPermissionData.from_json(x) for x in json['permissions']],
+        )
+
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'request_id={self.request_id}',
+            f'app_name={self.app_name}',
+            f'permissions={self.permissions}',
+        ])
+        return f'AppTokenRequestData[{props}]'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, AppTokenRequestData):
+            return NotImplemented
+        return self.request_id == other.request_id \
+            and self.app_name == other.app_name \
+            and self.permissions == other.permissions
 
 
 class ProjectData:
@@ -63,12 +173,12 @@ class ProjectData:
         return cls(
             owner=UserData.from_json(json['owner']),
             permissions={ProjectPermission.from_json(x) for x in json['permissions']},
-            project_id=json['projectId'],
-            project_number=json['projectNumber'] if 'projectNumber' in json and json['projectNumber'] is not None else None,
-            project_name=json['projectName'],
-            created=json['created'],
-            images=[x for x in json['images']],
-            path=json['path'],
+            project_id=cast(str, json['projectId']),
+            project_number=cast(int, json['projectNumber']) if 'projectNumber' in json and json['projectNumber'] is not None else None,
+            project_name=cast(str, json['projectName']),
+            created=cast(int, json['created']),
+            images=[cast(str, x) for x in json['images']],
+            path=cast(str, json['path']),
         )
 
     def __str__(self) -> str:
@@ -141,8 +251,8 @@ class RealTimeC2S:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeC2S.ListenToProject:
             return cls(
-                user_id=json['userId'],
-                project_id=json['projectId'],
+                user_id=cast(str, json['userId']),
+                project_id=cast(str, json['projectId']),
             )
 
         def __str__(self) -> str:
@@ -206,7 +316,7 @@ class RealTimeS2C:
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectStatus:
             return cls(
                 recent_runs=[ProjectRunData.from_json(x) for x in json['recentRuns']],
-                has_older_runs=json['hasOlderRuns'],
+                has_older_runs=cast(bool, json['hasOlderRuns']),
                 blocks=[Block.from_json(x) for x in json['blocks']],
             )
 
@@ -246,9 +356,9 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectRunInit:
             return cls(
-                run_id=json['runId'],
-                timestamp=json['timestamp'],
-                job_ids=[x for x in json['jobIds']],
+                run_id=cast(int, json['runId']),
+                timestamp=cast(int, json['timestamp']),
+                job_ids=[cast(str, x) for x in json['jobIds']],
             )
 
         def __str__(self) -> str:
@@ -283,7 +393,7 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectRunStart:
             return cls(
-                run_id=json['runId'],
+                run_id=cast(int, json['runId']),
             )
 
         def __str__(self) -> str:
@@ -316,8 +426,8 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.JobStart:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
             )
 
         def __str__(self) -> str:
@@ -352,8 +462,8 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.JobUpdate:
             return cls(
-                job_id=json['jobId'],
-                job_string=json['jobString'],
+                job_id=cast(str, json['jobId']),
+                job_string=cast(str, json['jobString']),
             )
 
         def __str__(self) -> str:
@@ -392,9 +502,9 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.JobFinish:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
-                job_string=json['jobString'],
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
+                job_string=cast(str, json['jobString']),
                 status=RunStatus.from_json(json['status']),
             )
 
@@ -434,7 +544,7 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectRunFinish:
             return cls(
-                run_id=json['runId'],
+                run_id=cast(int, json['runId']),
                 status=RunStatus.from_json(json['status']),
             )
 
@@ -476,11 +586,11 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobSubmit:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
-                cluster_job_id=json['clusterJobId'],
-                cluster_job_name=json['clusterJobName'] if 'clusterJobName' in json and json['clusterJobName'] is not None else None,
-                array_size=json['arraySize'] if 'arraySize' in json and json['arraySize'] is not None else None,
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
+                cluster_job_id=cast(str, json['clusterJobId']),
+                cluster_job_name=cast(str, json['clusterJobName']) if 'clusterJobName' in json and json['clusterJobName'] is not None else None,
+                array_size=cast(int, json['arraySize']) if 'arraySize' in json and json['arraySize'] is not None else None,
             )
 
         def __str__(self) -> str:
@@ -523,9 +633,9 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobStart:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
-                cluster_job_id=json['clusterJobId'],
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
+                cluster_job_id=cast(str, json['clusterJobId']),
             )
 
         def __str__(self) -> str:
@@ -568,11 +678,11 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobArrayStart:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
-                cluster_job_id=json['clusterJobId'],
-                array_index=json['arrayIndex'],
-                num_started=json['numStarted'],
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
+                cluster_job_id=cast(str, json['clusterJobId']),
+                array_index=cast(int, json['arrayIndex']),
+                num_started=cast(int, json['numStarted']),
             )
 
         def __str__(self) -> str:
@@ -623,13 +733,13 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobArrayEnd:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
-                cluster_job_id=json['clusterJobId'],
-                array_index=json['arrayIndex'],
-                num_ended=json['numEnded'],
-                num_canceled=json['numCanceled'],
-                num_failed=json['numFailed'],
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
+                cluster_job_id=cast(str, json['clusterJobId']),
+                array_index=cast(int, json['arrayIndex']),
+                num_ended=cast(int, json['numEnded']),
+                num_canceled=cast(int, json['numCanceled']),
+                num_failed=cast(int, json['numFailed']),
             )
 
         def __str__(self) -> str:
@@ -678,9 +788,9 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobEnd:
             return cls(
-                run_id=json['runId'],
-                job_id=json['jobId'],
-                cluster_job_id=json['clusterJobId'],
+                run_id=cast(int, json['runId']),
+                job_id=cast(str, json['jobId']),
+                cluster_job_id=cast(str, json['clusterJobId']),
                 result_type=ClusterJobResultType.from_json(json['resultType']),
             )
 
@@ -724,9 +834,9 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionRunningJob:
             return cls(
-                job_id=json['jobId'],
-                name=json['name'],
-                size=json['size'],
+                job_id=cast(str, json['jobId']),
+                name=cast(str, json['name']),
+                size=cast(int, json['size']),
                 status=RunStatus.from_json(json['status']),
             )
 
@@ -774,12 +884,12 @@ class RealTimeS2C:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionFilesystem:
             return cls(
-                used=json['used'],
-                bytes_available=json['bytesAvailable'],
-                path=json['path'],
-                type=json['type'],
-                bytes=json['bytes'],
-                bytes_used=json['bytesUsed'],
+                used=cast(float, json['used']),
+                bytes_available=cast(int, json['bytesAvailable']),
+                path=cast(str, json['path']),
+                type=cast(str, json['type']),
+                bytes=cast(int, json['bytes']),
+                bytes_used=cast(int, json['bytesUsed']),
             )
 
         def __str__(self) -> str:
@@ -855,9 +965,9 @@ class RealTimeS2C:
             @classmethod
             def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionTransferInit.FileInfo:
                 return cls(
-                    filename=json['filename'],
-                    bytes_total=json['bytesTotal'],
-                    bytes_transfered=json['bytesTransfered'],
+                    filename=cast(str, json['filename']),
+                    bytes_total=cast(int, json['bytesTotal']),
+                    bytes_transfered=cast(int, json['bytesTransfered']),
                 )
 
             def __str__(self) -> str:
@@ -898,10 +1008,10 @@ class Block:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> Block:
         return cls(
-            block_id=json['blockId'],
-            name=json['name'],
-            description=json['description'],
-            group_ids=[x for x in json['groupIds']],
+            block_id=cast(str, json['blockId']),
+            name=cast(str, json['name']),
+            description=cast(str, json['description']),
+            group_ids=[cast(str, x) for x in json['groupIds']],
         )
 
     def __str__(self) -> str:
@@ -942,9 +1052,9 @@ class ImagesScale:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> ImagesScale:
         return cls(
-            particle_radius_unbinned=json['particleRadiusUnbinned'],
-            pixel_a=json['pixelA'],
-            particle_radius_a=json['particleRadiusA'],
+            particle_radius_unbinned=cast(float, json['particleRadiusUnbinned']),
+            pixel_a=cast(float, json['pixelA']),
+            particle_radius_a=cast(float, json['particleRadiusA']),
         )
 
     def __str__(self) -> str:
@@ -1030,6 +1140,42 @@ TomoVirMethod.Auto = TomoVirMethod('Auto')
 TomoVirMethod.NoneVal = TomoVirMethod('None')
 
 
+class AppPermissionData:
+
+    def __init__(self, app_permission_id: str, description: Optional[str]) -> None:
+        self.app_permission_id = app_permission_id
+        self.description = description
+
+    def to_json(self) -> Dict[str,Any]:
+        return {
+            'appPermissionId': self.app_permission_id,
+            'description': self.description if self.description is not None else None,
+        }
+
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> AppPermissionData:
+        return cls(
+            app_permission_id=cast(str, json['appPermissionId']),
+            description=cast(str, json['description']) if 'description' in json and json['description'] is not None else None,
+        )
+
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'app_permission_id={self.app_permission_id}',
+            f'description={self.description}',
+        ])
+        return f'AppPermissionData[{props}]'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, AppPermissionData):
+            return NotImplemented
+        return self.app_permission_id == other.app_permission_id \
+            and self.description == other.description
+
+
 class ReconstructionData:
 
     def __init__(self, id: str, timestamp: int, class_num: int, iteration: int) -> None:
@@ -1049,10 +1195,10 @@ class ReconstructionData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> ReconstructionData:
         return cls(
-            id=json['id'],
-            timestamp=json['timestamp'],
-            class_num=json['classNum'],
-            iteration=json['iteration'],
+            id=cast(str, json['id']),
+            timestamp=cast(int, json['timestamp']),
+            class_num=cast(int, json['classNum']),
+            iteration=cast(int, json['iteration']),
         )
 
     def __str__(self) -> str:
@@ -1097,11 +1243,11 @@ class RefinementData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> RefinementData:
         return cls(
-            id=json['id'],
-            job_id=json['jobId'],
-            data_id=json['dataId'],
-            iteration=json['iteration'],
-            timestamp=json['timestamp'],
+            id=cast(str, json['id']),
+            job_id=cast(str, json['jobId']),
+            data_id=cast(str, json['dataId']),
+            iteration=cast(int, json['iteration']),
+            timestamp=cast(int, json['timestamp']),
         )
 
     def __str__(self) -> str:
@@ -1148,11 +1294,11 @@ class RefinementBundleData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> RefinementBundleData:
         return cls(
-            id=json['id'],
-            job_id=json['jobId'],
-            refinement_bundle_id=json['refinementBundleId'],
-            iteration=json['iteration'],
-            timestamp=json['timestamp'],
+            id=cast(str, json['id']),
+            job_id=cast(str, json['jobId']),
+            refinement_bundle_id=cast(str, json['refinementBundleId']),
+            iteration=cast(int, json['iteration']),
+            timestamp=cast(int, json['timestamp']),
         )
 
     def __str__(self) -> str:
@@ -1197,10 +1343,10 @@ class PypStats:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> PypStats:
         return cls(
-            scope_voltage=json['scopeVoltage'] if 'scopeVoltage' in json and json['scopeVoltage'] is not None else None,
-            scope_pixel=json['scopePixel'] if 'scopePixel' in json and json['scopePixel'] is not None else None,
-            scope_dose_rate=json['scopeDoseRate'] if 'scopeDoseRate' in json and json['scopeDoseRate'] is not None else None,
-            particle_radius=json['particleRadius'] if 'particleRadius' in json and json['particleRadius'] is not None else None,
+            scope_voltage=cast(float, json['scopeVoltage']) if 'scopeVoltage' in json and json['scopeVoltage'] is not None else None,
+            scope_pixel=cast(float, json['scopePixel']) if 'scopePixel' in json and json['scopePixel'] is not None else None,
+            scope_dose_rate=cast(float, json['scopeDoseRate']) if 'scopeDoseRate' in json and json['scopeDoseRate'] is not None else None,
+            particle_radius=cast(float, json['particleRadius']) if 'particleRadius' in json and json['particleRadius'] is not None else None,
         )
 
     def __str__(self) -> str:
@@ -1283,8 +1429,8 @@ class UserData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> UserData:
         return cls(
-            id=json['id'],
-            name=json['name'] if 'name' in json and json['name'] is not None else None,
+            id=cast(str, json['id']),
+            name=cast(str, json['name']) if 'name' in json and json['name'] is not None else None,
         )
 
     def __str__(self) -> str:
@@ -1323,8 +1469,8 @@ class ProjectRunData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> ProjectRunData:
         return cls(
-            run_id=json['runId'],
-            timestamp=json['timestamp'],
+            run_id=cast(int, json['runId']),
+            timestamp=cast(int, json['timestamp']),
             status=RunStatus.from_json(json['status']),
             jobs=[JobRunData.from_json(x) for x in json['jobs']],
         )
@@ -1475,11 +1621,11 @@ class StreamLogMsg:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> StreamLogMsg:
         return cls(
-            timestamp=json['timestamp'],
-            level=json['level'],
-            path=json['path'],
-            line=json['line'],
-            msg=json['msg'],
+            timestamp=cast(int, json['timestamp']),
+            level=cast(int, json['level']),
+            path=cast(str, json['path']),
+            line=cast(int, json['line']),
+            msg=cast(str, json['msg']),
         )
 
     def __str__(self) -> str:
@@ -1576,12 +1722,12 @@ class SessionExportData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> SessionExportData:
         return cls(
-            session_id=json['sessionId'],
-            export_id=json['exportId'],
-            request=json['request'],
-            created=json['created'],
-            cluster_job_id=json['clusterJobId'] if 'clusterJobId' in json and json['clusterJobId'] is not None else None,
-            result=json['result'] if 'result' in json and json['result'] is not None else None,
+            session_id=cast(str, json['sessionId']),
+            export_id=cast(str, json['exportId']),
+            request=cast(str, json['request']),
+            created=cast(int, json['created']),
+            cluster_job_id=cast(str, json['clusterJobId']) if 'clusterJobId' in json and json['clusterJobId'] is not None else None,
+            result=cast(str, json['result']) if 'result' in json and json['result'] is not None else None,
         )
 
     def __str__(self) -> str:
@@ -1640,15 +1786,15 @@ class MicrographMetadata:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> MicrographMetadata:
         return cls(
-            id=json['id'],
-            timestamp=json['timestamp'],
-            ccc=json['ccc'],
-            cccc=json['cccc'],
-            defocus1=json['defocus1'],
-            defocus2=json['defocus2'],
-            angle_astig=json['angleAstig'],
-            average_motion=json['averageMotion'],
-            num_particles=json['numParticles'],
+            id=cast(str, json['id']),
+            timestamp=cast(int, json['timestamp']),
+            ccc=cast(float, json['ccc']),
+            cccc=cast(float, json['cccc']),
+            defocus1=cast(float, json['defocus1']),
+            defocus2=cast(float, json['defocus2']),
+            angle_astig=cast(float, json['angleAstig']),
+            average_motion=cast(float, json['averageMotion']),
+            num_particles=cast(int, json['numParticles']),
             source_dims=ImageDims.from_json(json['sourceDims']) if 'sourceDims' in json and json['sourceDims'] is not None else None,
         )
 
@@ -1702,9 +1848,9 @@ class TwoDClassesData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> TwoDClassesData:
         return cls(
-            owner_id=json['ownerId'],
-            two_dclasses_id=json['twoDClassesId'],
-            created=json['created'],
+            owner_id=cast(str, json['ownerId']),
+            two_dclasses_id=cast(str, json['twoDClassesId']),
+            created=cast(int, json['created']),
         )
 
     def __str__(self) -> str:
@@ -1757,15 +1903,15 @@ class TiltSeriesData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> TiltSeriesData:
         return cls(
-            id=json['id'],
-            timestamp=json['timestamp'],
-            ccc=json['ccc'],
-            cccc=json['cccc'],
-            defocus1=json['defocus1'],
-            defocus2=json['defocus2'],
-            angle_astig=json['angleAstig'],
-            average_motion=json['averageMotion'],
-            num_particles=json['numParticles'],
+            id=cast(str, json['id']),
+            timestamp=cast(int, json['timestamp']),
+            ccc=cast(float, json['ccc']),
+            cccc=cast(float, json['cccc']),
+            defocus1=cast(float, json['defocus1']),
+            defocus2=cast(float, json['defocus2']),
+            angle_astig=cast(float, json['angleAstig']),
+            average_motion=cast(float, json['averageMotion']),
+            num_particles=cast(int, json['numParticles']),
             source_dims=ImageDims.from_json(json['sourceDims']) if 'sourceDims' in json and json['sourceDims'] is not None else None,
         )
 
@@ -1823,11 +1969,11 @@ class ImageDims:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> ImageDims:
         return cls(
-            num_slices=json['numSlices'],
-            width=json['width'],
-            height=json['height'],
-            depth=json['depth'],
-            binning_factor=json['binningFactor'],
+            num_slices=cast(int, json['numSlices']),
+            width=cast(int, json['width']),
+            height=cast(int, json['height']),
+            depth=cast(int, json['depth']),
+            binning_factor=cast(int, json['binningFactor']),
         )
 
     def __str__(self) -> str:
@@ -1870,7 +2016,7 @@ class JobRunData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> JobRunData:
         return cls(
-            job_id=json['jobId'],
+            job_id=cast(str, json['jobId']),
             status=RunStatus.from_json(json['status']),
             cluster_jobs=[ClusterJobData.from_json(x) for x in json['clusterJobs']],
         )
@@ -1915,9 +2061,9 @@ class ClusterJobData:
     @classmethod
     def from_json(cls, json: Dict[str,Any]) -> ClusterJobData:
         return cls(
-            cluster_job_id=json['clusterJobId'],
-            web_name=json['webName'] if 'webName' in json and json['webName'] is not None else None,
-            cluster_name=json['clusterName'] if 'clusterName' in json and json['clusterName'] is not None else None,
+            cluster_job_id=cast(str, json['clusterJobId']),
+            web_name=cast(str, json['webName']) if 'webName' in json and json['webName'] is not None else None,
+            cluster_name=cast(str, json['clusterName']) if 'clusterName' in json and json['clusterName'] is not None else None,
             status=RunStatus.from_json(json['status']),
             array_info=ClusterJobData.ArrayInfo.from_json(json['arrayInfo']) if 'arrayInfo' in json and json['arrayInfo'] is not None else None,
         )
@@ -1966,11 +2112,11 @@ class ClusterJobData:
         @classmethod
         def from_json(cls, json: Dict[str,Any]) -> ClusterJobData.ArrayInfo:
             return cls(
-                size=json['size'],
-                started=json['started'],
-                ended=json['ended'],
-                canceled=json['canceled'],
-                failed=json['failed'],
+                size=cast(int, json['size']),
+                started=cast(int, json['started']),
+                ended=cast(int, json['ended']),
+                canceled=cast(int, json['canceled']),
+                failed=cast(int, json['failed']),
             )
 
         def __str__(self) -> str:
