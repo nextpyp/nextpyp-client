@@ -66,44 +66,44 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
 
     async def send_listen_to_project(self, msg: RealTimeC2S.ListenToProject) -> None:
         j = msg.to_json()
-        j['type'] = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToProject'
-        json_str = json.dumps(j)
-        await self._send(json_str)
+        j['type'] = RealTimeC2S.ListenToProject.TYPE_ID
+        await self._send(j)
 
     async def recv(self) -> Union[RealTimeS2C.ProjectStatus, RealTimeS2C.ProjectRunInit, RealTimeS2C.ProjectRunStart, RealTimeS2C.JobStart, RealTimeS2C.JobUpdate, RealTimeS2C.JobFinish, RealTimeS2C.ProjectRunFinish, RealTimeS2C.ClusterJobSubmit, RealTimeS2C.ClusterJobStart, RealTimeS2C.ClusterJobArrayStart, RealTimeS2C.ClusterJobArrayEnd, RealTimeS2C.ClusterJobEnd]:
-        json_str = await self._recv()
-        j = json.loads(json_str)
-        type = j['type']
+        msg = await self._recv()
+        type = msg.get('type')
         match type:
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectStatus':
-                return RealTimeS2C.ProjectStatus.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunInit':
-                return RealTimeS2C.ProjectRunInit.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunStart':
-                return RealTimeS2C.ProjectRunStart.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobStart':
-                return RealTimeS2C.JobStart.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobUpdate':
-                return RealTimeS2C.JobUpdate.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish':
-                return RealTimeS2C.JobFinish.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunFinish':
-                return RealTimeS2C.ProjectRunFinish.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobSubmit':
-                return RealTimeS2C.ClusterJobSubmit.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobStart':
-                return RealTimeS2C.ClusterJobStart.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayStart':
-                return RealTimeS2C.ClusterJobArrayStart.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayEnd':
-                return RealTimeS2C.ClusterJobArrayEnd.from_json(j)
-            case 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobEnd':
-                return RealTimeS2C.ClusterJobEnd.from_json(j)
+            case RealTimeS2C.ProjectStatus.TYPE_ID:
+                return RealTimeS2C.ProjectStatus.from_json(msg)
+            case RealTimeS2C.ProjectRunInit.TYPE_ID:
+                return RealTimeS2C.ProjectRunInit.from_json(msg)
+            case RealTimeS2C.ProjectRunStart.TYPE_ID:
+                return RealTimeS2C.ProjectRunStart.from_json(msg)
+            case RealTimeS2C.JobStart.TYPE_ID:
+                return RealTimeS2C.JobStart.from_json(msg)
+            case RealTimeS2C.JobUpdate.TYPE_ID:
+                return RealTimeS2C.JobUpdate.from_json(msg)
+            case RealTimeS2C.JobFinish.TYPE_ID:
+                return RealTimeS2C.JobFinish.from_json(msg)
+            case RealTimeS2C.ProjectRunFinish.TYPE_ID:
+                return RealTimeS2C.ProjectRunFinish.from_json(msg)
+            case RealTimeS2C.ClusterJobSubmit.TYPE_ID:
+                return RealTimeS2C.ClusterJobSubmit.from_json(msg)
+            case RealTimeS2C.ClusterJobStart.TYPE_ID:
+                return RealTimeS2C.ClusterJobStart.from_json(msg)
+            case RealTimeS2C.ClusterJobArrayStart.TYPE_ID:
+                return RealTimeS2C.ClusterJobArrayStart.from_json(msg)
+            case RealTimeS2C.ClusterJobArrayEnd.TYPE_ID:
+                return RealTimeS2C.ClusterJobArrayEnd.from_json(msg)
+            case RealTimeS2C.ClusterJobEnd.TYPE_ID:
+                return RealTimeS2C.ClusterJobEnd.from_json(msg)
             case _:
                 raise RealtimeServiceUnexpectedMessage(type)
 
 
 class AppTokenRequestData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.AppTokenRequestData'
 
     def __init__(self, request_id: str, app_name: str, permissions: List[AppPermissionData]) -> None:
         self.request_id = request_id
@@ -145,6 +145,8 @@ class AppTokenRequestData:
 
 
 class ProjectData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectData'
 
     def __init__(self, owner: UserData, permissions: Set[ProjectPermission], project_id: str, project_number: Optional[int], project_name: str, created: int, images: List[str], path: str) -> None:
         self.owner = owner
@@ -212,6 +214,8 @@ class ProjectData:
 
 class RealTimeC2S:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S'
+
 
     def to_json(self) -> Dict[str,Any]:
         return {
@@ -237,6 +241,8 @@ class RealTimeC2S:
 
 
     class ListenToProject:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToProject'
 
         def __init__(self, user_id: str, project_id: str) -> None:
             self.user_id = user_id
@@ -274,6 +280,8 @@ class RealTimeC2S:
 
 class RealTimeS2C:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C'
+
 
     def to_json(self) -> Dict[str,Any]:
         return {
@@ -298,7 +306,47 @@ class RealTimeS2C:
         return True  # we are all the same! =D
 
 
+    class Error:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.Error'
+
+        def __init__(self, name: Optional[str], msg: Optional[str]) -> None:
+            self.name = name
+            self.msg = msg
+
+        def to_json(self) -> Dict[str,Any]:
+            return {
+                'name': self.name if self.name is not None else None,
+                'msg': self.msg if self.msg is not None else None,
+            }
+
+        @classmethod
+        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.Error:
+            return cls(
+                name=cast(str, json['name']) if 'name' in json and json['name'] is not None else None,
+                msg=cast(str, json['msg']) if 'msg' in json and json['msg'] is not None else None,
+            )
+
+        def __str__(self) -> str:
+            props = ', '.join([
+                f'name={self.name}',
+                f'msg={self.msg}',
+            ])
+            return f'Error[{props}]'
+
+        def __repr__(self) -> str:
+            return self.__str__()
+
+        def __eq__(self, other: object) -> Any:
+            if not isinstance(other, RealTimeS2C.Error):
+                return NotImplemented
+            return self.name == other.name \
+                and self.msg == other.msg
+
+
     class ProjectStatus:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectStatus'
 
         def __init__(self, recent_runs: List[ProjectRunData], has_older_runs: bool, blocks: List[Block]) -> None:
             self.recent_runs = recent_runs
@@ -341,6 +389,8 @@ class RealTimeS2C:
 
     class ProjectRunInit:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunInit'
+
         def __init__(self, run_id: int, timestamp: int, job_ids: List[str]) -> None:
             self.run_id = run_id
             self.timestamp = timestamp
@@ -382,6 +432,8 @@ class RealTimeS2C:
 
     class ProjectRunStart:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunStart'
+
         def __init__(self, run_id: int) -> None:
             self.run_id = run_id
 
@@ -412,6 +464,8 @@ class RealTimeS2C:
 
 
     class JobStart:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobStart'
 
         def __init__(self, run_id: int, job_id: str) -> None:
             self.run_id = run_id
@@ -449,6 +503,8 @@ class RealTimeS2C:
 
     class JobUpdate:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobUpdate'
+
         def __init__(self, job_id: str, job_string: str) -> None:
             self.job_id = job_id
             self.job_string = job_string
@@ -484,6 +540,8 @@ class RealTimeS2C:
 
 
     class JobFinish:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish'
 
         def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus) -> None:
             self.run_id = run_id
@@ -531,6 +589,8 @@ class RealTimeS2C:
 
     class ProjectRunFinish:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunFinish'
+
         def __init__(self, run_id: int, status: RunStatus) -> None:
             self.run_id = run_id
             self.status = status
@@ -566,6 +626,8 @@ class RealTimeS2C:
 
 
     class ClusterJobSubmit:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobSubmit'
 
         def __init__(self, run_id: int, job_id: str, cluster_job_id: str, cluster_job_name: Optional[str], array_size: Optional[int]) -> None:
             self.run_id = run_id
@@ -618,6 +680,8 @@ class RealTimeS2C:
 
     class ClusterJobStart:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobStart'
+
         def __init__(self, run_id: int, job_id: str, cluster_job_id: str) -> None:
             self.run_id = run_id
             self.job_id = job_id
@@ -658,6 +722,8 @@ class RealTimeS2C:
 
 
     class ClusterJobArrayStart:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayStart'
 
         def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_started: int) -> None:
             self.run_id = run_id
@@ -709,6 +775,8 @@ class RealTimeS2C:
 
 
     class ClusterJobArrayEnd:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayEnd'
 
         def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_ended: int, num_canceled: int, num_failed: int) -> None:
             self.run_id = run_id
@@ -771,6 +839,8 @@ class RealTimeS2C:
 
     class ClusterJobEnd:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobEnd'
+
         def __init__(self, run_id: int, job_id: str, cluster_job_id: str, result_type: ClusterJobResultType) -> None:
             self.run_id = run_id
             self.job_id = job_id
@@ -817,6 +887,8 @@ class RealTimeS2C:
 
     class SessionRunningJob:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionRunningJob'
+
         def __init__(self, job_id: str, name: str, size: int, status: RunStatus) -> None:
             self.job_id = job_id
             self.name = name
@@ -862,6 +934,8 @@ class RealTimeS2C:
 
 
     class SessionFilesystem:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionFilesystem'
 
         def __init__(self, used: float, bytes_available: int, path: str, type: str, bytes: int, bytes_used: int) -> None:
             self.used = used
@@ -919,6 +993,8 @@ class RealTimeS2C:
 
     class SessionTransferInit:
 
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit'
+
         def __init__(self, files: List[RealTimeS2C.SessionTransferInit.FileInfo]) -> None:
             self.files = files
 
@@ -949,6 +1025,8 @@ class RealTimeS2C:
 
 
         class FileInfo:
+
+            TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit.FileInfo'
 
             def __init__(self, filename: str, bytes_total: int, bytes_transfered: int) -> None:
                 self.filename = filename
@@ -990,6 +1068,8 @@ class RealTimeS2C:
 
 
 class Block:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.Block'
 
     def __init__(self, block_id: str, name: str, description: str, group_ids: List[str]) -> None:
         self.block_id = block_id
@@ -1036,6 +1116,8 @@ class Block:
 
 
 class ImagesScale:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImagesScale'
 
     def __init__(self, particle_radius_unbinned: float, pixel_a: float, particle_radius_a: float) -> None:
         self.particle_radius_unbinned = particle_radius_unbinned
@@ -1142,6 +1224,8 @@ TomoVirMethod.NoneVal = TomoVirMethod('None')
 
 class AppPermissionData:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.AppPermissionData'
+
     def __init__(self, app_permission_id: str, description: Optional[str]) -> None:
         self.app_permission_id = app_permission_id
         self.description = description
@@ -1177,6 +1261,8 @@ class AppPermissionData:
 
 
 class ReconstructionData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ReconstructionData'
 
     def __init__(self, id: str, timestamp: int, class_num: int, iteration: int) -> None:
         self.id = id
@@ -1223,6 +1309,8 @@ class ReconstructionData:
 
 
 class RefinementData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RefinementData'
 
     def __init__(self, id: str, job_id: str, data_id: str, iteration: int, timestamp: int) -> None:
         self.id = id
@@ -1275,6 +1363,8 @@ class RefinementData:
 
 class RefinementBundleData:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RefinementBundleData'
+
     def __init__(self, id: str, job_id: str, refinement_bundle_id: str, iteration: int, timestamp: int) -> None:
         self.id = id
         self.job_id = job_id
@@ -1325,6 +1415,8 @@ class RefinementBundleData:
 
 
 class PypStats:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.PypStats'
 
     def __init__(self, scope_voltage: Optional[float], scope_pixel: Optional[float], scope_dose_rate: Optional[float], particle_radius: Optional[float]) -> None:
         self.scope_voltage = scope_voltage
@@ -1416,6 +1508,8 @@ ProjectPermission.Read = ProjectPermission('Read')
 
 class UserData:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.UserData'
+
     def __init__(self, id: str, name: Optional[str]) -> None:
         self.id = id
         self.name = name
@@ -1451,6 +1545,8 @@ class UserData:
 
 
 class ProjectRunData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectRunData'
 
     def __init__(self, run_id: int, timestamp: int, status: RunStatus, jobs: List[JobRunData]) -> None:
         self.run_id = run_id
@@ -1602,6 +1698,8 @@ RunStatus.Waiting = RunStatus('Waiting')
 
 class StreamLogMsg:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.StreamLogMsg'
+
     def __init__(self, timestamp: int, level: int, path: str, line: int, msg: str) -> None:
         self.timestamp = timestamp
         self.level = level
@@ -1701,6 +1799,8 @@ SessionDaemon.Streampyp = SessionDaemon('Streampyp')
 
 class SessionExportData:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportData'
+
     def __init__(self, session_id: str, export_id: str, request: str, created: int, cluster_job_id: Optional[str], result: Optional[str]) -> None:
         self.session_id = session_id
         self.export_id = export_id
@@ -1756,6 +1856,8 @@ class SessionExportData:
 
 
 class MicrographMetadata:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MicrographMetadata'
 
     def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_particles: int, source_dims: Optional[ImageDims]) -> None:
         self.id = id
@@ -1833,6 +1935,8 @@ class MicrographMetadata:
 
 class TwoDClassesData:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TwoDClassesData'
+
     def __init__(self, owner_id: str, two_dclasses_id: str, created: int) -> None:
         self.owner_id = owner_id
         self.two_dclasses_id = two_dclasses_id
@@ -1873,6 +1977,8 @@ class TwoDClassesData:
 
 
 class TiltSeriesData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TiltSeriesData'
 
     def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_particles: int, source_dims: Optional[ImageDims]) -> None:
         self.id = id
@@ -1950,6 +2056,8 @@ class TiltSeriesData:
 
 class ImageDims:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImageDims'
+
     def __init__(self, num_slices: int, width: int, height: int, depth: int, binning_factor: int) -> None:
         self.num_slices = num_slices
         self.width = width
@@ -2001,6 +2109,8 @@ class ImageDims:
 
 class JobRunData:
 
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobRunData'
+
     def __init__(self, job_id: str, status: RunStatus, cluster_jobs: List[ClusterJobData]) -> None:
         self.job_id = job_id
         self.status = status
@@ -2041,6 +2151,8 @@ class JobRunData:
 
 
 class ClusterJobData:
+
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData'
 
     def __init__(self, cluster_job_id: str, web_name: Optional[str], cluster_name: Optional[str], status: RunStatus, array_info: Optional[ClusterJobData.ArrayInfo]) -> None:
         self.cluster_job_id = cluster_job_id
@@ -2092,6 +2204,8 @@ class ClusterJobData:
 
 
     class ArrayInfo:
+
+        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData.ArrayInfo'
 
         def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
             self.size = size

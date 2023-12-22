@@ -9,6 +9,7 @@ from typing import Optional, Any, Type, TYPE_CHECKING, TypeVar, Generic, Callabl
 
 if TYPE_CHECKING:
     from nextpyp.client import Client
+    from nextpyp.client.gen import RealTimeS2C
 
 
 C = TypeVar('C')
@@ -22,17 +23,16 @@ class RealtimeServiceUnexpectedBytes(Exception):
 
 class RealtimeServiceUnexpectedMessage(Exception):
 
-    def __init__(self, type: str) -> None:
-        super(RealtimeServiceUnexpectedMessage, self).__init__(f"websocket sent unexpected message type: {type}")
+    def __init__(self, type: Optional[str]) -> None:
+        super(RealtimeServiceUnexpectedMessage, self).__init__(f"received unexpected message type from websocket: {type}")
         self.type = type
 
 
 class RealtimeServiceError(Exception):
 
-    def __init__(self, name: Optional[str], msg: Optional[str]) -> None:
-        super(RealtimeServiceError, self).__init__(f'{name}: {msg}')
-        self.name = name
-        self.msg = msg
+    def __init__(self, e: RealTimeS2C.Error) -> None:
+        super(RealtimeServiceError, self).__init__(f'{e.name}: {e.msg}')
+        self.e = e
 
 
 class RealtimeServiceConnection:
@@ -44,7 +44,8 @@ class RealtimeServiceConnection:
         websocket = self.websocket
         if websocket is None:
             raise Exception('not connected')
-        await websocket.send(msg)
+        json_str = json.dumps(msg)
+        await websocket.send(json_str)
 
     async def _recv(self) -> Any:
 
@@ -60,21 +61,17 @@ class RealtimeServiceConnection:
             raise RealtimeServiceUnexpectedBytes()
         recvd = cast(str, recvd)
 
+        # try to interpret as JSON
+        msg = json.loads(recvd)
+
         # look for error messages in the response
-        if recvd.startswith('{"type":"edu.duke.bartesaghi.micromon.services.RealTimeS2C.Error"'):
-            msg = json.loads(recvd)
-            try:
-                err_name = cast(str, msg['name'])
-            except KeyError:
-                err_name = None
-            try:
-                err_msg = cast(str, msg['msg'])
-            except KeyError:
-                err_msg = None
-            raise RealtimeServiceError(err_name, err_msg)
+        from nextpyp.client.gen import RealTimeS2C
+        if msg.get('type') == RealTimeS2C.Error.TYPE_ID:
+            e = RealTimeS2C.Error.from_json(msg)
+            raise RealtimeServiceError(e)
 
         # otherwise, return the received message
-        return recvd
+        return msg
 
 
 class RealtimeService(Generic[C]):
@@ -89,29 +86,23 @@ class RealtimeService(Generic[C]):
             raise Exception(f'invalid endpoint, must be an absolute path: {endpoint}')
 
         self.client = client
-        self.endpoint = endpoint
-        self.connect: Optional[Connect] = None
-        self.ctor = ctor
+        self._endpoint = endpoint
+        self._connect: Optional[Connect] = None
+        self._ctor = ctor
 
     async def __aenter__(self) -> C:
 
-        if self.connect is not None:
+        if self._connect is not None:
             raise Exception('already connected')
 
-        # build the headers, if any
-        headers = {}
-        if self.client.credentials is not None:
-            headers['nextpyp-userid'] = self.client.credentials.userid
-            headers['nextpyp-token'] = self.client.credentials.token
-
         # init the connection, but don't connect to the server yet
-        connect = Connect(f'{self.client.ws_url_base}{self.endpoint}', extra_headers=headers)
-        self.connect = connect
+        connect = self.client._connect_websocket(self._endpoint)
+        self._connect = connect
 
         # connect to the server
         websocket = await connect.__aenter__()
 
-        return self.ctor(websocket)
+        return self._ctor(websocket)
 
     async def __aexit__(
         self,
@@ -119,9 +110,9 @@ class RealtimeService(Generic[C]):
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType]
     ) -> None:
-        connect = self.connect
+        connect = self._connect
         if connect is None:
             return
-        self.connect = None
+        self._connect = None
         await connect.__aexit__(exc_type, exc_value, traceback)
         pass

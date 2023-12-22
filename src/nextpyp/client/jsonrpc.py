@@ -63,19 +63,12 @@ def _handle_response(response: requests.Response) -> Any:
     # DEBUG
     # print(f'response = {response_body}')
 
-    def response_get(key: str) -> Optional[Any]:
-        nonlocal response_body
-        try:
-            return response_body[key]
-        except KeyError:
-            return None
-
     # handle any kvision error in the response
-    error = response_get('error')
+    error = response_body.get('error')
     if error is not None:
-        raise RpcError(error, cast(Optional[str], response_get('exceptionType')))
+        raise RpcError(error, cast(Optional[str], response_body.get('exceptionType')))
 
-    result = response_get('result')
+    result = response_body.get('result')
     if result is None:
         return None
 
