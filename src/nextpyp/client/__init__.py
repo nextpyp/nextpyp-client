@@ -9,12 +9,33 @@ from nextpyp.client.gen import Services, RealtimeServices
 
 
 class Client:
+    """
+    The main class for the client.
+    """
 
     def __init__(self, url_base: str, credentials: Optional[Credentials]) -> None:
-        self.url_base = url_base
+        """
+        Things here too.
+
+        And even more.
+
+        :param url_base: The url_base
+        :param credentials: The credentials
+        """
+
+        self.url_base: str = url_base
+        """
+        The url base
+        
+        Use this to do the thing!
+        """
+
         self.credentials = credentials
-        self.services = Services(self)
+        """The credentials"""
+        self.services: Services = Services(self)
+        """The services"""
         self.realtime_services = RealtimeServices(self)
+        """The realtime services"""
 
         # convert the base url to the websockets protocol
         url_parts = url_base.split(':')
