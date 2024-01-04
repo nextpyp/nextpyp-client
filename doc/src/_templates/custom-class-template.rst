@@ -13,6 +13,8 @@
 
    .. autosummary::
       :nosignatures:
+
+      ~{{ name }}.__init__
    {% for item in methods %}
       {%- if not item.startswith('_') %}
       ~{{ name }}.{{ item }}

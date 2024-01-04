@@ -10,32 +10,86 @@ from nextpyp.client.gen import Services, RealtimeServices
 
 class Client:
     """
-    The main class for the client.
+    Client for the NextPYP website.
+
+    Examples
+    --------
+
+    Requesting an app token for a user::
+
+        from nextpyp.client import Client
+
+        client = Client('https://nextpyp.my.org')
+        token_data = client.services.apps.request_token(
+            user_id='jeff',
+            app_name='My App',
+            app_permission_ids=['project_list']
+        )
+        print(f'token data: {token_data}')
+
+    The above example will print output similar to the following.::
+
+        AppTokenRequestData[request_id='the-request-id', app_name='My App', permissions=[AppPermissionData[...]]]
+
+    Once the token has been requested, the user (``jeff`` in this example) should approve the request
+    on the website and copy the app token into your app.
+
+    Once you have the app token, you can use the client in authenticated mode on behalf of the user,
+    which allows access to the services designated by the requested permissions.::
+
+        client = Client(
+            url_base='https://nextpyp.my.org',
+            credentials=Credentials(
+                userid='jeff',
+                token='the-app-token'
+            )
+        )
+        projects = client.services.projects.list('jeff')
+
     """
 
     def __init__(self, url_base: str, credentials: Optional[Credentials]) -> None:
         """
-        Things here too.
+        Create a new client that can connect to the website at the given URL
 
-        And even more.
+        Parameters
+        ----------
+        url_base
+            The base of the URL for your NextPYP website.
 
-        :param url_base: The url_base
-        :param credentials: The credentials
+            Only the scheme and authority parts of the URL should be included,
+            but not any path part.
+
+            For example: ``https://nextpyp.my.org``
+
+            If a port is needed, include it with a colon: ``http://nextpyp.my.org:8080``
+
+        credentials
+            The credentials, if any, to be used with this client.
+
+            Omit this parameter to use the client in unauthenticated mode.
+            Unauthenticated mode is only able to access a limited set of services.
+
+            TODO: document what these services are
         """
 
         self.url_base: str = url_base
+        """The URL passed into ``__init__``"""
+
+        self.credentials: Optional[Credentials] = credentials
+        """The credentials, if any, passed into ``__init__``"""
+
+        self.services: Services = Services(self)
         """
-        The url base
-        
-        Use this to do the thing!
+        All of the services available with this client.
+        See the :py:class:`.Services` Class for a complete listing.
         """
 
-        self.credentials = credentials
-        """The credentials"""
-        self.services: Services = Services(self)
-        """The services"""
-        self.realtime_services = RealtimeServices(self)
-        """The realtime services"""
+        self.realtime_services: RealtimeServices = RealtimeServices(self)
+        """
+        All of the realtime services available with this client.
+        See the :py:class:`.RealtimeServices` Class for a complete listing.
+        """
 
         # convert the base url to the websockets protocol
         url_parts = url_base.split(':')
