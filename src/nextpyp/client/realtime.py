@@ -9,7 +9,7 @@ from typing import Optional, Any, Type, TYPE_CHECKING, TypeVar, Generic, Callabl
 
 if TYPE_CHECKING:
     from nextpyp.client import Client
-    from nextpyp.client.gen import RealTimeS2C
+    from nextpyp.client.gen import RealTimeS2CError
 
 
 C = TypeVar('C')
@@ -30,7 +30,7 @@ class RealtimeServiceUnexpectedMessage(Exception):
 
 class RealtimeServiceError(Exception):
 
-    def __init__(self, e: RealTimeS2C.Error) -> None:
+    def __init__(self, e: RealTimeS2CError) -> None:
         super(RealtimeServiceError, self).__init__(f'{e.name}: {e.msg}')
         self.e = e
 
@@ -65,9 +65,9 @@ class RealtimeServiceConnection:
         msg = json.loads(recvd)
 
         # look for error messages in the response
-        from nextpyp.client.gen import RealTimeS2C
-        if msg.get('type') == RealTimeS2C.Error.TYPE_ID:
-            e = RealTimeS2C.Error.from_json(msg)
+        from nextpyp.client.gen import RealTimeS2CError
+        if msg.get('type') == RealTimeS2CError.TYPE_ID:
+            e = RealTimeS2CError.from_json(msg)
             raise RealtimeServiceError(e)
 
         # otherwise, return the received message

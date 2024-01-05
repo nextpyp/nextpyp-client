@@ -131,11 +131,10 @@ class RealtimeServices:
             ))
             
             msg = await project.recv()
-            match type(msg):
-                case RealTimeS2CProjectStatus:
-                    print(f'project status: {msg}')
-                case _:
-                    print(f'received other msg: {msg}')
+            if type(msg) is RealTimeS2CProjectStatus:
+                print(f'project status: {msg}')
+            else:
+                print(f'received other msg: {msg}')
     
     """
     
@@ -191,33 +190,32 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
         .. code-block:: python
         
             msg = await project.recv()
-            match type(msg):
-                case RealTimeS2CProjectStatus:
-                    print(f'received message: {msg}')
-                case RealTimeS2CProjectRunInit:
-                    print(f'received message: {msg}')
-                case RealTimeS2CProjectRunStart:
-                    print(f'received message: {msg}')
-                case RealTimeS2CJobStart:
-                    print(f'received message: {msg}')
-                case RealTimeS2CJobUpdate:
-                    print(f'received message: {msg}')
-                case RealTimeS2CJobFinish:
-                    print(f'received message: {msg}')
-                case RealTimeS2CProjectRunFinish:
-                    print(f'received message: {msg}')
-                case RealTimeS2CClusterJobSubmit:
-                    print(f'received message: {msg}')
-                case RealTimeS2CClusterJobStart:
-                    print(f'received message: {msg}')
-                case RealTimeS2CClusterJobArrayStart:
-                    print(f'received message: {msg}')
-                case RealTimeS2CClusterJobArrayEnd:
-                    print(f'received message: {msg}')
-                case RealTimeS2CClusterJobEnd:
-                    print(f'received message: {msg}')
-                case _:
-                    raise Exception(f'received unexpected msg: {msg}')
+            if type(msg) is RealTimeS2CProjectStatus:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CProjectRunInit:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CProjectRunStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CJobStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CJobUpdate:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CJobFinish:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CProjectRunFinish:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CClusterJobSubmit:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CClusterJobStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CClusterJobArrayStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CClusterJobArrayEnd:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CClusterJobEnd:
+                print(f'received message: {msg}')
+            else:
+                raise Exception(f'received unexpected msg: {msg}')
         """
         
         msg = await self._recv()
@@ -460,7 +458,7 @@ class RealTimeC2S:
 
 class RealTimeC2SListenToProject:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2SListenToProject'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToProject'
     
     def __init__(self, user_id: str, project_id: str) -> None:
         """
@@ -556,7 +554,7 @@ class RealTimeS2C:
 
 class RealTimeS2CError:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CError'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.Error'
     
     def __init__(self, name: Optional[str], msg: Optional[str]) -> None:
         """
@@ -611,7 +609,7 @@ class RealTimeS2CError:
 
 class RealTimeS2CProjectStatus:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectStatus'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectStatus'
     
     def __init__(self, recent_runs: List[ProjectRunData], has_older_runs: bool, blocks: List[Block]) -> None:
         """
@@ -674,7 +672,7 @@ class RealTimeS2CProjectStatus:
 
 class RealTimeS2CProjectRunInit:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectRunInit'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunInit'
     
     def __init__(self, run_id: int, timestamp: int, job_ids: List[str]) -> None:
         """
@@ -737,7 +735,7 @@ class RealTimeS2CProjectRunInit:
 
 class RealTimeS2CProjectRunStart:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectRunStart'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunStart'
     
     def __init__(self, run_id: int) -> None:
         """
@@ -784,7 +782,7 @@ class RealTimeS2CProjectRunStart:
 
 class RealTimeS2CJobStart:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CJobStart'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobStart'
     
     def __init__(self, run_id: int, job_id: str) -> None:
         """
@@ -839,7 +837,7 @@ class RealTimeS2CJobStart:
 
 class RealTimeS2CJobUpdate:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CJobUpdate'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobUpdate'
     
     def __init__(self, job_id: str, job_string: str) -> None:
         """
@@ -894,7 +892,7 @@ class RealTimeS2CJobUpdate:
 
 class RealTimeS2CJobFinish:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CJobFinish'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish'
     
     def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus) -> None:
         """
@@ -965,7 +963,7 @@ class RealTimeS2CJobFinish:
 
 class RealTimeS2CProjectRunFinish:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectRunFinish'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunFinish'
     
     def __init__(self, run_id: int, status: RunStatus) -> None:
         """
@@ -1020,7 +1018,7 @@ class RealTimeS2CProjectRunFinish:
 
 class RealTimeS2CClusterJobSubmit:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobSubmit'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobSubmit'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, cluster_job_name: Optional[str], array_size: Optional[int]) -> None:
         """
@@ -1099,7 +1097,7 @@ class RealTimeS2CClusterJobSubmit:
 
 class RealTimeS2CClusterJobStart:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobStart'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobStart'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str) -> None:
         """
@@ -1162,7 +1160,7 @@ class RealTimeS2CClusterJobStart:
 
 class RealTimeS2CClusterJobArrayStart:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobArrayStart'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayStart'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_started: int) -> None:
         """
@@ -1241,7 +1239,7 @@ class RealTimeS2CClusterJobArrayStart:
 
 class RealTimeS2CClusterJobArrayEnd:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobArrayEnd'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayEnd'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_ended: int, num_canceled: int, num_failed: int) -> None:
         """
@@ -1336,7 +1334,7 @@ class RealTimeS2CClusterJobArrayEnd:
 
 class RealTimeS2CClusterJobEnd:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobEnd'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobEnd'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, result_type: ClusterJobResultType) -> None:
         """
@@ -1407,7 +1405,7 @@ class RealTimeS2CClusterJobEnd:
 
 class RealTimeS2CSessionRunningJob:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionRunningJob'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionRunningJob'
     
     def __init__(self, job_id: str, name: str, size: int, status: RunStatus) -> None:
         """
@@ -1478,7 +1476,7 @@ class RealTimeS2CSessionRunningJob:
 
 class RealTimeS2CSessionFilesystem:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionFilesystem'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionFilesystem'
     
     def __init__(self, used: float, bytes_available: int, path: str, type: str, bytes: int, bytes_used: int) -> None:
         """
@@ -1565,7 +1563,7 @@ class RealTimeS2CSessionFilesystem:
 
 class RealTimeS2CSessionTransferInit:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionTransferInit'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit'
     
     def __init__(self, files: List[RealTimeS2CSessionTransferInitFileInfo]) -> None:
         """
@@ -1612,7 +1610,7 @@ class RealTimeS2CSessionTransferInit:
 
 class RealTimeS2CSessionTransferInitFileInfo:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionTransferInitFileInfo'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit.FileInfo'
     
     def __init__(self, filename: str, bytes_total: int, bytes_transfered: int) -> None:
         """
@@ -3281,7 +3279,7 @@ class ClusterJobData:
 
 class ClusterJobDataArrayInfo:
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobDataArrayInfo'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData.ArrayInfo'
     
     def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
         """

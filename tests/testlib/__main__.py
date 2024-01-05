@@ -6,7 +6,7 @@ import asyncio
 
 from nextpyp.client import Client
 from nextpyp.client.credentials import Credentials
-from nextpyp.client.gen import RealTimeC2S, RealTimeS2C
+from nextpyp.client.gen import RealTimeC2SListenToProject, RealTimeS2CProjectStatus
 
 
 client = Client(
@@ -41,16 +41,15 @@ def call() -> None:
 async def ws() -> None:
 
     async with client.realtime_services.project as project:
-        await project.send_listen_to_project(RealTimeC2S.ListenToProject(
+        await project.send_listen_to_project(RealTimeC2SListenToProject(
             user_id='jeff',
             project_id='SPA_Test-79TUrqvTRuG'
         ))
         msg = await project.recv()
-        match type(msg):
-            case RealTimeS2C.ProjectStatus:
-                print(f'project status: {msg}')
-            case _:
-                print(f'received other msg: {msg}')
+        if type(msg) is RealTimeS2CProjectStatus:
+            print(f'project status: {msg}')
+        else:
+            print(f'received other msg: {msg}')
 
 
 async def main() -> None:
