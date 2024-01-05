@@ -13,15 +13,23 @@ if TYPE_CHECKING:
 
 class Services:
     """
-    All of the different services that can be accessed by the NextPYP client
+    This class houses all of the different regular services that can be accessed by the NextPYP client,
+    with each service exposed as a class attribute.
     
-    Regular services work just like function calls. Calling a service function
-    will cause the Python app to wait until the NextPYP website responds with the result.
+    Each regular service contains a group of functions that work in your app just like regular functions,
+    except the function is executed on the NextPYP website instead of in your app.
+    Calling a service function will cause your app to send a request to the NextPYP website
+    and then wait until the response arrives.
+    
+    Regular services are different from realtime services. To learn more about realtime services,
+    see :py:class:`.RealtimeServices`.
     
     Examples
     --------
     
-    Call a simple service::
+    Call the ``list`` functon of the ``projects`` service:
+    
+    .. code-block:: python
     
         projects = client.services.projects.list('user_id')
     """
@@ -83,7 +91,7 @@ class ProjectsService:
 
     def list(self, user_id: str) -> List[ProjectData]:
         """
-        (no documentation yet)
+        (no description yet)
         """
         path = '/kv/projects/list'
         response = self.client._call(path, [user_id])
@@ -105,21 +113,26 @@ class RealtimeServices:
     messages to/from the website. This technique results in a lower event latency
     than more traditional connection polling techniques, and can be more efficient with network resources as well.
     
+    Realtime services are different from regular services. To learn more about regular services,
+    see :py:class:`.Services`.
+    
     Examples
     --------
     
-    Call a realtime service::
+    Call a realtime service:
+    
+    .. code-block:: python
     
         async with client.realtime_services.project as project:
         
-            await project.send_listen_to_project(RealTimeC2S.ListenToProject(
+            await project.send_listen_to_project(RealTimeC2SListenToProject(
                 user_id='user_id',
                 project_id='project_id'
             ))
             
             msg = await project.recv()
             match type(msg):
-                case RealTimeS2C.ProjectStatus:
+                case RealTimeS2CProjectStatus:
                     print(f'project status: {msg}')
                 case _:
                     print(f'received other msg: {msg}')
@@ -127,28 +140,28 @@ class RealtimeServices:
     """
     
     def __init__(self, client: Client) -> None:
-        self.project = RealtimeService(client, '/ws/project', ProjectRealtimeServiceConnection)
+        self.project: RealtimeService[ProjectRealtimeServiceConnection] = RealtimeService(client, '/ws/project', ProjectRealtimeServiceConnection)
         """
-        (not documented yet)
+        (no description yet)
         
         .. rubric:: Client to Server messages
         
-        * :py:class:`.RealTimeC2S.ListenToProject`
+        * :py:class:`.RealTimeC2SListenToProject`
         
         .. rubric:: Server to Client messages
         
-        * :py:class:`.RealTimeS2C.ProjectStatus`
-        * :py:class:`.RealTimeS2C.ProjectRunInit`
-        * :py:class:`.RealTimeS2C.ProjectRunStart`
-        * :py:class:`.RealTimeS2C.JobStart`
-        * :py:class:`.RealTimeS2C.JobUpdate`
-        * :py:class:`.RealTimeS2C.JobFinish`
-        * :py:class:`.RealTimeS2C.ProjectRunFinish`
-        * :py:class:`.RealTimeS2C.ClusterJobSubmit`
-        * :py:class:`.RealTimeS2C.ClusterJobStart`
-        * :py:class:`.RealTimeS2C.ClusterJobArrayStart`
-        * :py:class:`.RealTimeS2C.ClusterJobArrayEnd`
-        * :py:class:`.RealTimeS2C.ClusterJobEnd`
+        * :py:class:`.RealTimeS2CProjectStatus`
+        * :py:class:`.RealTimeS2CProjectRunInit`
+        * :py:class:`.RealTimeS2CProjectRunStart`
+        * :py:class:`.RealTimeS2CJobStart`
+        * :py:class:`.RealTimeS2CJobUpdate`
+        * :py:class:`.RealTimeS2CJobFinish`
+        * :py:class:`.RealTimeS2CProjectRunFinish`
+        * :py:class:`.RealTimeS2CClusterJobSubmit`
+        * :py:class:`.RealTimeS2CClusterJobStart`
+        * :py:class:`.RealTimeS2CClusterJobArrayStart`
+        * :py:class:`.RealTimeS2CClusterJobArrayEnd`
+        * :py:class:`.RealTimeS2CClusterJobEnd`
         """
 
 
@@ -157,39 +170,83 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
     def __init__(self, websocket: WebSocketClientProtocol) -> None:
         super(ProjectRealtimeServiceConnection, self).__init__(websocket)
     
-    async def send_listen_to_project(self, msg: RealTimeC2S.ListenToProject) -> None:
+    async def send_listen_to_project(self, msg: RealTimeC2SListenToProject) -> None:
+        """
+        Sends a RealTimeC2SListenToProject message
+        """
+        
         j = msg.to_json()
-        j['type'] = RealTimeC2S.ListenToProject.TYPE_ID
+        j['type'] = RealTimeC2SListenToProject.TYPE_ID
         await self._send(j)
     
-    async def recv(self) -> Union[RealTimeS2C.ProjectStatus, RealTimeS2C.ProjectRunInit, RealTimeS2C.ProjectRunStart, RealTimeS2C.JobStart, RealTimeS2C.JobUpdate, RealTimeS2C.JobFinish, RealTimeS2C.ProjectRunFinish, RealTimeS2C.ClusterJobSubmit, RealTimeS2C.ClusterJobStart, RealTimeS2C.ClusterJobArrayStart, RealTimeS2C.ClusterJobArrayEnd, RealTimeS2C.ClusterJobEnd]:
+    async def recv(self) -> Union[RealTimeS2CProjectStatus, RealTimeS2CProjectRunInit, RealTimeS2CProjectRunStart, RealTimeS2CJobStart, RealTimeS2CJobUpdate, RealTimeS2CJobFinish, RealTimeS2CProjectRunFinish, RealTimeS2CClusterJobSubmit, RealTimeS2CClusterJobStart, RealTimeS2CClusterJobArrayStart, RealTimeS2CClusterJobArrayEnd, RealTimeS2CClusterJobEnd]:
+        """
+        Receives a message from the website. Could be any one of several different messages.
+        
+        Examples
+        --------
+        
+        Receive a message from this realtime service:
+        
+        .. code-block:: python
+        
+            msg = await project.recv()
+            match type(msg):
+                case RealTimeS2CProjectStatus:
+                    print(f'received message: {msg}')
+                case RealTimeS2CProjectRunInit:
+                    print(f'received message: {msg}')
+                case RealTimeS2CProjectRunStart:
+                    print(f'received message: {msg}')
+                case RealTimeS2CJobStart:
+                    print(f'received message: {msg}')
+                case RealTimeS2CJobUpdate:
+                    print(f'received message: {msg}')
+                case RealTimeS2CJobFinish:
+                    print(f'received message: {msg}')
+                case RealTimeS2CProjectRunFinish:
+                    print(f'received message: {msg}')
+                case RealTimeS2CClusterJobSubmit:
+                    print(f'received message: {msg}')
+                case RealTimeS2CClusterJobStart:
+                    print(f'received message: {msg}')
+                case RealTimeS2CClusterJobArrayStart:
+                    print(f'received message: {msg}')
+                case RealTimeS2CClusterJobArrayEnd:
+                    print(f'received message: {msg}')
+                case RealTimeS2CClusterJobEnd:
+                    print(f'received message: {msg}')
+                case _:
+                    raise Exception(f'received unexpected msg: {msg}')
+        """
+        
         msg = await self._recv()
         type = msg.get('type')
         match type:
-            case RealTimeS2C.ProjectStatus.TYPE_ID:
-                return RealTimeS2C.ProjectStatus.from_json(msg)
-            case RealTimeS2C.ProjectRunInit.TYPE_ID:
-                return RealTimeS2C.ProjectRunInit.from_json(msg)
-            case RealTimeS2C.ProjectRunStart.TYPE_ID:
-                return RealTimeS2C.ProjectRunStart.from_json(msg)
-            case RealTimeS2C.JobStart.TYPE_ID:
-                return RealTimeS2C.JobStart.from_json(msg)
-            case RealTimeS2C.JobUpdate.TYPE_ID:
-                return RealTimeS2C.JobUpdate.from_json(msg)
-            case RealTimeS2C.JobFinish.TYPE_ID:
-                return RealTimeS2C.JobFinish.from_json(msg)
-            case RealTimeS2C.ProjectRunFinish.TYPE_ID:
-                return RealTimeS2C.ProjectRunFinish.from_json(msg)
-            case RealTimeS2C.ClusterJobSubmit.TYPE_ID:
-                return RealTimeS2C.ClusterJobSubmit.from_json(msg)
-            case RealTimeS2C.ClusterJobStart.TYPE_ID:
-                return RealTimeS2C.ClusterJobStart.from_json(msg)
-            case RealTimeS2C.ClusterJobArrayStart.TYPE_ID:
-                return RealTimeS2C.ClusterJobArrayStart.from_json(msg)
-            case RealTimeS2C.ClusterJobArrayEnd.TYPE_ID:
-                return RealTimeS2C.ClusterJobArrayEnd.from_json(msg)
-            case RealTimeS2C.ClusterJobEnd.TYPE_ID:
-                return RealTimeS2C.ClusterJobEnd.from_json(msg)
+            case RealTimeS2CProjectStatus.TYPE_ID:
+                return RealTimeS2CProjectStatus.from_json(msg)
+            case RealTimeS2CProjectRunInit.TYPE_ID:
+                return RealTimeS2CProjectRunInit.from_json(msg)
+            case RealTimeS2CProjectRunStart.TYPE_ID:
+                return RealTimeS2CProjectRunStart.from_json(msg)
+            case RealTimeS2CJobStart.TYPE_ID:
+                return RealTimeS2CJobStart.from_json(msg)
+            case RealTimeS2CJobUpdate.TYPE_ID:
+                return RealTimeS2CJobUpdate.from_json(msg)
+            case RealTimeS2CJobFinish.TYPE_ID:
+                return RealTimeS2CJobFinish.from_json(msg)
+            case RealTimeS2CProjectRunFinish.TYPE_ID:
+                return RealTimeS2CProjectRunFinish.from_json(msg)
+            case RealTimeS2CClusterJobSubmit.TYPE_ID:
+                return RealTimeS2CClusterJobSubmit.from_json(msg)
+            case RealTimeS2CClusterJobStart.TYPE_ID:
+                return RealTimeS2CClusterJobStart.from_json(msg)
+            case RealTimeS2CClusterJobArrayStart.TYPE_ID:
+                return RealTimeS2CClusterJobArrayStart.from_json(msg)
+            case RealTimeS2CClusterJobArrayEnd.TYPE_ID:
+                return RealTimeS2CClusterJobArrayEnd.from_json(msg)
+            case RealTimeS2CClusterJobEnd.TYPE_ID:
+                return RealTimeS2CClusterJobEnd.from_json(msg)
             case _:
                 raise RealtimeServiceUnexpectedMessage(type)
 
@@ -202,9 +259,18 @@ class AppTokenRequestData:
         """
         
         """
-        self.request_id = request_id
-        self.app_name = app_name
-        self.permissions = permissions
+        self.request_id: str = request_id
+        """
+        (no description yet)
+        """
+        self.app_name: str = app_name
+        """
+        (no description yet)
+        """
+        self.permissions: List[AppPermissionData] = permissions
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -256,14 +322,38 @@ class ProjectData:
         """
         
         """
-        self.owner = owner
-        self.permissions = permissions
-        self.project_id = project_id
-        self.project_number = project_number
-        self.project_name = project_name
-        self.created = created
-        self.images = images
-        self.path = path
+        self.owner: UserData = owner
+        """
+        (no description yet)
+        """
+        self.permissions: Set[ProjectPermission] = permissions
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.project_number: Optional[int] = project_number
+        """
+        (no description yet)
+        """
+        self.project_name: str = project_name
+        """
+        (no description yet)
+        """
+        self.created: int = created
+        """
+        (no description yet)
+        """
+        self.images: List[str] = images
+        """
+        urls of representative images for the project, small size
+        """
+        self.path: str = path
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -366,55 +456,61 @@ class RealTimeC2S:
         if not isinstance(other, RealTimeC2S):
             return NotImplemented
         return True  # we are all the same! =D
+
+
+class RealTimeC2SListenToProject:
     
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2SListenToProject'
     
-    class ListenToProject:
+    def __init__(self, user_id: str, project_id: str) -> None:
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToProject'
+        """
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        def __init__(self, user_id: str, project_id: str) -> None:
-            """
-            
-            """
-            self.user_id = user_id
-            self.project_id = project_id
+        return {
+            'userId': self.user_id,
+            'projectId': self.project_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2SListenToProject:
+        """
+        Creates a new class instance from JSON
+        """
         
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'userId': self.user_id,
-                'projectId': self.project_id,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeC2S.ListenToProject:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                user_id=cast(str, json['userId']),
-                project_id=cast(str, json['projectId']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'user_id={self.user_id}',
-                f'project_id={self.project_id}',
-            ])
-            return f'ListenToProject[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeC2S.ListenToProject):
-                return NotImplemented
-            return self.user_id == other.user_id \
-                and self.project_id == other.project_id
+        return cls(
+            user_id=cast(str, json['userId']),
+            project_id=cast(str, json['projectId']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+        ])
+        return f'RealTimeC2SListenToProject[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeC2SListenToProject):
+            return NotImplemented
+        return self.user_id == other.user_id \
+            and self.project_id == other.project_id
 
 
 class RealTimeS2C:
@@ -456,954 +552,1125 @@ class RealTimeS2C:
         if not isinstance(other, RealTimeS2C):
             return NotImplemented
         return True  # we are all the same! =D
+
+
+class RealTimeS2CError:
     
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CError'
     
-    class Error:
+    def __init__(self, name: Optional[str], msg: Optional[str]) -> None:
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.Error'
-        
-        def __init__(self, name: Optional[str], msg: Optional[str]) -> None:
-            """
-            
-            """
-            self.name = name
-            self.msg = msg
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'name': self.name if self.name is not None else None,
-                'msg': self.msg if self.msg is not None else None,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.Error:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                name=cast(str, json['name']) if 'name' in json and json['name'] is not None else None,
-                msg=cast(str, json['msg']) if 'msg' in json and json['msg'] is not None else None,
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'name={self.name}',
-                f'msg={self.msg}',
-            ])
-            return f'Error[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.Error):
-                return NotImplemented
-            return self.name == other.name \
-                and self.msg == other.msg
+        """
+        self.name: Optional[str] = name
+        """
+        (no description yet)
+        """
+        self.msg: Optional[str] = msg
+        """
+        (no description yet)
+        """
     
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'name': self.name if self.name is not None else None,
+            'msg': self.msg if self.msg is not None else None,
+        }
     
-    class ProjectStatus:
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CError:
+        """
+        Creates a new class instance from JSON
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectStatus'
-        
-        def __init__(self, recent_runs: List[ProjectRunData], has_older_runs: bool, blocks: List[Block]) -> None:
-            """
-            
-            """
-            self.recent_runs = recent_runs
-            self.has_older_runs = has_older_runs
-            self.blocks = blocks
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'recentRuns': [x.to_json() for x in self.recent_runs],
-                'hasOlderRuns': self.has_older_runs,
-                'blocks': [x.to_json() for x in self.blocks],
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectStatus:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                recent_runs=[ProjectRunData.from_json(x) for x in json['recentRuns']],
-                has_older_runs=cast(bool, json['hasOlderRuns']),
-                blocks=[Block.from_json(x) for x in json['blocks']],
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'recent_runs={self.recent_runs}',
-                f'has_older_runs={self.has_older_runs}',
-                f'blocks={self.blocks}',
-            ])
-            return f'ProjectStatus[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ProjectStatus):
-                return NotImplemented
-            return self.recent_runs == other.recent_runs \
-                and self.has_older_runs == other.has_older_runs \
-                and self.blocks == other.blocks
+        return cls(
+            name=cast(str, json['name']) if 'name' in json and json['name'] is not None else None,
+            msg=cast(str, json['msg']) if 'msg' in json and json['msg'] is not None else None,
+        )
     
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'name={self.name}',
+            f'msg={self.msg}',
+        ])
+        return f'RealTimeS2CError[{props}]'
     
-    class ProjectRunInit:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunInit'
-        
-        def __init__(self, run_id: int, timestamp: int, job_ids: List[str]) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.timestamp = timestamp
-            self.job_ids = job_ids
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'timestamp': self.timestamp,
-                'jobIds': [x for x in self.job_ids],
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectRunInit:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                timestamp=cast(int, json['timestamp']),
-                job_ids=[cast(str, x) for x in json['jobIds']],
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'timestamp={self.timestamp}',
-                f'job_ids={self.job_ids}',
-            ])
-            return f'ProjectRunInit[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ProjectRunInit):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.timestamp == other.timestamp \
-                and self.job_ids == other.job_ids
+    def __repr__(self) -> str:
+        return self.__str__()
     
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CError):
+            return NotImplemented
+        return self.name == other.name \
+            and self.msg == other.msg
+
+
+class RealTimeS2CProjectStatus:
     
-    class ProjectRunStart:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunStart'
-        
-        def __init__(self, run_id: int) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectRunStart:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-            ])
-            return f'ProjectRunStart[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ProjectRunStart):
-                return NotImplemented
-            return self.run_id == other.run_id
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectStatus'
     
+    def __init__(self, recent_runs: List[ProjectRunData], has_older_runs: bool, blocks: List[Block]) -> None:
+        """
+        
+        """
+        self.recent_runs: List[ProjectRunData] = recent_runs
+        """
+        (no description yet)
+        """
+        self.has_older_runs: bool = has_older_runs
+        """
+        (no description yet)
+        """
+        self.blocks: List[Block] = blocks
+        """
+        (no description yet)
+        """
     
-    class JobStart:
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobStart'
-        
-        def __init__(self, run_id: int, job_id: str) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.JobStart:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-            ])
-            return f'JobStart[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.JobStart):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id
+        return {
+            'recentRuns': [x.to_json() for x in self.recent_runs],
+            'hasOlderRuns': self.has_older_runs,
+            'blocks': [x.to_json() for x in self.blocks],
+        }
     
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectStatus:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            recent_runs=[ProjectRunData.from_json(x) for x in json['recentRuns']],
+            has_older_runs=cast(bool, json['hasOlderRuns']),
+            blocks=[Block.from_json(x) for x in json['blocks']],
+        )
     
-    class JobUpdate:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobUpdate'
-        
-        def __init__(self, job_id: str, job_string: str) -> None:
-            """
-            
-            """
-            self.job_id = job_id
-            self.job_string = job_string
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'jobId': self.job_id,
-                'jobString': self.job_string,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.JobUpdate:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                job_id=cast(str, json['jobId']),
-                job_string=cast(str, json['jobString']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'job_id={self.job_id}',
-                f'job_string={self.job_string}',
-            ])
-            return f'JobUpdate[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.JobUpdate):
-                return NotImplemented
-            return self.job_id == other.job_id \
-                and self.job_string == other.job_string
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'recent_runs={self.recent_runs}',
+            f'has_older_runs={self.has_older_runs}',
+            f'blocks={self.blocks}',
+        ])
+        return f'RealTimeS2CProjectStatus[{props}]'
     
+    def __repr__(self) -> str:
+        return self.__str__()
     
-    class JobFinish:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish'
-        
-        def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-            self.job_string = job_string
-            self.status = status
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-                'jobString': self.job_string,
-                'status': self.status.to_json(),
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.JobFinish:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-                job_string=cast(str, json['jobString']),
-                status=RunStatus.from_json(json['status']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-                f'job_string={self.job_string}',
-                f'status={self.status}',
-            ])
-            return f'JobFinish[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.JobFinish):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id \
-                and self.job_string == other.job_string \
-                and self.status == other.status
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CProjectStatus):
+            return NotImplemented
+        return self.recent_runs == other.recent_runs \
+            and self.has_older_runs == other.has_older_runs \
+            and self.blocks == other.blocks
+
+
+class RealTimeS2CProjectRunInit:
     
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectRunInit'
     
-    class ProjectRunFinish:
+    def __init__(self, run_id: int, timestamp: int, job_ids: List[str]) -> None:
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunFinish'
-        
-        def __init__(self, run_id: int, status: RunStatus) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.status = status
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'status': self.status.to_json(),
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ProjectRunFinish:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                status=RunStatus.from_json(json['status']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'status={self.status}',
-            ])
-            return f'ProjectRunFinish[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ProjectRunFinish):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.status == other.status
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.job_ids: List[str] = job_ids
+        """
+        (no description yet)
+        """
     
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'timestamp': self.timestamp,
+            'jobIds': [x for x in self.job_ids],
+        }
     
-    class ClusterJobSubmit:
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectRunInit:
+        """
+        Creates a new class instance from JSON
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobSubmit'
-        
-        def __init__(self, run_id: int, job_id: str, cluster_job_id: str, cluster_job_name: Optional[str], array_size: Optional[int]) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-            self.cluster_job_id = cluster_job_id
-            self.cluster_job_name = cluster_job_name
-            self.array_size = array_size
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-                'clusterJobId': self.cluster_job_id,
-                'clusterJobName': self.cluster_job_name if self.cluster_job_name is not None else None,
-                'arraySize': self.array_size if self.array_size is not None else None,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobSubmit:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-                cluster_job_id=cast(str, json['clusterJobId']),
-                cluster_job_name=cast(str, json['clusterJobName']) if 'clusterJobName' in json and json['clusterJobName'] is not None else None,
-                array_size=cast(int, json['arraySize']) if 'arraySize' in json and json['arraySize'] is not None else None,
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-                f'cluster_job_id={self.cluster_job_id}',
-                f'cluster_job_name={self.cluster_job_name}',
-                f'array_size={self.array_size}',
-            ])
-            return f'ClusterJobSubmit[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ClusterJobSubmit):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id \
-                and self.cluster_job_id == other.cluster_job_id \
-                and self.cluster_job_name == other.cluster_job_name \
-                and self.array_size == other.array_size
+        return cls(
+            run_id=cast(int, json['runId']),
+            timestamp=cast(int, json['timestamp']),
+            job_ids=[cast(str, x) for x in json['jobIds']],
+        )
     
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'timestamp={self.timestamp}',
+            f'job_ids={self.job_ids}',
+        ])
+        return f'RealTimeS2CProjectRunInit[{props}]'
     
-    class ClusterJobStart:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobStart'
-        
-        def __init__(self, run_id: int, job_id: str, cluster_job_id: str) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-            self.cluster_job_id = cluster_job_id
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-                'clusterJobId': self.cluster_job_id,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobStart:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-                cluster_job_id=cast(str, json['clusterJobId']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-                f'cluster_job_id={self.cluster_job_id}',
-            ])
-            return f'ClusterJobStart[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ClusterJobStart):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id \
-                and self.cluster_job_id == other.cluster_job_id
+    def __repr__(self) -> str:
+        return self.__str__()
     
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CProjectRunInit):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.timestamp == other.timestamp \
+            and self.job_ids == other.job_ids
+
+
+class RealTimeS2CProjectRunStart:
     
-    class ClusterJobArrayStart:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayStart'
-        
-        def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_started: int) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-            self.cluster_job_id = cluster_job_id
-            self.array_index = array_index
-            self.num_started = num_started
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-                'clusterJobId': self.cluster_job_id,
-                'arrayIndex': self.array_index,
-                'numStarted': self.num_started,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobArrayStart:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-                cluster_job_id=cast(str, json['clusterJobId']),
-                array_index=cast(int, json['arrayIndex']),
-                num_started=cast(int, json['numStarted']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-                f'cluster_job_id={self.cluster_job_id}',
-                f'array_index={self.array_index}',
-                f'num_started={self.num_started}',
-            ])
-            return f'ClusterJobArrayStart[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ClusterJobArrayStart):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id \
-                and self.cluster_job_id == other.cluster_job_id \
-                and self.array_index == other.array_index \
-                and self.num_started == other.num_started
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectRunStart'
     
+    def __init__(self, run_id: int) -> None:
+        """
+        
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
     
-    class ClusterJobArrayEnd:
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayEnd'
-        
-        def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_ended: int, num_canceled: int, num_failed: int) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-            self.cluster_job_id = cluster_job_id
-            self.array_index = array_index
-            self.num_ended = num_ended
-            self.num_canceled = num_canceled
-            self.num_failed = num_failed
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-                'clusterJobId': self.cluster_job_id,
-                'arrayIndex': self.array_index,
-                'numEnded': self.num_ended,
-                'numCanceled': self.num_canceled,
-                'numFailed': self.num_failed,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobArrayEnd:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-                cluster_job_id=cast(str, json['clusterJobId']),
-                array_index=cast(int, json['arrayIndex']),
-                num_ended=cast(int, json['numEnded']),
-                num_canceled=cast(int, json['numCanceled']),
-                num_failed=cast(int, json['numFailed']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-                f'cluster_job_id={self.cluster_job_id}',
-                f'array_index={self.array_index}',
-                f'num_ended={self.num_ended}',
-                f'num_canceled={self.num_canceled}',
-                f'num_failed={self.num_failed}',
-            ])
-            return f'ClusterJobArrayEnd[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ClusterJobArrayEnd):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id \
-                and self.cluster_job_id == other.cluster_job_id \
-                and self.array_index == other.array_index \
-                and self.num_ended == other.num_ended \
-                and self.num_canceled == other.num_canceled \
-                and self.num_failed == other.num_failed
+        return {
+            'runId': self.run_id,
+        }
     
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectRunStart:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+        )
     
-    class ClusterJobEnd:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobEnd'
-        
-        def __init__(self, run_id: int, job_id: str, cluster_job_id: str, result_type: ClusterJobResultType) -> None:
-            """
-            
-            """
-            self.run_id = run_id
-            self.job_id = job_id
-            self.cluster_job_id = cluster_job_id
-            self.result_type = result_type
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'runId': self.run_id,
-                'jobId': self.job_id,
-                'clusterJobId': self.cluster_job_id,
-                'resultType': self.result_type.to_json(),
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.ClusterJobEnd:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                run_id=cast(int, json['runId']),
-                job_id=cast(str, json['jobId']),
-                cluster_job_id=cast(str, json['clusterJobId']),
-                result_type=ClusterJobResultType.from_json(json['resultType']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'run_id={self.run_id}',
-                f'job_id={self.job_id}',
-                f'cluster_job_id={self.cluster_job_id}',
-                f'result_type={self.result_type}',
-            ])
-            return f'ClusterJobEnd[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.ClusterJobEnd):
-                return NotImplemented
-            return self.run_id == other.run_id \
-                and self.job_id == other.job_id \
-                and self.cluster_job_id == other.cluster_job_id \
-                and self.result_type == other.result_type
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+        ])
+        return f'RealTimeS2CProjectRunStart[{props}]'
     
+    def __repr__(self) -> str:
+        return self.__str__()
     
-    class SessionRunningJob:
-        
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionRunningJob'
-        
-        def __init__(self, job_id: str, name: str, size: int, status: RunStatus) -> None:
-            """
-            
-            """
-            self.job_id = job_id
-            self.name = name
-            self.size = size
-            self.status = status
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'jobId': self.job_id,
-                'name': self.name,
-                'size': self.size,
-                'status': self.status.to_json(),
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionRunningJob:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                job_id=cast(str, json['jobId']),
-                name=cast(str, json['name']),
-                size=cast(int, json['size']),
-                status=RunStatus.from_json(json['status']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'job_id={self.job_id}',
-                f'name={self.name}',
-                f'size={self.size}',
-                f'status={self.status}',
-            ])
-            return f'SessionRunningJob[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.SessionRunningJob):
-                return NotImplemented
-            return self.job_id == other.job_id \
-                and self.name == other.name \
-                and self.size == other.size \
-                and self.status == other.status
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CProjectRunStart):
+            return NotImplemented
+        return self.run_id == other.run_id
+
+
+class RealTimeS2CJobStart:
     
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CJobStart'
     
-    class SessionFilesystem:
+    def __init__(self, run_id: int, job_id: str) -> None:
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionFilesystem'
-        
-        def __init__(self, used: float, bytes_available: int, path: str, type: str, bytes: int, bytes_used: int) -> None:
-            """
-            
-            """
-            self.used = used
-            self.bytes_available = bytes_available
-            self.path = path
-            self.type = type
-            self.bytes = bytes
-            self.bytes_used = bytes_used
-        
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'used': self.used,
-                'bytesAvailable': self.bytes_available,
-                'path': self.path,
-                'type': self.type,
-                'bytes': self.bytes,
-                'bytesUsed': self.bytes_used,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionFilesystem:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                used=cast(float, json['used']),
-                bytes_available=cast(int, json['bytesAvailable']),
-                path=cast(str, json['path']),
-                type=cast(str, json['type']),
-                bytes=cast(int, json['bytes']),
-                bytes_used=cast(int, json['bytesUsed']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'used={self.used}',
-                f'bytes_available={self.bytes_available}',
-                f'path={self.path}',
-                f'type={self.type}',
-                f'bytes={self.bytes}',
-                f'bytes_used={self.bytes_used}',
-            ])
-            return f'SessionFilesystem[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.SessionFilesystem):
-                return NotImplemented
-            return self.used == other.used \
-                and self.bytes_available == other.bytes_available \
-                and self.path == other.path \
-                and self.type == other.type \
-                and self.bytes == other.bytes \
-                and self.bytes_used == other.bytes_used
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
     
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+        }
     
-    class SessionTransferInit:
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CJobStart:
+        """
+        Creates a new class instance from JSON
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit'
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+        ])
+        return f'RealTimeS2CJobStart[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CJobStart):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id
+
+
+class RealTimeS2CJobUpdate:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CJobUpdate'
+    
+    def __init__(self, job_id: str, job_string: str) -> None:
+        """
         
-        def __init__(self, files: List[RealTimeS2C.SessionTransferInit.FileInfo]) -> None:
-            """
-            
-            """
-            self.files = files
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.job_string: str = job_string
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'files': [x.to_json() for x in self.files],
-            }
+        return {
+            'jobId': self.job_id,
+            'jobString': self.job_string,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CJobUpdate:
+        """
+        Creates a new class instance from JSON
+        """
         
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionTransferInit:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                files=[RealTimeS2C.SessionTransferInit.FileInfo.from_json(x) for x in json['files']],
-            )
+        return cls(
+            job_id=cast(str, json['jobId']),
+            job_string=cast(str, json['jobString']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'job_string={self.job_string}',
+        ])
+        return f'RealTimeS2CJobUpdate[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CJobUpdate):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.job_string == other.job_string
+
+
+class RealTimeS2CJobFinish:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CJobFinish'
+    
+    def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus) -> None:
+        """
         
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'files={self.files}',
-            ])
-            return f'SessionTransferInit[{props}]'
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.job_string: str = job_string
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        def __repr__(self) -> str:
-            return self.__str__()
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'jobString': self.job_string,
+            'status': self.status.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CJobFinish:
+        """
+        Creates a new class instance from JSON
+        """
         
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, RealTimeS2C.SessionTransferInit):
-                return NotImplemented
-            return self.files == other.files
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+            job_string=cast(str, json['jobString']),
+            status=RunStatus.from_json(json['status']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'job_string={self.job_string}',
+            f'status={self.status}',
+        ])
+        return f'RealTimeS2CJobFinish[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CJobFinish):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.job_string == other.job_string \
+            and self.status == other.status
+
+
+class RealTimeS2CProjectRunFinish:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CProjectRunFinish'
+    
+    def __init__(self, run_id: int, status: RunStatus) -> None:
+        """
         
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        class FileInfo:
-            
-            TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit.FileInfo'
-            
-            def __init__(self, filename: str, bytes_total: int, bytes_transfered: int) -> None:
-                """
-                
-                """
-                self.filename = filename
-                self.bytes_total = bytes_total
-                self.bytes_transfered = bytes_transfered
-            
-            def to_json(self) -> Dict[str,Any]:
-                """
-                Converts this class instance into JSON
-                """
-                
-                return {
-                    'filename': self.filename,
-                    'bytesTotal': self.bytes_total,
-                    'bytesTransfered': self.bytes_transfered,
-                }
-            
-            @classmethod
-            def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C.SessionTransferInit.FileInfo:
-                """
-                Creates a new class instance from JSON
-                """
-                
-                return cls(
-                    filename=cast(str, json['filename']),
-                    bytes_total=cast(int, json['bytesTotal']),
-                    bytes_transfered=cast(int, json['bytesTransfered']),
-                )
-            
-            def __str__(self) -> str:
-                props = ', '.join([
-                    f'filename={self.filename}',
-                    f'bytes_total={self.bytes_total}',
-                    f'bytes_transfered={self.bytes_transfered}',
-                ])
-                return f'FileInfo[{props}]'
-            
-            def __repr__(self) -> str:
-                return self.__str__()
-            
-            def __eq__(self, other: object) -> Any:
-                if not isinstance(other, RealTimeS2C.SessionTransferInit.FileInfo):
-                    return NotImplemented
-                return self.filename == other.filename \
-                    and self.bytes_total == other.bytes_total \
-                    and self.bytes_transfered == other.bytes_transfered
+        return {
+            'runId': self.run_id,
+            'status': self.status.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectRunFinish:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+            status=RunStatus.from_json(json['status']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'status={self.status}',
+        ])
+        return f'RealTimeS2CProjectRunFinish[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CProjectRunFinish):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.status == other.status
+
+
+class RealTimeS2CClusterJobSubmit:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobSubmit'
+    
+    def __init__(self, run_id: int, job_id: str, cluster_job_id: str, cluster_job_name: Optional[str], array_size: Optional[int]) -> None:
+        """
+        
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.cluster_job_name: Optional[str] = cluster_job_name
+        """
+        (no description yet)
+        """
+        self.array_size: Optional[int] = array_size
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
+            'clusterJobName': self.cluster_job_name if self.cluster_job_name is not None else None,
+            'arraySize': self.array_size if self.array_size is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobSubmit:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+            cluster_job_id=cast(str, json['clusterJobId']),
+            cluster_job_name=cast(str, json['clusterJobName']) if 'clusterJobName' in json and json['clusterJobName'] is not None else None,
+            array_size=cast(int, json['arraySize']) if 'arraySize' in json and json['arraySize'] is not None else None,
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
+            f'cluster_job_name={self.cluster_job_name}',
+            f'array_size={self.array_size}',
+        ])
+        return f'RealTimeS2CClusterJobSubmit[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CClusterJobSubmit):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.cluster_job_id == other.cluster_job_id \
+            and self.cluster_job_name == other.cluster_job_name \
+            and self.array_size == other.array_size
+
+
+class RealTimeS2CClusterJobStart:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobStart'
+    
+    def __init__(self, run_id: int, job_id: str, cluster_job_id: str) -> None:
+        """
+        
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobStart:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+            cluster_job_id=cast(str, json['clusterJobId']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
+        ])
+        return f'RealTimeS2CClusterJobStart[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CClusterJobStart):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.cluster_job_id == other.cluster_job_id
+
+
+class RealTimeS2CClusterJobArrayStart:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobArrayStart'
+    
+    def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_started: int) -> None:
+        """
+        
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.array_index: int = array_index
+        """
+        (no description yet)
+        """
+        self.num_started: int = num_started
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
+            'arrayIndex': self.array_index,
+            'numStarted': self.num_started,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobArrayStart:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+            cluster_job_id=cast(str, json['clusterJobId']),
+            array_index=cast(int, json['arrayIndex']),
+            num_started=cast(int, json['numStarted']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
+            f'array_index={self.array_index}',
+            f'num_started={self.num_started}',
+        ])
+        return f'RealTimeS2CClusterJobArrayStart[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CClusterJobArrayStart):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.cluster_job_id == other.cluster_job_id \
+            and self.array_index == other.array_index \
+            and self.num_started == other.num_started
+
+
+class RealTimeS2CClusterJobArrayEnd:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobArrayEnd'
+    
+    def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_ended: int, num_canceled: int, num_failed: int) -> None:
+        """
+        
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.array_index: int = array_index
+        """
+        (no description yet)
+        """
+        self.num_ended: int = num_ended
+        """
+        (no description yet)
+        """
+        self.num_canceled: int = num_canceled
+        """
+        (no description yet)
+        """
+        self.num_failed: int = num_failed
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
+            'arrayIndex': self.array_index,
+            'numEnded': self.num_ended,
+            'numCanceled': self.num_canceled,
+            'numFailed': self.num_failed,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobArrayEnd:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+            cluster_job_id=cast(str, json['clusterJobId']),
+            array_index=cast(int, json['arrayIndex']),
+            num_ended=cast(int, json['numEnded']),
+            num_canceled=cast(int, json['numCanceled']),
+            num_failed=cast(int, json['numFailed']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
+            f'array_index={self.array_index}',
+            f'num_ended={self.num_ended}',
+            f'num_canceled={self.num_canceled}',
+            f'num_failed={self.num_failed}',
+        ])
+        return f'RealTimeS2CClusterJobArrayEnd[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CClusterJobArrayEnd):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.cluster_job_id == other.cluster_job_id \
+            and self.array_index == other.array_index \
+            and self.num_ended == other.num_ended \
+            and self.num_canceled == other.num_canceled \
+            and self.num_failed == other.num_failed
+
+
+class RealTimeS2CClusterJobEnd:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CClusterJobEnd'
+    
+    def __init__(self, run_id: int, job_id: str, cluster_job_id: str, result_type: ClusterJobResultType) -> None:
+        """
+        
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.result_type: ClusterJobResultType = result_type
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
+            'resultType': self.result_type.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobEnd:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            run_id=cast(int, json['runId']),
+            job_id=cast(str, json['jobId']),
+            cluster_job_id=cast(str, json['clusterJobId']),
+            result_type=ClusterJobResultType.from_json(json['resultType']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
+            f'result_type={self.result_type}',
+        ])
+        return f'RealTimeS2CClusterJobEnd[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CClusterJobEnd):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.cluster_job_id == other.cluster_job_id \
+            and self.result_type == other.result_type
+
+
+class RealTimeS2CSessionRunningJob:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionRunningJob'
+    
+    def __init__(self, job_id: str, name: str, size: int, status: RunStatus) -> None:
+        """
+        
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.size: int = size
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'name': self.name,
+            'size': self.size,
+            'status': self.status.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionRunningJob:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            name=cast(str, json['name']),
+            size=cast(int, json['size']),
+            status=RunStatus.from_json(json['status']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'name={self.name}',
+            f'size={self.size}',
+            f'status={self.status}',
+        ])
+        return f'RealTimeS2CSessionRunningJob[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionRunningJob):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.name == other.name \
+            and self.size == other.size \
+            and self.status == other.status
+
+
+class RealTimeS2CSessionFilesystem:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionFilesystem'
+    
+    def __init__(self, used: float, bytes_available: int, path: str, type: str, bytes: int, bytes_used: int) -> None:
+        """
+        
+        """
+        self.used: float = used
+        """
+        (no description yet)
+        """
+        self.bytes_available: int = bytes_available
+        """
+        (no description yet)
+        """
+        self.path: str = path
+        """
+        (no description yet)
+        """
+        self.type: str = type
+        """
+        (no description yet)
+        """
+        self.bytes: int = bytes
+        """
+        (no description yet)
+        """
+        self.bytes_used: int = bytes_used
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'used': self.used,
+            'bytesAvailable': self.bytes_available,
+            'path': self.path,
+            'type': self.type,
+            'bytes': self.bytes,
+            'bytesUsed': self.bytes_used,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionFilesystem:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            used=cast(float, json['used']),
+            bytes_available=cast(int, json['bytesAvailable']),
+            path=cast(str, json['path']),
+            type=cast(str, json['type']),
+            bytes=cast(int, json['bytes']),
+            bytes_used=cast(int, json['bytesUsed']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'used={self.used}',
+            f'bytes_available={self.bytes_available}',
+            f'path={self.path}',
+            f'type={self.type}',
+            f'bytes={self.bytes}',
+            f'bytes_used={self.bytes_used}',
+        ])
+        return f'RealTimeS2CSessionFilesystem[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionFilesystem):
+            return NotImplemented
+        return self.used == other.used \
+            and self.bytes_available == other.bytes_available \
+            and self.path == other.path \
+            and self.type == other.type \
+            and self.bytes == other.bytes \
+            and self.bytes_used == other.bytes_used
+
+
+class RealTimeS2CSessionTransferInit:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionTransferInit'
+    
+    def __init__(self, files: List[RealTimeS2CSessionTransferInitFileInfo]) -> None:
+        """
+        
+        """
+        self.files: List[RealTimeS2CSessionTransferInitFileInfo] = files
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'files': [x.to_json() for x in self.files],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferInit:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            files=[RealTimeS2CSessionTransferInitFileInfo.from_json(x) for x in json['files']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'files={self.files}',
+        ])
+        return f'RealTimeS2CSessionTransferInit[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTransferInit):
+            return NotImplemented
+        return self.files == other.files
+
+
+class RealTimeS2CSessionTransferInitFileInfo:
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2CSessionTransferInitFileInfo'
+    
+    def __init__(self, filename: str, bytes_total: int, bytes_transfered: int) -> None:
+        """
+        
+        """
+        self.filename: str = filename
+        """
+        (no description yet)
+        """
+        self.bytes_total: int = bytes_total
+        """
+        (no description yet)
+        """
+        self.bytes_transfered: int = bytes_transfered
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filename': self.filename,
+            'bytesTotal': self.bytes_total,
+            'bytesTransfered': self.bytes_transfered,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferInitFileInfo:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            filename=cast(str, json['filename']),
+            bytes_total=cast(int, json['bytesTotal']),
+            bytes_transfered=cast(int, json['bytesTransfered']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filename={self.filename}',
+            f'bytes_total={self.bytes_total}',
+            f'bytes_transfered={self.bytes_transfered}',
+        ])
+        return f'RealTimeS2CSessionTransferInitFileInfo[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTransferInitFileInfo):
+            return NotImplemented
+        return self.filename == other.filename \
+            and self.bytes_total == other.bytes_total \
+            and self.bytes_transfered == other.bytes_transfered
 
 
 class Block:
@@ -1414,10 +1681,22 @@ class Block:
         """
         
         """
-        self.block_id = block_id
-        self.name = name
-        self.description = description
-        self.group_ids = group_ids
+        self.block_id: str = block_id
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.description: str = description
+        """
+        (no description yet)
+        """
+        self.group_ids: List[str] = group_ids
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1476,9 +1755,18 @@ class ImagesScale:
         """
         A way to represent the physical size of things in micrograph and tomogram images. These are params common to a set of source images.
         """
-        self.particle_radius_unbinned = particle_radius_unbinned
-        self.pixel_a = pixel_a
-        self.particle_radius_a = particle_radius_a
+        self.particle_radius_unbinned: float = particle_radius_unbinned
+        """
+        The particle radius, in unbinned pixels
+        """
+        self.pixel_a: float = pixel_a
+        """
+        The size, in Angstroms, of one pixel in the source image
+        """
+        self.particle_radius_a: float = particle_radius_a
+        """
+        The radius, in Angstroms, of a particle
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1602,8 +1890,14 @@ class AppPermissionData:
         """
         
         """
-        self.app_permission_id = app_permission_id
-        self.description = description
+        self.app_permission_id: str = app_permission_id
+        """
+        (no description yet)
+        """
+        self.description: Optional[str] = description
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1651,10 +1945,22 @@ class ReconstructionData:
         """
         
         """
-        self.id = id
-        self.timestamp = timestamp
-        self.class_num = class_num
-        self.iteration = iteration
+        self.id: str = id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.class_num: int = class_num
+        """
+        (no description yet)
+        """
+        self.iteration: int = iteration
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1710,11 +2016,26 @@ class RefinementData:
         """
         
         """
-        self.id = id
-        self.job_id = job_id
-        self.data_id = data_id
-        self.iteration = iteration
-        self.timestamp = timestamp
+        self.id: str = id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.data_id: str = data_id
+        """
+        eg a micrograph id or a tilt series id
+        """
+        self.iteration: int = iteration
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1774,11 +2095,26 @@ class RefinementBundleData:
         """
         
         """
-        self.id = id
-        self.job_id = job_id
-        self.refinement_bundle_id = refinement_bundle_id
-        self.iteration = iteration
-        self.timestamp = timestamp
+        self.id: str = id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.refinement_bundle_id: str = refinement_bundle_id
+        """
+        (no description yet)
+        """
+        self.iteration: int = iteration
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1838,10 +2174,22 @@ class PypStats:
         """
         
         """
-        self.scope_voltage = scope_voltage
-        self.scope_pixel = scope_pixel
-        self.scope_dose_rate = scope_dose_rate
-        self.particle_radius = particle_radius
+        self.scope_voltage: Optional[float] = scope_voltage
+        """
+        (no description yet)
+        """
+        self.scope_pixel: Optional[float] = scope_pixel
+        """
+        (no description yet)
+        """
+        self.scope_dose_rate: Optional[float] = scope_dose_rate
+        """
+        (no description yet)
+        """
+        self.particle_radius: Optional[float] = particle_radius
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1949,8 +2297,14 @@ class UserData:
         """
         
         """
-        self.id = id
-        self.name = name
+        self.id: str = id
+        """
+        (no description yet)
+        """
+        self.name: Optional[str] = name
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1998,10 +2352,22 @@ class ProjectRunData:
         """
         
         """
-        self.run_id = run_id
-        self.timestamp = timestamp
-        self.status = status
-        self.jobs = jobs
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.jobs: List[JobRunData] = jobs
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2177,11 +2543,26 @@ class StreamLogMsg:
         """
         
         """
-        self.timestamp = timestamp
-        self.level = level
-        self.path = path
-        self.line = line
-        self.msg = msg
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.level: int = level
+        """
+        (no description yet)
+        """
+        self.path: str = path
+        """
+        (no description yet)
+        """
+        self.line: int = line
+        """
+        (no description yet)
+        """
+        self.msg: str = msg
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2297,12 +2678,30 @@ class SessionExportData:
         """
         
         """
-        self.session_id = session_id
-        self.export_id = export_id
-        self.request = request
-        self.created = created
-        self.cluster_job_id = cluster_job_id
-        self.result = result
+        self.session_id: str = session_id
+        """
+        (no description yet)
+        """
+        self.export_id: str = export_id
+        """
+        (no description yet)
+        """
+        self.request: str = request
+        """
+        serialized SessionExportRequest
+        """
+        self.created: int = created
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: Optional[str] = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.result: Optional[str] = result
+        """
+        serialized SessionExportResult
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2366,16 +2765,46 @@ class MicrographMetadata:
         """
         
         """
-        self.id = id
-        self.timestamp = timestamp
-        self.ccc = ccc
-        self.cccc = cccc
-        self.defocus1 = defocus1
-        self.defocus2 = defocus2
-        self.angle_astig = angle_astig
-        self.average_motion = average_motion
-        self.num_particles = num_particles
-        self.source_dims = source_dims
+        self.id: str = id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.ccc: float = ccc
+        """
+        (no description yet)
+        """
+        self.cccc: float = cccc
+        """
+        (no description yet)
+        """
+        self.defocus1: float = defocus1
+        """
+        (no description yet)
+        """
+        self.defocus2: float = defocus2
+        """
+        (no description yet)
+        """
+        self.angle_astig: float = angle_astig
+        """
+        (no description yet)
+        """
+        self.average_motion: float = average_motion
+        """
+        (no description yet)
+        """
+        self.num_particles: int = num_particles
+        """
+        (no description yet)
+        """
+        self.source_dims: Optional[ImageDims] = source_dims
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2455,9 +2884,18 @@ class TwoDClassesData:
         """
         
         """
-        self.owner_id = owner_id
-        self.two_dclasses_id = two_dclasses_id
-        self.created = created
+        self.owner_id: str = owner_id
+        """
+        (no description yet)
+        """
+        self.two_dclasses_id: str = two_dclasses_id
+        """
+        (no description yet)
+        """
+        self.created: int = created
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2509,16 +2947,46 @@ class TiltSeriesData:
         """
         
         """
-        self.id = id
-        self.timestamp = timestamp
-        self.ccc = ccc
-        self.cccc = cccc
-        self.defocus1 = defocus1
-        self.defocus2 = defocus2
-        self.angle_astig = angle_astig
-        self.average_motion = average_motion
-        self.num_particles = num_particles
-        self.source_dims = source_dims
+        self.id: str = id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.ccc: float = ccc
+        """
+        (no description yet)
+        """
+        self.cccc: float = cccc
+        """
+        (no description yet)
+        """
+        self.defocus1: float = defocus1
+        """
+        (no description yet)
+        """
+        self.defocus2: float = defocus2
+        """
+        (no description yet)
+        """
+        self.angle_astig: float = angle_astig
+        """
+        (no description yet)
+        """
+        self.average_motion: float = average_motion
+        """
+        (no description yet)
+        """
+        self.num_particles: int = num_particles
+        """
+        (no description yet)
+        """
+        self.source_dims: Optional[ImageDims] = source_dims
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2598,11 +3066,26 @@ class ImageDims:
         """
         
         """
-        self.num_slices = num_slices
-        self.width = width
-        self.height = height
-        self.depth = depth
-        self.binning_factor = binning_factor
+        self.num_slices: int = num_slices
+        """
+        (no description yet)
+        """
+        self.width: int = width
+        """
+        image width, in pixels
+        """
+        self.height: int = height
+        """
+        image height, in pixels
+        """
+        self.depth: int = depth
+        """
+        image depth, in pixels (for tomograms)
+        """
+        self.binning_factor: int = binning_factor
+        """
+        the binning factor, same for all dimensions
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2662,9 +3145,18 @@ class JobRunData:
         """
         
         """
-        self.job_id = job_id
-        self.status = status
-        self.cluster_jobs = cluster_jobs
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.cluster_jobs: List[ClusterJobData] = cluster_jobs
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2712,15 +3204,30 @@ class ClusterJobData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData'
     
-    def __init__(self, cluster_job_id: str, web_name: Optional[str], cluster_name: Optional[str], status: RunStatus, array_info: Optional[ClusterJobData.ArrayInfo]) -> None:
+    def __init__(self, cluster_job_id: str, web_name: Optional[str], cluster_name: Optional[str], status: RunStatus, array_info: Optional[ClusterJobDataArrayInfo]) -> None:
         """
         
         """
-        self.cluster_job_id = cluster_job_id
-        self.web_name = web_name
-        self.cluster_name = cluster_name
-        self.status = status
-        self.array_info = array_info
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.web_name: Optional[str] = web_name
+        """
+        (no description yet)
+        """
+        self.cluster_name: Optional[str] = cluster_name
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.array_info: Optional[ClusterJobDataArrayInfo] = array_info
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2746,7 +3253,7 @@ class ClusterJobData:
             web_name=cast(str, json['webName']) if 'webName' in json and json['webName'] is not None else None,
             cluster_name=cast(str, json['clusterName']) if 'clusterName' in json and json['clusterName'] is not None else None,
             status=RunStatus.from_json(json['status']),
-            array_info=ClusterJobData.ArrayInfo.from_json(json['arrayInfo']) if 'arrayInfo' in json and json['arrayInfo'] is not None else None,
+            array_info=ClusterJobDataArrayInfo.from_json(json['arrayInfo']) if 'arrayInfo' in json and json['arrayInfo'] is not None else None,
         )
     
     def __str__(self) -> str:
@@ -2770,67 +3277,82 @@ class ClusterJobData:
             and self.cluster_name == other.cluster_name \
             and self.status == other.status \
             and self.array_info == other.array_info
+
+
+class ClusterJobDataArrayInfo:
     
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobDataArrayInfo'
     
-    class ArrayInfo:
+    def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
+        """
         
-        TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData.ArrayInfo'
+        """
+        self.size: int = size
+        """
+        (no description yet)
+        """
+        self.started: int = started
+        """
+        (no description yet)
+        """
+        self.ended: int = ended
+        """
+        (no description yet)
+        """
+        self.canceled: int = canceled
+        """
+        (no description yet)
+        """
+        self.failed: int = failed
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
         
-        def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
-            """
-            
-            """
-            self.size = size
-            self.started = started
-            self.ended = ended
-            self.canceled = canceled
-            self.failed = failed
+        return {
+            'size': self.size,
+            'started': self.started,
+            'ended': self.ended,
+            'canceled': self.canceled,
+            'failed': self.failed,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> ClusterJobDataArrayInfo:
+        """
+        Creates a new class instance from JSON
+        """
         
-        def to_json(self) -> Dict[str,Any]:
-            """
-            Converts this class instance into JSON
-            """
-            
-            return {
-                'size': self.size,
-                'started': self.started,
-                'ended': self.ended,
-                'canceled': self.canceled,
-                'failed': self.failed,
-            }
-        
-        @classmethod
-        def from_json(cls, json: Dict[str,Any]) -> ClusterJobData.ArrayInfo:
-            """
-            Creates a new class instance from JSON
-            """
-            
-            return cls(
-                size=cast(int, json['size']),
-                started=cast(int, json['started']),
-                ended=cast(int, json['ended']),
-                canceled=cast(int, json['canceled']),
-                failed=cast(int, json['failed']),
-            )
-        
-        def __str__(self) -> str:
-            props = ', '.join([
-                f'size={self.size}',
-                f'started={self.started}',
-                f'ended={self.ended}',
-                f'canceled={self.canceled}',
-                f'failed={self.failed}',
-            ])
-            return f'ArrayInfo[{props}]'
-        
-        def __repr__(self) -> str:
-            return self.__str__()
-        
-        def __eq__(self, other: object) -> Any:
-            if not isinstance(other, ClusterJobData.ArrayInfo):
-                return NotImplemented
-            return self.size == other.size \
-                and self.started == other.started \
-                and self.ended == other.ended \
-                and self.canceled == other.canceled \
-                and self.failed == other.failed
+        return cls(
+            size=cast(int, json['size']),
+            started=cast(int, json['started']),
+            ended=cast(int, json['ended']),
+            canceled=cast(int, json['canceled']),
+            failed=cast(int, json['failed']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'size={self.size}',
+            f'started={self.started}',
+            f'ended={self.ended}',
+            f'canceled={self.canceled}',
+            f'failed={self.failed}',
+        ])
+        return f'ClusterJobDataArrayInfo[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobDataArrayInfo):
+            return NotImplemented
+        return self.size == other.size \
+            and self.started == other.started \
+            and self.ended == other.ended \
+            and self.canceled == other.canceled \
+            and self.failed == other.failed

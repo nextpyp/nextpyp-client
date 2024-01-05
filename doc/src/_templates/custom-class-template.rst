@@ -33,3 +33,5 @@
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
+   .. rubric:: {{ _('Details') }}

@@ -76,7 +76,19 @@ class RealtimeServiceConnection:
 
 class RealtimeService(Generic[C]):
     """
-    An asyncio client for nextPYP realtime web services
+    An asyncio client for NextPYP realtime web services
+
+    To connect a realtime service, create a new connection using the ``await with ... as ...`` syntax.
+
+    .. code-block:: python
+
+        async with service as connection:
+            pass
+
+    Once the connection is established, you can send messages to the NextPYP website and receive messages in return.
+    look at the documentation for each realtime service individually to see what messages can be sent and received.
+    The class named something like ``<service_name>RealtimeServiceConnection`` will have all the ``send`` and ``recv``
+    methods specific to that realtime service.
     """
 
     def __init__(self, client: Client, endpoint: str, ctor: Callable[[WebSocketClientProtocol], C]) -> None:

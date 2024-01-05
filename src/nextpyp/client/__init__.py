@@ -12,10 +12,18 @@ class Client:
     """
     Client for the NextPYP website.
 
+    A complete listing of what services are available what services are available can be found at:
+
+    * :py:class:`.Services` for regular services
+    * :py:class:`.RealtimeServices` for realtime services
+
     Examples
     --------
 
-    Requesting an app token for a user::
+    Before the client can be fully used, your app must ask for permission from the NextPYP user.
+    Start by requesting an app token by using the client in unauthenticated mode.
+
+    .. code-block:: python
 
         from nextpyp.client import Client
 
@@ -27,15 +35,20 @@ class Client:
         )
         print(f'token data: {token_data}')
 
-    The above example will print output similar to the following.::
+    The above example will print output similar to the following.
+
+    .. code-block:: text
 
         AppTokenRequestData[request_id='the-request-id', app_name='My App', permissions=[AppPermissionData[...]]]
 
     Once the token has been requested, the user (``jeff`` in this example) should approve the request
-    on the website and copy the app token into your app.
+    on the website and copy the app token into your app. The app token is just a string, so it should
+    be easy to handle.
 
-    Once you have the app token, you can use the client in authenticated mode on behalf of the user,
-    which allows access to the services designated by the requested permissions.::
+    Once you have the app token, you can use the client in authenticated mode
+    which allows access to the services on behalf of the user according to the assigned permissions.
+
+    .. code-block:: python
 
         client = Client(
             url_base='https://nextpyp.my.org',
