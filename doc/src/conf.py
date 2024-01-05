@@ -19,10 +19,6 @@ author = 'Jeff Martin'
 # general sphinx config
 extensions = [
 
-    # allow markdown doc files
-    # https://myst-parser.readthedocs.io
-    'myst_parser',
-
     # generate docs from code automatically
     # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
     'sphinx.ext.autodoc',
