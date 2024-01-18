@@ -62,6 +62,8 @@ class AppsService:
     def version(self) -> str:
         """
         Returns the version number of NextPYP
+        
+        :Permission Needed: none
         """
         path = '/kv/apps/version'
         response = self.client._call(path, [])
@@ -73,6 +75,8 @@ class AppsService:
         """
         Request an app token for your app on behalf of a specific user.
         Once requested, the user will need to approve the token request on the website. After approval, the user can copy the app token (it's a string) into your app.
+        
+        :Permission Needed: none
         """
         path = '/kv/apps/requestToken'
         response = self.client._call(path, [user_id, app_name, app_permission_ids])
@@ -92,6 +96,8 @@ class ProjectsService:
     def list(self, user_id: str) -> List[ProjectData]:
         """
         (no description yet)
+        
+        :Permission Needed: ``project_list``
         """
         path = '/kv/projects/list'
         response = self.client._call(path, [user_id])
@@ -141,30 +147,35 @@ class RealtimeServices:
     def __init__(self, client: Client) -> None:
         self.project: RealtimeService[ProjectRealtimeServiceConnection] = RealtimeService(client, '/ws/project', ProjectRealtimeServiceConnection)
         """
-        (no description yet)
-        
-        .. rubric:: Client to Server messages
-        
-        * :py:class:`.RealTimeC2SListenToProject`
-        
-        .. rubric:: Server to Client messages
-        
-        * :py:class:`.RealTimeS2CProjectStatus`
-        * :py:class:`.RealTimeS2CProjectRunInit`
-        * :py:class:`.RealTimeS2CProjectRunStart`
-        * :py:class:`.RealTimeS2CJobStart`
-        * :py:class:`.RealTimeS2CJobUpdate`
-        * :py:class:`.RealTimeS2CJobFinish`
-        * :py:class:`.RealTimeS2CProjectRunFinish`
-        * :py:class:`.RealTimeS2CClusterJobSubmit`
-        * :py:class:`.RealTimeS2CClusterJobStart`
-        * :py:class:`.RealTimeS2CClusterJobArrayStart`
-        * :py:class:`.RealTimeS2CClusterJobArrayEnd`
-        * :py:class:`.RealTimeS2CClusterJobEnd`
+        The Project realtime service, see :py:class:`.ProjectRealtimeServiceConnection`
         """
 
 
 class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
+    """
+    (no description yet)
+    
+    :Permission Needed: ``project_listen``
+    
+    :Client to Server messages:
+    
+    * :py:class:`.RealTimeC2SListenToProject`
+    
+    :Server to Client messages:
+    
+    * :py:class:`.RealTimeS2CProjectStatus`
+    * :py:class:`.RealTimeS2CProjectRunInit`
+    * :py:class:`.RealTimeS2CProjectRunStart`
+    * :py:class:`.RealTimeS2CJobStart`
+    * :py:class:`.RealTimeS2CJobUpdate`
+    * :py:class:`.RealTimeS2CJobFinish`
+    * :py:class:`.RealTimeS2CProjectRunFinish`
+    * :py:class:`.RealTimeS2CClusterJobSubmit`
+    * :py:class:`.RealTimeS2CClusterJobStart`
+    * :py:class:`.RealTimeS2CClusterJobArrayStart`
+    * :py:class:`.RealTimeS2CClusterJobArrayEnd`
+    * :py:class:`.RealTimeS2CClusterJobEnd`
+    """
     
     def __init__(self, websocket: WebSocketClientProtocol) -> None:
         super(ProjectRealtimeServiceConnection, self).__init__(websocket)
@@ -250,13 +261,13 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
 
 
 class AppTokenRequestData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.AppTokenRequestData'
     
     def __init__(self, request_id: str, app_name: str, permissions: List[AppPermissionData]) -> None:
-        """
-        
-        """
         self.request_id: str = request_id
         """
         (no description yet)
@@ -313,13 +324,13 @@ class AppTokenRequestData:
 
 
 class ProjectData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectData'
     
     def __init__(self, owner: UserData, permissions: Set[ProjectPermission], project_id: str, project_number: Optional[int], project_name: str, created: int, images: List[str], path: str) -> None:
-        """
-        
-        """
         self.owner: UserData = owner
         """
         (no description yet)
@@ -417,9 +428,7 @@ class ProjectData:
 
 class RealTimeC2S:
     """
-    client -
-    >
-     server (C2S) messages for real-time communication
+    client-to-server (C2S) messages for real-time communication
     """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S'
@@ -457,13 +466,13 @@ class RealTimeC2S:
 
 
 class RealTimeC2SListenToProject:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToProject'
     
     def __init__(self, user_id: str, project_id: str) -> None:
-        """
-        
-        """
         self.user_id: str = user_id
         """
         (no description yet)
@@ -513,9 +522,7 @@ class RealTimeC2SListenToProject:
 
 class RealTimeS2C:
     """
-    server -
-    >
-     client (S2C) messages for real-time communication
+    server-to-client (S2C) messages for real-time communication
     """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C'
@@ -553,13 +560,13 @@ class RealTimeS2C:
 
 
 class RealTimeS2CError:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.Error'
     
     def __init__(self, name: Optional[str], msg: Optional[str]) -> None:
-        """
-        
-        """
         self.name: Optional[str] = name
         """
         (no description yet)
@@ -608,13 +615,13 @@ class RealTimeS2CError:
 
 
 class RealTimeS2CProjectStatus:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectStatus'
     
     def __init__(self, recent_runs: List[ProjectRunData], has_older_runs: bool, blocks: List[Block]) -> None:
-        """
-        
-        """
         self.recent_runs: List[ProjectRunData] = recent_runs
         """
         (no description yet)
@@ -671,13 +678,13 @@ class RealTimeS2CProjectStatus:
 
 
 class RealTimeS2CProjectRunInit:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunInit'
     
     def __init__(self, run_id: int, timestamp: int, job_ids: List[str]) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -734,13 +741,13 @@ class RealTimeS2CProjectRunInit:
 
 
 class RealTimeS2CProjectRunStart:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunStart'
     
     def __init__(self, run_id: int) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -781,13 +788,13 @@ class RealTimeS2CProjectRunStart:
 
 
 class RealTimeS2CJobStart:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobStart'
     
     def __init__(self, run_id: int, job_id: str) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -836,13 +843,13 @@ class RealTimeS2CJobStart:
 
 
 class RealTimeS2CJobUpdate:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobUpdate'
     
     def __init__(self, job_id: str, job_string: str) -> None:
-        """
-        
-        """
         self.job_id: str = job_id
         """
         (no description yet)
@@ -891,13 +898,13 @@ class RealTimeS2CJobUpdate:
 
 
 class RealTimeS2CJobFinish:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish'
     
     def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -962,13 +969,13 @@ class RealTimeS2CJobFinish:
 
 
 class RealTimeS2CProjectRunFinish:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectRunFinish'
     
     def __init__(self, run_id: int, status: RunStatus) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -1017,13 +1024,13 @@ class RealTimeS2CProjectRunFinish:
 
 
 class RealTimeS2CClusterJobSubmit:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobSubmit'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, cluster_job_name: Optional[str], array_size: Optional[int]) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -1096,13 +1103,13 @@ class RealTimeS2CClusterJobSubmit:
 
 
 class RealTimeS2CClusterJobStart:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobStart'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -1159,13 +1166,13 @@ class RealTimeS2CClusterJobStart:
 
 
 class RealTimeS2CClusterJobArrayStart:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayStart'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_started: int) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -1238,13 +1245,13 @@ class RealTimeS2CClusterJobArrayStart:
 
 
 class RealTimeS2CClusterJobArrayEnd:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobArrayEnd'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, array_index: int, num_ended: int, num_canceled: int, num_failed: int) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -1333,13 +1340,13 @@ class RealTimeS2CClusterJobArrayEnd:
 
 
 class RealTimeS2CClusterJobEnd:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ClusterJobEnd'
     
     def __init__(self, run_id: int, job_id: str, cluster_job_id: str, result_type: ClusterJobResultType) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -1404,13 +1411,13 @@ class RealTimeS2CClusterJobEnd:
 
 
 class RealTimeS2CSessionRunningJob:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionRunningJob'
     
     def __init__(self, job_id: str, name: str, size: int, status: RunStatus) -> None:
-        """
-        
-        """
         self.job_id: str = job_id
         """
         (no description yet)
@@ -1475,13 +1482,13 @@ class RealTimeS2CSessionRunningJob:
 
 
 class RealTimeS2CSessionFilesystem:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionFilesystem'
     
     def __init__(self, used: float, bytes_available: int, path: str, type: str, bytes: int, bytes_used: int) -> None:
-        """
-        
-        """
         self.used: float = used
         """
         (no description yet)
@@ -1562,13 +1569,13 @@ class RealTimeS2CSessionFilesystem:
 
 
 class RealTimeS2CSessionTransferInit:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit'
     
     def __init__(self, files: List[RealTimeS2CSessionTransferInitFileInfo]) -> None:
-        """
-        
-        """
         self.files: List[RealTimeS2CSessionTransferInitFileInfo] = files
         """
         (no description yet)
@@ -1609,13 +1616,13 @@ class RealTimeS2CSessionTransferInit:
 
 
 class RealTimeS2CSessionTransferInitFileInfo:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferInit.FileInfo'
     
     def __init__(self, filename: str, bytes_total: int, bytes_transfered: int) -> None:
-        """
-        
-        """
         self.filename: str = filename
         """
         (no description yet)
@@ -1672,13 +1679,13 @@ class RealTimeS2CSessionTransferInitFileInfo:
 
 
 class Block:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.Block'
     
     def __init__(self, block_id: str, name: str, description: str, group_ids: List[str]) -> None:
-        """
-        
-        """
         self.block_id: str = block_id
         """
         (no description yet)
@@ -1750,9 +1757,6 @@ class ImagesScale:
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImagesScale'
     
     def __init__(self, particle_radius_unbinned: float, pixel_a: float, particle_radius_a: float) -> None:
-        """
-        A way to represent the physical size of things in micrograph and tomogram images. These are params common to a set of source images.
-        """
         self.particle_radius_unbinned: float = particle_radius_unbinned
         """
         The particle radius, in unbinned pixels
@@ -1809,6 +1813,9 @@ class ImagesScale:
 
 
 class TomoVirMethod:
+    """
+    (no description yet)
+    """
     
     TopazEval: TomoVirMethod
     TopazTrain: TomoVirMethod
@@ -1881,13 +1888,13 @@ TomoVirMethod.NoneVal = TomoVirMethod('None')
 
 
 class AppPermissionData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.AppPermissionData'
     
     def __init__(self, app_permission_id: str, description: Optional[str]) -> None:
-        """
-        
-        """
         self.app_permission_id: str = app_permission_id
         """
         (no description yet)
@@ -1936,13 +1943,13 @@ class AppPermissionData:
 
 
 class ReconstructionData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ReconstructionData'
     
     def __init__(self, id: str, timestamp: int, class_num: int, iteration: int) -> None:
-        """
-        
-        """
         self.id: str = id
         """
         (no description yet)
@@ -2007,13 +2014,13 @@ class ReconstructionData:
 
 
 class RefinementData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RefinementData'
     
     def __init__(self, id: str, job_id: str, data_id: str, iteration: int, timestamp: int) -> None:
-        """
-        
-        """
         self.id: str = id
         """
         (no description yet)
@@ -2086,13 +2093,13 @@ class RefinementData:
 
 
 class RefinementBundleData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RefinementBundleData'
     
     def __init__(self, id: str, job_id: str, refinement_bundle_id: str, iteration: int, timestamp: int) -> None:
-        """
-        
-        """
         self.id: str = id
         """
         (no description yet)
@@ -2165,13 +2172,13 @@ class RefinementBundleData:
 
 
 class PypStats:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.PypStats'
     
     def __init__(self, scope_voltage: Optional[float], scope_pixel: Optional[float], scope_dose_rate: Optional[float], particle_radius: Optional[float]) -> None:
-        """
-        
-        """
         self.scope_voltage: Optional[float] = scope_voltage
         """
         (no description yet)
@@ -2236,6 +2243,9 @@ class PypStats:
 
 
 class ProjectPermission:
+    """
+    (no description yet)
+    """
     
     Write: ProjectPermission
     Read: ProjectPermission
@@ -2288,13 +2298,13 @@ ProjectPermission.Read = ProjectPermission('Read')
 
 
 class UserData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.UserData'
     
     def __init__(self, id: str, name: Optional[str]) -> None:
-        """
-        
-        """
         self.id: str = id
         """
         (no description yet)
@@ -2343,13 +2353,13 @@ class UserData:
 
 
 class ProjectRunData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectRunData'
     
     def __init__(self, run_id: int, timestamp: int, status: RunStatus, jobs: List[JobRunData]) -> None:
-        """
-        
-        """
         self.run_id: int = run_id
         """
         (no description yet)
@@ -2414,6 +2424,9 @@ class ProjectRunData:
 
 
 class ClusterJobResultType:
+    """
+    (no description yet)
+    """
     
     Canceled: ClusterJobResultType
     Failure: ClusterJobResultType
@@ -2470,6 +2483,9 @@ ClusterJobResultType.Success = ClusterJobResultType('Success')
 
 
 class RunStatus:
+    """
+    (no description yet)
+    """
     
     Canceled: RunStatus
     Failed: RunStatus
@@ -2534,13 +2550,13 @@ RunStatus.Waiting = RunStatus('Waiting')
 
 
 class StreamLogMsg:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.StreamLogMsg'
     
     def __init__(self, timestamp: int, level: int, path: str, line: int, msg: str) -> None:
-        """
-        
-        """
         self.timestamp: int = timestamp
         """
         (no description yet)
@@ -2613,6 +2629,9 @@ class StreamLogMsg:
 
 
 class SessionDaemon:
+    """
+    (no description yet)
+    """
     
     Fypd: SessionDaemon
     Pypd: SessionDaemon
@@ -2669,13 +2688,13 @@ SessionDaemon.Streampyp = SessionDaemon('Streampyp')
 
 
 class SessionExportData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportData'
     
     def __init__(self, session_id: str, export_id: str, request: str, created: int, cluster_job_id: Optional[str], result: Optional[str]) -> None:
-        """
-        
-        """
         self.session_id: str = session_id
         """
         (no description yet)
@@ -2756,13 +2775,13 @@ class SessionExportData:
 
 
 class MicrographMetadata:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MicrographMetadata'
     
     def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_particles: int, source_dims: Optional[ImageDims]) -> None:
-        """
-        
-        """
         self.id: str = id
         """
         (no description yet)
@@ -2875,13 +2894,13 @@ class MicrographMetadata:
 
 
 class TwoDClassesData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TwoDClassesData'
     
     def __init__(self, owner_id: str, two_dclasses_id: str, created: int) -> None:
-        """
-        
-        """
         self.owner_id: str = owner_id
         """
         (no description yet)
@@ -2938,13 +2957,13 @@ class TwoDClassesData:
 
 
 class TiltSeriesData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TiltSeriesData'
     
     def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_particles: int, source_dims: Optional[ImageDims]) -> None:
-        """
-        
-        """
         self.id: str = id
         """
         (no description yet)
@@ -3057,13 +3076,13 @@ class TiltSeriesData:
 
 
 class ImageDims:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImageDims'
     
     def __init__(self, num_slices: int, width: int, height: int, depth: int, binning_factor: int) -> None:
-        """
-        
-        """
         self.num_slices: int = num_slices
         """
         (no description yet)
@@ -3136,13 +3155,13 @@ class ImageDims:
 
 
 class JobRunData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobRunData'
     
     def __init__(self, job_id: str, status: RunStatus, cluster_jobs: List[ClusterJobData]) -> None:
-        """
-        
-        """
         self.job_id: str = job_id
         """
         (no description yet)
@@ -3199,13 +3218,13 @@ class JobRunData:
 
 
 class ClusterJobData:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData'
     
     def __init__(self, cluster_job_id: str, web_name: Optional[str], cluster_name: Optional[str], status: RunStatus, array_info: Optional[ClusterJobDataArrayInfo]) -> None:
-        """
-        
-        """
         self.cluster_job_id: str = cluster_job_id
         """
         (no description yet)
@@ -3278,13 +3297,13 @@ class ClusterJobData:
 
 
 class ClusterJobDataArrayInfo:
+    """
+    (no description yet)
+    """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData.ArrayInfo'
     
     def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
-        """
-        
-        """
         self.size: int = size
         """
         (no description yet)
