@@ -4,7 +4,7 @@ import pytest
 from nextpyp.client.gen import RealTimeC2SListenToProject, RealTimeS2CError, RealTimeS2CProjectStatus, ProjectRunData, JobRunData, ClusterJobData, RunStatus, Block
 from nextpyp.client.realtime import RealtimeServiceError
 
-from testlib import MockClient
+from testlib import MockTransport
 
 
 pytest_plugins = ('pytest_asyncio',)
@@ -12,13 +12,14 @@ pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio
 async def test_send_listen() -> None:
-    client = MockClient()
+    transport = MockTransport()
+    client = transport.client()
     async with client.realtime_services.project as srv:
         await srv.send_listen_to_project(RealTimeC2SListenToProject(
             user_id='foo',
             project_id='bar'
         ))
-    assert client.last_sent_message() == {
+    assert transport.get_last_sent_message() == {
         'type': RealTimeC2SListenToProject.TYPE_ID,
         'userId': 'foo',
         'projectId': 'bar'
@@ -27,8 +28,9 @@ async def test_send_listen() -> None:
 
 @pytest.mark.asyncio
 async def test_recv_error() -> None:
-    client = MockClient()
-    client.next_recv_message({
+    transport = MockTransport()
+    client = transport.client()
+    transport.set_next_recv_message({
         'type': RealTimeS2CError.TYPE_ID,
         'name': 'Foo',
         'msg': 'bar'
@@ -42,8 +44,9 @@ async def test_recv_error() -> None:
 
 @pytest.mark.asyncio
 async def test_recv_status() -> None:
-    client = MockClient()
-    client.next_recv_message({
+    transport = MockTransport()
+    client = transport.client()
+    transport.set_next_recv_message({
         'type': RealTimeS2CProjectStatus.TYPE_ID,
         'recentRuns': [
             {

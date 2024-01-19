@@ -1,7 +1,7 @@
 
 from nextpyp.client.gen import ProjectData, ProjectPermission, UserData
 
-from testlib import MockClient
+from testlib import MockTransport
 
 
 user_examples = [
@@ -36,24 +36,27 @@ project_examples = [
 
 
 def test_list_params() -> None:
-    client = MockClient()
-    client.next_response = []
+    transport = MockTransport()
+    client = transport.client()
+    transport.next_response = []
     client.services.projects.list('userid')
-    assert client.last_params == ['userid']
+    assert transport.last_params == ['userid']
 
 
 def test_list_response_none() -> None:
-    client = MockClient()
-    client.next_response = []
+    transport = MockTransport()
+    client = transport.client()
+    transport.next_response = []
     projects = client.services.projects.list('userid')
     assert projects == []
 
 
 def test_list_response_two() -> None:
-    client = MockClient()
-    client.next_response = project_examples
+    transport = MockTransport()
+    client = transport.client()
+    transport.next_response = project_examples
     projects = client.services.projects.list('userid')
-    assert client.last_params == ['userid']
+    assert transport.last_params == ['userid']
     assert len(projects) == 2
     jeff = UserData(
         id='jeff',

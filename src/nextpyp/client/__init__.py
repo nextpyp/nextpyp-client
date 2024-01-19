@@ -2,10 +2,11 @@
 from typing import Optional, List, Any
 
 from websockets.legacy.client import Connect
+import semver
 
 import nextpyp.client.jsonrpc as jsonrpc
 from nextpyp.client.credentials import Credentials
-from nextpyp.client.gen import Services, RealtimeServices
+from nextpyp.client.gen import API_VERSION, Services, RealtimeServices
 
 
 class Client:
@@ -59,6 +60,22 @@ class Client:
         )
         projects = client.services.projects.list('jeff')
 
+    .. rubric:: Version Compatibility
+
+    The nextPYP publishes a `SemVer`_ version number to communicate compatibility information with clients.
+
+    .. _SemVer: https://semver.org
+
+    It's a good idea to check if your client version is compatible with the website API version
+    before using it. This will help warn you if the website API has been updated with a breaking change,
+    but the client hasn't been updated to match yet.
+
+    .. code-block:: python
+
+        client = Client('https://nextpyp.my.org')
+        if not client.is_compatible():
+            raise Exception("Client might not work anymore, time to update")
+
     """
 
     def __init__(self, url_base: str, credentials: Optional[Credentials]) -> None:
@@ -104,15 +121,45 @@ class Client:
         See the :py:class:`.RealtimeServices` Class for a complete listing.
         """
 
+        self.api_version: str = API_VERSION
+        """
+        The nextPYP API version this client was built against.
+        """
+
+        # setup the transport
+        self._transport: NetworkTransport = NetworkTransport(url_base, credentials)
+
+    def is_compatible(self) -> bool:
+        """
+        Asks the nextPYP website for its API version number and compares it to the version
+        number built into this client. This client is compatible with the website if (and only if)
+        the two major version numbers match.
+        """
+
+        # collect the version numbers
+        local_api_version = semver.Version.parse(self.api_version)
+        remote_api_version = semver.Version.parse(self.services.apps.versions().api_version)
+
+        # two SemVer versions are compatible iff the major numbers match
+        return local_api_version.major == remote_api_version.major
+
+
+class NetworkTransport:
+
+    def __init__(self, url_base: str, credentials: Optional[Credentials]) -> None:
+
+        self.url_base = url_base
+        self.credentials = credentials
+
         # convert the base url to the websockets protocol
         url_parts = url_base.split(':')
         url_parts[0] = 'ws'
         self.ws_url_base = ':'.join(url_parts)
 
-    def _call(self, endpoint: str, params: List[Any]) -> Optional[Any]:
+    def call(self, endpoint: str, params: List[Any]) -> Optional[Any]:
         return jsonrpc.call(self.url_base, endpoint, self.credentials, params)
 
-    def _connect_websocket(self, endpoint: str) -> Connect:
+    def connect_websocket(self, endpoint: str) -> Connect:
 
         # build the headers, if any
         headers = {}

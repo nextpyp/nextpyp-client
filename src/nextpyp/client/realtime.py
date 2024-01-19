@@ -108,7 +108,7 @@ class RealtimeService(Generic[C]):
             raise Exception('already connected')
 
         # init the connection, but don't connect to the server yet
-        connect = self.client._connect_websocket(self._endpoint)
+        connect = self.client._transport.connect_websocket(self._endpoint)
         self._connect = connect
 
         # connect to the server

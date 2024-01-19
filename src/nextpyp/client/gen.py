@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from nextpyp.client import Client
 
 
+API_VERSION = '1.0.0'
+
+
 class Services:
     """
     This class houses all of the different regular services that can be accessed by the NextPYP client,
@@ -59,17 +62,17 @@ class AppsService:
     def __init__(self, client: Client) -> None:
         self.client = client
 
-    def version(self) -> str:
+    def versions(self) -> VersionData:
         """
-        Returns the version number of NextPYP
+        Returns the version numbers of NextPYP
         
         :Permission Needed: none
         """
         path = '/kv/apps/version'
-        response = self.client._call(path, [])
+        response = self.client._transport.call(path, [])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return cast(str, response)
+        return VersionData.from_json(response)
 
     def request_token(self, user_id: str, app_name: str, app_permission_ids: List[str]) -> AppTokenRequestData:
         """
@@ -79,7 +82,7 @@ class AppsService:
         :Permission Needed: none
         """
         path = '/kv/apps/requestToken'
-        response = self.client._call(path, [user_id, app_name, app_permission_ids])
+        response = self.client._transport.call(path, [user_id, app_name, app_permission_ids])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return AppTokenRequestData.from_json(response)
@@ -100,7 +103,7 @@ class ProjectsService:
         :Permission Needed: ``project_list``
         """
         path = '/kv/projects/list'
-        response = self.client._call(path, [user_id])
+        response = self.client._transport.call(path, [user_id])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return [ProjectData.from_json(x) for x in response]
@@ -258,6 +261,61 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
                 return RealTimeS2CClusterJobEnd.from_json(msg)
             case _:
                 raise RealtimeServiceUnexpectedMessage(type)
+
+
+class VersionData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.VersionData'
+    
+    def __init__(self, version: str, api_version: str) -> None:
+        self.version: str = version
+        """
+        The version of nextPYP itself
+        """
+        self.api_version: str = api_version
+        """
+        The version of the nextPYP API, to determine compatibility with API clients
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'version': self.version,
+            'apiVersion': self.api_version,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> VersionData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            version=cast(str, json['version']),
+            api_version=cast(str, json['apiVersion']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'version={self.version}',
+            f'api_version={self.api_version}',
+        ])
+        return f'VersionData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, VersionData):
+            return NotImplemented
+        return self.version == other.version \
+            and self.api_version == other.api_version
 
 
 class AppTokenRequestData:
