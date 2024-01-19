@@ -5,3 +5,5 @@
 __pycache__
 /doc/build
 /doc/src/_autosummary
+/todo.txt
+/dist

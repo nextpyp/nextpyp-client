@@ -6,6 +6,8 @@
 [project]
 name = "nextpyp-client"
 version = "0.1.0"
+# TODO: how does the client software version interact with the API version?
+#       since the client includes gen'd code, we'd have to bump major/minor versions at the same time as the API
 authors = [
     { name="Jeff Martin", email="jeff@cuchazinteractive.com" },
 ]
