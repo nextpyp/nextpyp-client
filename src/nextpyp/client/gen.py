@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING, Union, cast
+from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING, Union, cast, TypeVar, Generic
 
 import json
 from websockets.legacy.client import WebSocketClientProtocol
@@ -12,6 +12,35 @@ if TYPE_CHECKING:
 
 
 API_VERSION = '1.0.0'
+
+
+T = TypeVar('T')
+
+
+ArgValuesToml = str
+Option = List
+
+
+def option_from_json(val: Any) -> Option[T]:
+    if len(val) == 1:
+        return cast(Option[T], val[0])
+    else:
+        return cast(Option[T], None)
+
+
+def option_to_json(val: Option[T]) -> List[T]:
+    if val is not None:
+        return [cast(T, val)]
+    else:
+        return []
+
+
+def arg_values_toml_from_json(val: Any) -> ArgValuesToml:
+    return cast(ArgValuesToml, val)
+
+
+def arg_values_toml_to_json(val: ArgValuesToml) -> str:
+    return val
 
 
 class Services:
@@ -48,6 +77,24 @@ class Services:
         """
         The Projects service.
         See: :py:class:`.ProjectsService`
+        """
+        
+        self.sessions: SessionsService = SessionsService(client)
+        """
+        The Sessions service.
+        See: :py:class:`.SessionsService`
+        """
+        
+        self.single_particle_sessions: SingleParticleSessionsService = SingleParticleSessionsService(client)
+        """
+        The SingleParticleSessions service.
+        See: :py:class:`.SingleParticleSessionsService`
+        """
+        
+        self.tomography_sessions: TomographySessionsService = TomographySessionsService(client)
+        """
+        The TomographySessions service.
+        See: :py:class:`.TomographySessionsService`
         """
         
 
@@ -109,6 +156,468 @@ class ProjectsService:
         return [ProjectData.from_json(x) for x in response]
 
 
+class SessionsService:
+    """
+    (no description yet)
+    """
+    
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def session_options(self, search: Optional[str], initial: Optional[str], state: Optional[str]) -> List[RemoteOption]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_list``
+        """
+        path = '/kv/sessions/sessionOptions'
+        response = self.client._transport.call(path, [search, initial, state])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [RemoteOption.from_json(x) for x in response]
+
+    def groups(self) -> List[Group]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``group_list``
+        """
+        path = '/kv/sessions/groups'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [Group.from_json(x) for x in response]
+
+    def group_options(self, search: Optional[str], initial: Optional[str], state: Optional[str]) -> List[RemoteOption]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``group_list``
+        """
+        path = '/kv/sessions/groupOptions'
+        response = self.client._transport.call(path, [search, initial, state])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [RemoteOption.from_json(x) for x in response]
+
+    def running(self) -> RunningSessions:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_list``
+        """
+        path = '/kv/sessions/running'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return RunningSessions.from_json(response)
+
+    def is_running(self, session_id: str, daemon: SessionDaemon) -> bool:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/isRunning'
+        response = self.client._transport.call(path, [session_id, daemon])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(bool, response)
+
+    def start(self, session_id: str, daemon: SessionDaemon) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_control``
+        """
+        path = '/kv/sessions/start'
+        self.client._transport.call(path, [session_id, daemon])
+
+    def restart(self, session_id: str, daemon: SessionDaemon) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_control``
+        """
+        path = '/kv/sessions/restart'
+        self.client._transport.call(path, [session_id, daemon])
+
+    def clear(self, session_id: str, daemon: SessionDaemon) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_control``
+        """
+        path = '/kv/sessions/clear'
+        self.client._transport.call(path, [session_id, daemon])
+
+    def stop(self, session_id: str, daemon: SessionDaemon) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_control``
+        """
+        path = '/kv/sessions/stop'
+        self.client._transport.call(path, [session_id, daemon])
+
+    def cancel(self, session_id: str) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_control``
+        """
+        path = '/kv/sessions/cancel'
+        self.client._transport.call(path, [session_id])
+
+    def logs(self, session_id: str, daemon: SessionDaemon) -> SessionLogs:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/logs'
+        response = self.client._transport.call(path, [session_id, daemon])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionLogs.from_json(response)
+
+    def commands(self, session_id: str, job_id: str) -> SessionCommands:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/cmds'
+        response = self.client._transport.call(path, [session_id, job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionCommands.from_json(response)
+
+    def log(self, session_id: str, job_id: str) -> SessionLog:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/log'
+        response = self.client._transport.call(path, [session_id, job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionLog.from_json(response)
+
+    def speeds(self, session_id: str) -> SessionSpeeds:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/speeds'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionSpeeds.from_json(response)
+
+    def jobs_logs(self, session_id: str) -> SessionJobsLogs:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/jobsLogs'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionJobsLogs.from_json(response)
+
+    def job_logs(self, session_id: str, job_id: str) -> SessionJobLogs:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/jobLogs'
+        response = self.client._transport.call(path, [session_id, job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionJobLogs.from_json(response)
+
+    def get_avg_rot(self, session_id: str, data_id: str) -> Option[AvgRotData]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/avgRot'
+        response = self.client._transport.call(path, [session_id, data_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return option_from_json(response)
+
+    def get_motion(self, session_id: str, data_id: str) -> Option[MotionData]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/motion'
+        response = self.client._transport.call(path, [session_id, data_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return option_from_json(response)
+
+    def data_log(self, session_id: str, data_id: str) -> str:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/dataLog'
+        response = self.client._transport.call(path, [session_id, data_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+    def list_filters(self, session_id: str) -> List[str]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/listFilters'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [cast(str, x) for x in response]
+
+    def get_filter(self, session_id: str, name: str) -> PreprocessingFilter:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/getFilter'
+        response = self.client._transport.call(path, [session_id, name])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return PreprocessingFilter.from_json(response)
+
+    def save_filter(self, session_id: str, filter: PreprocessingFilter) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_write``
+        """
+        path = '/kv/sessions/saveFilter'
+        self.client._transport.call(path, [session_id, filter])
+
+    def delete_filter(self, session_id: str, name: str) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_write``
+        """
+        path = '/kv/sessions/deleteFilter'
+        self.client._transport.call(path, [session_id, name])
+
+    def filter_options(self, search: Optional[str], initial: Optional[str], state: Optional[str]) -> List[RemoteOption]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/filterOptions'
+        response = self.client._transport.call(path, [search, initial, state])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [RemoteOption.from_json(x) for x in response]
+
+    def export(self, session_id: str, request: str, slurm_values: ArgValuesToml) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_export``
+        """
+        path = '/kv/sessions/export'
+        self.client._transport.call(path, [session_id, request, slurm_values])
+
+    def cancel_export(self, export_id: str) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_export``
+        """
+        path = '/kv/sessions/cancelExport'
+        self.client._transport.call(path, [export_id])
+
+
+class SingleParticleSessionsService:
+    """
+    (no description yet)
+    """
+    
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def list(self) -> List[SingleParticleSessionData]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_list``
+        """
+        path = '/kv/session/single-particle/list'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [SingleParticleSessionData.from_json(x) for x in response]
+
+    def create(self, args: SingleParticleSessionArgs) -> SingleParticleSessionData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_create``
+        """
+        path = '/kv/session/single-particle/create'
+        response = self.client._transport.call(path, [args])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SingleParticleSessionData.from_json(response)
+
+    def edit(self, session_id: str, args: Optional[SingleParticleSessionArgs]) -> SingleParticleSessionData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_write``
+        """
+        path = '/kv/session/single-particle/edit'
+        response = self.client._transport.call(path, [session_id, args])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SingleParticleSessionData.from_json(response)
+
+    def get(self, session_id: str) -> SingleParticleSessionData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/session/single-particle/get'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SingleParticleSessionData.from_json(response)
+
+    def delete(self, session_id: str) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_delete``
+        """
+        path = '/kv/session/single-particle/delete'
+        self.client._transport.call(path, [session_id])
+
+    def get_args(self) -> str:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/session/single-particle/getArgs'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+
+class TomographySessionsService:
+    """
+    (no description yet)
+    """
+    
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def list(self) -> List[TomographySessionData]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_list``
+        """
+        path = '/kv/session/tomography/list'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [TomographySessionData.from_json(x) for x in response]
+
+    def create(self, args: TomographySessionArgs) -> TomographySessionData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_create``
+        """
+        path = '/kv/session/tomography/create'
+        response = self.client._transport.call(path, [args])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return TomographySessionData.from_json(response)
+
+    def edit(self, session_id: str, args: Optional[TomographySessionArgs]) -> TomographySessionData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_write``
+        """
+        path = '/kv/session/tomography/edit'
+        response = self.client._transport.call(path, [session_id, args])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return TomographySessionData.from_json(response)
+
+    def get(self, session_id: str) -> TomographySessionData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/session/tomography/get'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return TomographySessionData.from_json(response)
+
+    def delete(self, session_id: str) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_delete``
+        """
+        path = '/kv/session/tomography/delete'
+        self.client._transport.call(path, [session_id])
+
+    def get_args(self) -> str:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/session/tomography/getArgs'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+    def get_drift_metadata(self, session_id: str, tilt_series_id: str) -> Option[DriftMetadata]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/session/tomography/driftMetadata'
+        response = self.client._transport.call(path, [session_id, tilt_series_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return option_from_json(response)
+
+
 class RealtimeServices:
     """
     All of the different realtime services that can be accessed by the NextPYP client
@@ -151,6 +660,14 @@ class RealtimeServices:
         self.project: RealtimeService[ProjectRealtimeServiceConnection] = RealtimeService(client, '/ws/project', ProjectRealtimeServiceConnection)
         """
         The Project realtime service, see :py:class:`.ProjectRealtimeServiceConnection`
+        """
+        self.single_particle_session: RealtimeService[SingleParticleSessionRealtimeServiceConnection] = RealtimeService(client, '/ws/singleParticleSession', SingleParticleSessionRealtimeServiceConnection)
+        """
+        The SingleParticleSession realtime service, see :py:class:`.SingleParticleSessionRealtimeServiceConnection`
+        """
+        self.tomography_session: RealtimeService[TomographySessionRealtimeServiceConnection] = RealtimeService(client, '/ws/tomographySession', TomographySessionRealtimeServiceConnection)
+        """
+        The TomographySession realtime service, see :py:class:`.TomographySessionRealtimeServiceConnection`
         """
 
 
@@ -261,6 +778,475 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
                 return RealTimeS2CClusterJobEnd.from_json(msg)
             case _:
                 raise RealtimeServiceUnexpectedMessage(type)
+
+
+class SingleParticleSessionRealtimeServiceConnection(RealtimeServiceConnection):
+    """
+    (no description yet)
+    
+    :Permission Needed: ``session_listen``
+    
+    :Client to Server messages:
+    
+    * :py:class:`.RealTimeC2SListenToSession`
+    * :py:class:`.RealTimeC2SSessionSettingsSaved`
+    
+    :Server to Client messages:
+    
+    * :py:class:`.RealTimeS2CSessionStatus`
+    * :py:class:`.RealTimeS2CSessionSmallData`
+    * :py:class:`.RealTimeS2CSessionLargeData`
+    * :py:class:`.RealTimeS2CUpdatedParameters`
+    * :py:class:`.RealTimeS2CSessionMicrograph`
+    * :py:class:`.RealTimeS2CSessionTwoDClasses`
+    * :py:class:`.RealTimeS2CSessionExport`
+    * :py:class:`.RealTimeS2CSessionFilesystems`
+    * :py:class:`.RealTimeS2CSessionTransferInit`
+    * :py:class:`.RealTimeS2CSessionTransferWaiting`
+    * :py:class:`.RealTimeS2CSessionTransferStarted`
+    * :py:class:`.RealTimeS2CSessionTransferProgress`
+    * :py:class:`.RealTimeS2CSessionTransferFinished`
+    * :py:class:`.RealTimeS2CSessionDaemonSubmitted`
+    * :py:class:`.RealTimeS2CSessionDaemonStarted`
+    * :py:class:`.RealTimeS2CSessionDaemonFinished`
+    * :py:class:`.RealTimeS2CSessionJobSubmitted`
+    * :py:class:`.RealTimeS2CSessionJobStarted`
+    * :py:class:`.RealTimeS2CSessionJobFinished`
+    """
+    
+    def __init__(self, websocket: WebSocketClientProtocol) -> None:
+        super(SingleParticleSessionRealtimeServiceConnection, self).__init__(websocket)
+    
+    async def send_listen_to_session(self, msg: RealTimeC2SListenToSession) -> None:
+        """
+        Sends a RealTimeC2SListenToSession message
+        """
+        
+        j = msg.to_json()
+        j['type'] = RealTimeC2SListenToSession.TYPE_ID
+        await self._send(j)
+    
+    async def send_session_settings_saved(self, msg: RealTimeC2SSessionSettingsSaved) -> None:
+        """
+        Sends a RealTimeC2SSessionSettingsSaved message
+        """
+        
+        j = msg.to_json()
+        j['type'] = RealTimeC2SSessionSettingsSaved.TYPE_ID
+        await self._send(j)
+    
+    async def recv(self) -> Union[RealTimeS2CSessionStatus, RealTimeS2CSessionSmallData, RealTimeS2CSessionLargeData, RealTimeS2CUpdatedParameters, RealTimeS2CSessionMicrograph, RealTimeS2CSessionTwoDClasses, RealTimeS2CSessionExport, RealTimeS2CSessionFilesystems, RealTimeS2CSessionTransferInit, RealTimeS2CSessionTransferWaiting, RealTimeS2CSessionTransferStarted, RealTimeS2CSessionTransferProgress, RealTimeS2CSessionTransferFinished, RealTimeS2CSessionDaemonSubmitted, RealTimeS2CSessionDaemonStarted, RealTimeS2CSessionDaemonFinished, RealTimeS2CSessionJobSubmitted, RealTimeS2CSessionJobStarted, RealTimeS2CSessionJobFinished]:
+        """
+        Receives a message from the website. Could be any one of several different messages.
+        
+        Examples
+        --------
+        
+        Receive a message from this realtime service:
+        
+        .. code-block:: python
+        
+            msg = await project.recv()
+            if type(msg) is RealTimeS2CSessionStatus:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionSmallData:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionLargeData:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CUpdatedParameters:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionMicrograph:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTwoDClasses:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionExport:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionFilesystems:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferInit:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferWaiting:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferStarted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferProgress:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferFinished:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionDaemonSubmitted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionDaemonStarted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionDaemonFinished:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobSubmitted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobStarted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobFinished:
+                print(f'received message: {msg}')
+            else:
+                raise Exception(f'received unexpected msg: {msg}')
+        """
+        
+        msg = await self._recv()
+        type = msg.get('type')
+        match type:
+            case RealTimeS2CSessionStatus.TYPE_ID:
+                return RealTimeS2CSessionStatus.from_json(msg)
+            case RealTimeS2CSessionSmallData.TYPE_ID:
+                return RealTimeS2CSessionSmallData.from_json(msg)
+            case RealTimeS2CSessionLargeData.TYPE_ID:
+                return RealTimeS2CSessionLargeData.from_json(msg)
+            case RealTimeS2CUpdatedParameters.TYPE_ID:
+                return RealTimeS2CUpdatedParameters.from_json(msg)
+            case RealTimeS2CSessionMicrograph.TYPE_ID:
+                return RealTimeS2CSessionMicrograph.from_json(msg)
+            case RealTimeS2CSessionTwoDClasses.TYPE_ID:
+                return RealTimeS2CSessionTwoDClasses.from_json(msg)
+            case RealTimeS2CSessionExport.TYPE_ID:
+                return RealTimeS2CSessionExport.from_json(msg)
+            case RealTimeS2CSessionFilesystems.TYPE_ID:
+                return RealTimeS2CSessionFilesystems.from_json(msg)
+            case RealTimeS2CSessionTransferInit.TYPE_ID:
+                return RealTimeS2CSessionTransferInit.from_json(msg)
+            case RealTimeS2CSessionTransferWaiting.TYPE_ID:
+                return RealTimeS2CSessionTransferWaiting.from_json(msg)
+            case RealTimeS2CSessionTransferStarted.TYPE_ID:
+                return RealTimeS2CSessionTransferStarted.from_json(msg)
+            case RealTimeS2CSessionTransferProgress.TYPE_ID:
+                return RealTimeS2CSessionTransferProgress.from_json(msg)
+            case RealTimeS2CSessionTransferFinished.TYPE_ID:
+                return RealTimeS2CSessionTransferFinished.from_json(msg)
+            case RealTimeS2CSessionDaemonSubmitted.TYPE_ID:
+                return RealTimeS2CSessionDaemonSubmitted.from_json(msg)
+            case RealTimeS2CSessionDaemonStarted.TYPE_ID:
+                return RealTimeS2CSessionDaemonStarted.from_json(msg)
+            case RealTimeS2CSessionDaemonFinished.TYPE_ID:
+                return RealTimeS2CSessionDaemonFinished.from_json(msg)
+            case RealTimeS2CSessionJobSubmitted.TYPE_ID:
+                return RealTimeS2CSessionJobSubmitted.from_json(msg)
+            case RealTimeS2CSessionJobStarted.TYPE_ID:
+                return RealTimeS2CSessionJobStarted.from_json(msg)
+            case RealTimeS2CSessionJobFinished.TYPE_ID:
+                return RealTimeS2CSessionJobFinished.from_json(msg)
+            case _:
+                raise RealtimeServiceUnexpectedMessage(type)
+
+
+class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
+    """
+    (no description yet)
+    
+    :Permission Needed: ``session_listen``
+    
+    :Client to Server messages:
+    
+    * :py:class:`.RealTimeC2SListenToSession`
+    * :py:class:`.RealTimeC2SSessionSettingsSaved`
+    
+    :Server to Client messages:
+    
+    * :py:class:`.RealTimeS2CSessionStatus`
+    * :py:class:`.RealTimeS2CSessionSmallData`
+    * :py:class:`.RealTimeS2CSessionLargeData`
+    * :py:class:`.RealTimeS2CUpdatedParameters`
+    * :py:class:`.RealTimeS2CSessionTiltSeries`
+    * :py:class:`.RealTimeS2CSessionExport`
+    * :py:class:`.RealTimeS2CSessionFilesystems`
+    * :py:class:`.RealTimeS2CSessionTransferInit`
+    * :py:class:`.RealTimeS2CSessionTransferWaiting`
+    * :py:class:`.RealTimeS2CSessionTransferStarted`
+    * :py:class:`.RealTimeS2CSessionTransferProgress`
+    * :py:class:`.RealTimeS2CSessionTransferFinished`
+    * :py:class:`.RealTimeS2CSessionDaemonSubmitted`
+    * :py:class:`.RealTimeS2CSessionDaemonStarted`
+    * :py:class:`.RealTimeS2CSessionDaemonFinished`
+    * :py:class:`.RealTimeS2CSessionJobSubmitted`
+    * :py:class:`.RealTimeS2CSessionJobStarted`
+    * :py:class:`.RealTimeS2CSessionJobFinished`
+    """
+    
+    def __init__(self, websocket: WebSocketClientProtocol) -> None:
+        super(TomographySessionRealtimeServiceConnection, self).__init__(websocket)
+    
+    async def send_listen_to_session(self, msg: RealTimeC2SListenToSession) -> None:
+        """
+        Sends a RealTimeC2SListenToSession message
+        """
+        
+        j = msg.to_json()
+        j['type'] = RealTimeC2SListenToSession.TYPE_ID
+        await self._send(j)
+    
+    async def send_session_settings_saved(self, msg: RealTimeC2SSessionSettingsSaved) -> None:
+        """
+        Sends a RealTimeC2SSessionSettingsSaved message
+        """
+        
+        j = msg.to_json()
+        j['type'] = RealTimeC2SSessionSettingsSaved.TYPE_ID
+        await self._send(j)
+    
+    async def recv(self) -> Union[RealTimeS2CSessionStatus, RealTimeS2CSessionSmallData, RealTimeS2CSessionLargeData, RealTimeS2CUpdatedParameters, RealTimeS2CSessionTiltSeries, RealTimeS2CSessionExport, RealTimeS2CSessionFilesystems, RealTimeS2CSessionTransferInit, RealTimeS2CSessionTransferWaiting, RealTimeS2CSessionTransferStarted, RealTimeS2CSessionTransferProgress, RealTimeS2CSessionTransferFinished, RealTimeS2CSessionDaemonSubmitted, RealTimeS2CSessionDaemonStarted, RealTimeS2CSessionDaemonFinished, RealTimeS2CSessionJobSubmitted, RealTimeS2CSessionJobStarted, RealTimeS2CSessionJobFinished]:
+        """
+        Receives a message from the website. Could be any one of several different messages.
+        
+        Examples
+        --------
+        
+        Receive a message from this realtime service:
+        
+        .. code-block:: python
+        
+            msg = await project.recv()
+            if type(msg) is RealTimeS2CSessionStatus:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionSmallData:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionLargeData:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CUpdatedParameters:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTiltSeries:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionExport:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionFilesystems:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferInit:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferWaiting:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferStarted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferProgress:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTransferFinished:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionDaemonSubmitted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionDaemonStarted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionDaemonFinished:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobSubmitted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobStarted:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobFinished:
+                print(f'received message: {msg}')
+            else:
+                raise Exception(f'received unexpected msg: {msg}')
+        """
+        
+        msg = await self._recv()
+        type = msg.get('type')
+        match type:
+            case RealTimeS2CSessionStatus.TYPE_ID:
+                return RealTimeS2CSessionStatus.from_json(msg)
+            case RealTimeS2CSessionSmallData.TYPE_ID:
+                return RealTimeS2CSessionSmallData.from_json(msg)
+            case RealTimeS2CSessionLargeData.TYPE_ID:
+                return RealTimeS2CSessionLargeData.from_json(msg)
+            case RealTimeS2CUpdatedParameters.TYPE_ID:
+                return RealTimeS2CUpdatedParameters.from_json(msg)
+            case RealTimeS2CSessionTiltSeries.TYPE_ID:
+                return RealTimeS2CSessionTiltSeries.from_json(msg)
+            case RealTimeS2CSessionExport.TYPE_ID:
+                return RealTimeS2CSessionExport.from_json(msg)
+            case RealTimeS2CSessionFilesystems.TYPE_ID:
+                return RealTimeS2CSessionFilesystems.from_json(msg)
+            case RealTimeS2CSessionTransferInit.TYPE_ID:
+                return RealTimeS2CSessionTransferInit.from_json(msg)
+            case RealTimeS2CSessionTransferWaiting.TYPE_ID:
+                return RealTimeS2CSessionTransferWaiting.from_json(msg)
+            case RealTimeS2CSessionTransferStarted.TYPE_ID:
+                return RealTimeS2CSessionTransferStarted.from_json(msg)
+            case RealTimeS2CSessionTransferProgress.TYPE_ID:
+                return RealTimeS2CSessionTransferProgress.from_json(msg)
+            case RealTimeS2CSessionTransferFinished.TYPE_ID:
+                return RealTimeS2CSessionTransferFinished.from_json(msg)
+            case RealTimeS2CSessionDaemonSubmitted.TYPE_ID:
+                return RealTimeS2CSessionDaemonSubmitted.from_json(msg)
+            case RealTimeS2CSessionDaemonStarted.TYPE_ID:
+                return RealTimeS2CSessionDaemonStarted.from_json(msg)
+            case RealTimeS2CSessionDaemonFinished.TYPE_ID:
+                return RealTimeS2CSessionDaemonFinished.from_json(msg)
+            case RealTimeS2CSessionJobSubmitted.TYPE_ID:
+                return RealTimeS2CSessionJobSubmitted.from_json(msg)
+            case RealTimeS2CSessionJobStarted.TYPE_ID:
+                return RealTimeS2CSessionJobStarted.from_json(msg)
+            case RealTimeS2CSessionJobFinished.TYPE_ID:
+                return RealTimeS2CSessionJobFinished.from_json(msg)
+            case _:
+                raise RealtimeServiceUnexpectedMessage(type)
+
+
+class RemoteOption:
+    """
+    Search result option, with some options for presentation
+    """
+    
+    TYPE_ID: str = 'io.kvision.remote.RemoteOption'
+    
+    def __init__(self, value: Optional[str], text: Optional[str], class_name: Optional[str], subtext: Optional[str], icon: Optional[str], content: Optional[str], disabled: bool, divider: bool) -> None:
+        self.value: Optional[str] = value
+        """
+        (no description yet)
+        """
+        self.text: Optional[str] = text
+        """
+        (no description yet)
+        """
+        self.class_name: Optional[str] = class_name
+        """
+        (no description yet)
+        """
+        self.subtext: Optional[str] = subtext
+        """
+        (no description yet)
+        """
+        self.icon: Optional[str] = icon
+        """
+        (no description yet)
+        """
+        self.content: Optional[str] = content
+        """
+        (no description yet)
+        """
+        self.disabled: bool = disabled
+        """
+        (no description yet)
+        """
+        self.divider: bool = divider
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'value': self.value if self.value is not None else None,
+            'text': self.text if self.text is not None else None,
+            'className': self.class_name if self.class_name is not None else None,
+            'subtext': self.subtext if self.subtext is not None else None,
+            'icon': self.icon if self.icon is not None else None,
+            'content': self.content if self.content is not None else None,
+            'disabled': self.disabled,
+            'divider': self.divider,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RemoteOption:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            value=cast(str, json['value']) if 'value' in json and json['value'] is not None else None,
+            text=cast(str, json['text']) if 'text' in json and json['text'] is not None else None,
+            class_name=cast(str, json['className']) if 'className' in json and json['className'] is not None else None,
+            subtext=cast(str, json['subtext']) if 'subtext' in json and json['subtext'] is not None else None,
+            icon=cast(str, json['icon']) if 'icon' in json and json['icon'] is not None else None,
+            content=cast(str, json['content']) if 'content' in json and json['content'] is not None else None,
+            disabled=cast(bool, json['disabled']),
+            divider=cast(bool, json['divider']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'value={self.value}',
+            f'text={self.text}',
+            f'class_name={self.class_name}',
+            f'subtext={self.subtext}',
+            f'icon={self.icon}',
+            f'content={self.content}',
+            f'disabled={self.disabled}',
+            f'divider={self.divider}',
+        ])
+        return f'RemoteOption[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RemoteOption):
+            return NotImplemented
+        return self.value == other.value \
+            and self.text == other.text \
+            and self.class_name == other.class_name \
+            and self.subtext == other.subtext \
+            and self.icon == other.icon \
+            and self.content == other.content \
+            and self.disabled == other.disabled \
+            and self.divider == other.divider
+
+
+class Group:
+    """
+    Represents a group of users (usually an academic lab)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.Group'
+    
+    def __init__(self, id_or_throw: str, name: str, id: Optional[str]) -> None:
+        self.id_or_throw: str = id_or_throw
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        a display name
+        """
+        self.id: Optional[str] = id
+        """
+        a unique identifier
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'idOrThrow': self.id_or_throw,
+            'name': self.name,
+            'id': self.id if self.id is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> Group:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            id_or_throw=cast(str, json['idOrThrow']),
+            name=cast(str, json['name']),
+            id=cast(str, json['id']) if 'id' in json and json['id'] is not None else None,
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'id_or_throw={self.id_or_throw}',
+            f'name={self.name}',
+            f'id={self.id}',
+        ])
+        return f'Group[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, Group):
+            return NotImplemented
+        return self.id_or_throw == other.id_or_throw \
+            and self.name == other.name \
+            and self.id == other.id
 
 
 class VersionData:
@@ -379,6 +1365,69 @@ class AppTokenRequestData:
         return self.request_id == other.request_id \
             and self.app_name == other.app_name \
             and self.permissions == other.permissions
+
+
+class PreprocessingFilter:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.PreprocessingFilter'
+    
+    def __init__(self, name: str, ranges: List[PreprocessingPropRange], excluded_ids: List[str]) -> None:
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.ranges: List[PreprocessingPropRange] = ranges
+        """
+        (no description yet)
+        """
+        self.excluded_ids: List[str] = excluded_ids
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'name': self.name,
+            'ranges': [x.to_json() for x in self.ranges],
+            'excludedIds': [x for x in self.excluded_ids],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> PreprocessingFilter:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            name=cast(str, json['name']),
+            ranges=[PreprocessingPropRange.from_json(x) for x in json['ranges']],
+            excluded_ids=[cast(str, x) for x in json['excludedIds']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'name={self.name}',
+            f'ranges={self.ranges}',
+            f'excluded_ids={self.excluded_ids}',
+        ])
+        return f'PreprocessingFilter[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, PreprocessingFilter):
+            return NotImplemented
+        return self.name == other.name \
+            and self.ranges == other.ranges \
+            and self.excluded_ids == other.excluded_ids
 
 
 class ProjectData:
@@ -576,6 +1625,92 @@ class RealTimeC2SListenToProject:
             return NotImplemented
         return self.user_id == other.user_id \
             and self.project_id == other.project_id
+
+
+class RealTimeC2SListenToSession:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToSession'
+    
+    def __init__(self, session_id: str) -> None:
+        self.session_id: str = session_id
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'sessionId': self.session_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2SListenToSession:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            session_id=cast(str, json['sessionId']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'session_id={self.session_id}',
+        ])
+        return f'RealTimeC2SListenToSession[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeC2SListenToSession):
+            return NotImplemented
+        return self.session_id == other.session_id
+
+
+class RealTimeC2SSessionSettingsSaved:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.SessionSettingsSaved'
+    
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2SSessionSettingsSaved:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+        ])
+        return f'RealTimeC2SSessionSettingsSaved[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeC2SSessionSettingsSaved):
+            return NotImplemented
+        return True  # we are all the same! =D
 
 
 class RealTimeS2C:
@@ -1468,6 +2603,258 @@ class RealTimeS2CClusterJobEnd:
             and self.result_type == other.result_type
 
 
+class RealTimeS2CUpdatedParameters:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.UpdatedParameters'
+    
+    def __init__(self, pyp_stats: PypStats, images_scale: ImagesScale) -> None:
+        self.pyp_stats: PypStats = pyp_stats
+        """
+        (no description yet)
+        """
+        self.images_scale: ImagesScale = images_scale
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'pypStats': self.pyp_stats.to_json(),
+            'imagesScale': self.images_scale.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CUpdatedParameters:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            pyp_stats=PypStats.from_json(json['pypStats']),
+            images_scale=ImagesScale.from_json(json['imagesScale']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'pyp_stats={self.pyp_stats}',
+            f'images_scale={self.images_scale}',
+        ])
+        return f'RealTimeS2CUpdatedParameters[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CUpdatedParameters):
+            return NotImplemented
+        return self.pyp_stats == other.pyp_stats \
+            and self.images_scale == other.images_scale
+
+
+class RealTimeS2CSessionStatus:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionStatus'
+    
+    def __init__(self, daemons_running: List[bool], jobs_running: List[RealTimeS2CSessionRunningJob], images_scale: Optional[ImagesScale], tomo_vir_method: TomoVirMethod, tomo_vir_rad: float, tomo_vir_binn: int) -> None:
+        self.daemons_running: List[bool] = daemons_running
+        """
+        in order of SessionDaemon.values()
+        """
+        self.jobs_running: List[RealTimeS2CSessionRunningJob] = jobs_running
+        """
+        (no description yet)
+        """
+        self.images_scale: Optional[ImagesScale] = images_scale
+        """
+        (no description yet)
+        """
+        self.tomo_vir_method: TomoVirMethod = tomo_vir_method
+        """
+        (no description yet)
+        """
+        self.tomo_vir_rad: float = tomo_vir_rad
+        """
+        (no description yet)
+        """
+        self.tomo_vir_binn: int = tomo_vir_binn
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'daemonsRunning': [x for x in self.daemons_running],
+            'jobsRunning': [x.to_json() for x in self.jobs_running],
+            'imagesScale': self.images_scale.to_json() if self.images_scale is not None else None,
+            'tomoVirMethod': self.tomo_vir_method.to_json(),
+            'tomoVirRad': self.tomo_vir_rad,
+            'tomoVirBinn': self.tomo_vir_binn,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionStatus:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            daemons_running=[cast(bool, x) for x in json['daemonsRunning']],
+            jobs_running=[RealTimeS2CSessionRunningJob.from_json(x) for x in json['jobsRunning']],
+            images_scale=ImagesScale.from_json(json['imagesScale']) if 'imagesScale' in json and json['imagesScale'] is not None else None,
+            tomo_vir_method=TomoVirMethod.from_json(json['tomoVirMethod']),
+            tomo_vir_rad=cast(float, json['tomoVirRad']),
+            tomo_vir_binn=cast(int, json['tomoVirBinn']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'daemons_running={self.daemons_running}',
+            f'jobs_running={self.jobs_running}',
+            f'images_scale={self.images_scale}',
+            f'tomo_vir_method={self.tomo_vir_method}',
+            f'tomo_vir_rad={self.tomo_vir_rad}',
+            f'tomo_vir_binn={self.tomo_vir_binn}',
+        ])
+        return f'RealTimeS2CSessionStatus[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionStatus):
+            return NotImplemented
+        return self.daemons_running == other.daemons_running \
+            and self.jobs_running == other.jobs_running \
+            and self.images_scale == other.images_scale \
+            and self.tomo_vir_method == other.tomo_vir_method \
+            and self.tomo_vir_rad == other.tomo_vir_rad \
+            and self.tomo_vir_binn == other.tomo_vir_binn
+
+
+class RealTimeS2CSessionSmallData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionSmallData'
+    
+    def __init__(self, exports: List[SessionExportData]) -> None:
+        self.exports: List[SessionExportData] = exports
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'exports': [x.to_json() for x in self.exports],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionSmallData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            exports=[SessionExportData.from_json(x) for x in json['exports']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'exports={self.exports}',
+        ])
+        return f'RealTimeS2CSessionSmallData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionSmallData):
+            return NotImplemented
+        return self.exports == other.exports
+
+
+class RealTimeS2CSessionLargeData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionLargeData'
+    
+    def __init__(self, micrographs: List[MicrographMetadata], tilt_serieses: List[TiltSeriesData], two_dclasses: List[TwoDClassesData]) -> None:
+        self.micrographs: List[MicrographMetadata] = micrographs
+        """
+        (no description yet)
+        """
+        self.tilt_serieses: List[TiltSeriesData] = tilt_serieses
+        """
+        (no description yet)
+        """
+        self.two_dclasses: List[TwoDClassesData] = two_dclasses
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'micrographs': [x.to_json() for x in self.micrographs],
+            'tiltSerieses': [x.to_json() for x in self.tilt_serieses],
+            'twoDClasses': [x.to_json() for x in self.two_dclasses],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionLargeData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            micrographs=[MicrographMetadata.from_json(x) for x in json['micrographs']],
+            tilt_serieses=[TiltSeriesData.from_json(x) for x in json['tiltSerieses']],
+            two_dclasses=[TwoDClassesData.from_json(x) for x in json['twoDClasses']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'micrographs={self.micrographs}',
+            f'tilt_serieses={self.tilt_serieses}',
+            f'two_dclasses={self.two_dclasses}',
+        ])
+        return f'RealTimeS2CSessionLargeData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionLargeData):
+            return NotImplemented
+        return self.micrographs == other.micrographs \
+            and self.tilt_serieses == other.tilt_serieses \
+            and self.two_dclasses == other.two_dclasses
+
+
 class RealTimeS2CSessionRunningJob:
     """
     (no description yet)
@@ -1537,6 +2924,336 @@ class RealTimeS2CSessionRunningJob:
             and self.name == other.name \
             and self.size == other.size \
             and self.status == other.status
+
+
+class RealTimeS2CSessionDaemonSubmitted:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionDaemonSubmitted'
+    
+    def __init__(self, job_id: str, daemon: SessionDaemon) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.daemon: SessionDaemon = daemon
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'daemon': self.daemon.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionDaemonSubmitted:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            daemon=SessionDaemon.from_json(json['daemon']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'daemon={self.daemon}',
+        ])
+        return f'RealTimeS2CSessionDaemonSubmitted[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionDaemonSubmitted):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.daemon == other.daemon
+
+
+class RealTimeS2CSessionDaemonStarted:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionDaemonStarted'
+    
+    def __init__(self, job_id: str, daemon: SessionDaemon) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.daemon: SessionDaemon = daemon
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'daemon': self.daemon.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionDaemonStarted:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            daemon=SessionDaemon.from_json(json['daemon']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'daemon={self.daemon}',
+        ])
+        return f'RealTimeS2CSessionDaemonStarted[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionDaemonStarted):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.daemon == other.daemon
+
+
+class RealTimeS2CSessionDaemonFinished:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionDaemonFinished'
+    
+    def __init__(self, job_id: str, daemon: SessionDaemon) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.daemon: SessionDaemon = daemon
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'daemon': self.daemon.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionDaemonFinished:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            daemon=SessionDaemon.from_json(json['daemon']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'daemon={self.daemon}',
+        ])
+        return f'RealTimeS2CSessionDaemonFinished[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionDaemonFinished):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.daemon == other.daemon
+
+
+class RealTimeS2CSessionJobSubmitted:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionJobSubmitted'
+    
+    def __init__(self, job_id: str, name: str, size: int) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.size: int = size
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'name': self.name,
+            'size': self.size,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionJobSubmitted:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            name=cast(str, json['name']),
+            size=cast(int, json['size']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'name={self.name}',
+            f'size={self.size}',
+        ])
+        return f'RealTimeS2CSessionJobSubmitted[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionJobSubmitted):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.name == other.name \
+            and self.size == other.size
+
+
+class RealTimeS2CSessionJobStarted:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionJobStarted'
+    
+    def __init__(self, job_id: str) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionJobStarted:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+        ])
+        return f'RealTimeS2CSessionJobStarted[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionJobStarted):
+            return NotImplemented
+        return self.job_id == other.job_id
+
+
+class RealTimeS2CSessionJobFinished:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionJobFinished'
+    
+    def __init__(self, job_id: str, result_type: ClusterJobResultType) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.result_type: ClusterJobResultType = result_type
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'resultType': self.result_type.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionJobFinished:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            result_type=ClusterJobResultType.from_json(json['resultType']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'result_type={self.result_type}',
+        ])
+        return f'RealTimeS2CSessionJobFinished[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionJobFinished):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.result_type == other.result_type
 
 
 class RealTimeS2CSessionFilesystem:
@@ -1624,6 +3341,53 @@ class RealTimeS2CSessionFilesystem:
             and self.type == other.type \
             and self.bytes == other.bytes \
             and self.bytes_used == other.bytes_used
+
+
+class RealTimeS2CSessionFilesystems:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionFilesystems'
+    
+    def __init__(self, filesystems: List[RealTimeS2CSessionFilesystem]) -> None:
+        self.filesystems: List[RealTimeS2CSessionFilesystem] = filesystems
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filesystems': [x.to_json() for x in self.filesystems],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionFilesystems:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            filesystems=[RealTimeS2CSessionFilesystem.from_json(x) for x in json['filesystems']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filesystems={self.filesystems}',
+        ])
+        return f'RealTimeS2CSessionFilesystems[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionFilesystems):
+            return NotImplemented
+        return self.filesystems == other.filesystems
 
 
 class RealTimeS2CSessionTransferInit:
@@ -1734,6 +3498,1459 @@ class RealTimeS2CSessionTransferInitFileInfo:
         return self.filename == other.filename \
             and self.bytes_total == other.bytes_total \
             and self.bytes_transfered == other.bytes_transfered
+
+
+class RealTimeS2CSessionTransferWaiting:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferWaiting'
+    
+    def __init__(self, filename: str) -> None:
+        self.filename: str = filename
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filename': self.filename,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferWaiting:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            filename=cast(str, json['filename']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filename={self.filename}',
+        ])
+        return f'RealTimeS2CSessionTransferWaiting[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTransferWaiting):
+            return NotImplemented
+        return self.filename == other.filename
+
+
+class RealTimeS2CSessionTransferStarted:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferStarted'
+    
+    def __init__(self, filename: str, bytes_total: int) -> None:
+        self.filename: str = filename
+        """
+        (no description yet)
+        """
+        self.bytes_total: int = bytes_total
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filename': self.filename,
+            'bytesTotal': self.bytes_total,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferStarted:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            filename=cast(str, json['filename']),
+            bytes_total=cast(int, json['bytesTotal']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filename={self.filename}',
+            f'bytes_total={self.bytes_total}',
+        ])
+        return f'RealTimeS2CSessionTransferStarted[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTransferStarted):
+            return NotImplemented
+        return self.filename == other.filename \
+            and self.bytes_total == other.bytes_total
+
+
+class RealTimeS2CSessionTransferProgress:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferProgress'
+    
+    def __init__(self, filename: str, bytes_transferred: int) -> None:
+        self.filename: str = filename
+        """
+        (no description yet)
+        """
+        self.bytes_transferred: int = bytes_transferred
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filename': self.filename,
+            'bytesTransferred': self.bytes_transferred,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferProgress:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            filename=cast(str, json['filename']),
+            bytes_transferred=cast(int, json['bytesTransferred']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filename={self.filename}',
+            f'bytes_transferred={self.bytes_transferred}',
+        ])
+        return f'RealTimeS2CSessionTransferProgress[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTransferProgress):
+            return NotImplemented
+        return self.filename == other.filename \
+            and self.bytes_transferred == other.bytes_transferred
+
+
+class RealTimeS2CSessionTransferFinished:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTransferFinished'
+    
+    def __init__(self, filename: str) -> None:
+        self.filename: str = filename
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filename': self.filename,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferFinished:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            filename=cast(str, json['filename']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filename={self.filename}',
+        ])
+        return f'RealTimeS2CSessionTransferFinished[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTransferFinished):
+            return NotImplemented
+        return self.filename == other.filename
+
+
+class RealTimeS2CSessionMicrograph:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionMicrograph'
+    
+    def __init__(self, micrograph: MicrographMetadata) -> None:
+        self.micrograph: MicrographMetadata = micrograph
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'micrograph': self.micrograph.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionMicrograph:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            micrograph=MicrographMetadata.from_json(json['micrograph']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'micrograph={self.micrograph}',
+        ])
+        return f'RealTimeS2CSessionMicrograph[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionMicrograph):
+            return NotImplemented
+        return self.micrograph == other.micrograph
+
+
+class RealTimeS2CSessionTiltSeries:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTiltSeries'
+    
+    def __init__(self, tilt_series: TiltSeriesData, num_auto_particles: Optional[int], num_auto_virions: Optional[int]) -> None:
+        self.tilt_series: TiltSeriesData = tilt_series
+        """
+        (no description yet)
+        """
+        self.num_auto_particles: Optional[int] = num_auto_particles
+        """
+        (no description yet)
+        """
+        self.num_auto_virions: Optional[int] = num_auto_virions
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'tiltSeries': self.tilt_series.to_json(),
+            'numAutoParticles': self.num_auto_particles if self.num_auto_particles is not None else None,
+            'numAutoVirions': self.num_auto_virions if self.num_auto_virions is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTiltSeries:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            tilt_series=TiltSeriesData.from_json(json['tiltSeries']),
+            num_auto_particles=cast(int, json['numAutoParticles']) if 'numAutoParticles' in json and json['numAutoParticles'] is not None else None,
+            num_auto_virions=cast(int, json['numAutoVirions']) if 'numAutoVirions' in json and json['numAutoVirions'] is not None else None,
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'tilt_series={self.tilt_series}',
+            f'num_auto_particles={self.num_auto_particles}',
+            f'num_auto_virions={self.num_auto_virions}',
+        ])
+        return f'RealTimeS2CSessionTiltSeries[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTiltSeries):
+            return NotImplemented
+        return self.tilt_series == other.tilt_series \
+            and self.num_auto_particles == other.num_auto_particles \
+            and self.num_auto_virions == other.num_auto_virions
+
+
+class RealTimeS2CSessionTwoDClasses:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTwoDClasses'
+    
+    def __init__(self, two_dclasses: TwoDClassesData) -> None:
+        self.two_dclasses: TwoDClassesData = two_dclasses
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'twoDClasses': self.two_dclasses.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTwoDClasses:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            two_dclasses=TwoDClassesData.from_json(json['twoDClasses']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'two_dclasses={self.two_dclasses}',
+        ])
+        return f'RealTimeS2CSessionTwoDClasses[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionTwoDClasses):
+            return NotImplemented
+        return self.two_dclasses == other.two_dclasses
+
+
+class RealTimeS2CSessionExport:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionExport'
+    
+    def __init__(self, export: SessionExportData) -> None:
+        self.export: SessionExportData = export
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'export': self.export.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionExport:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            export=SessionExportData.from_json(json['export']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'export={self.export}',
+        ])
+        return f'RealTimeS2CSessionExport[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionExport):
+            return NotImplemented
+        return self.export == other.export
+
+
+class SingleParticleSessionArgs:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SingleParticleSessionArgs'
+    
+    def __init__(self, name: str, group_id: str, values: ArgValuesToml) -> None:
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.group_id: str = group_id
+        """
+        (no description yet)
+        """
+        self.values: ArgValuesToml = values
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'name': self.name,
+            'groupId': self.group_id,
+            'values': self.values,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SingleParticleSessionArgs:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            name=cast(str, json['name']),
+            group_id=cast(str, json['groupId']),
+            values=arg_values_toml_from_json(json['values']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'name={self.name}',
+            f'group_id={self.group_id}',
+            f'values={self.values}',
+        ])
+        return f'SingleParticleSessionArgs[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SingleParticleSessionArgs):
+            return NotImplemented
+        return self.name == other.name \
+            and self.group_id == other.group_id \
+            and self.values == other.values
+
+
+class SingleParticleSessionData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SingleParticleSessionData'
+    
+    def __init__(self, newest_args: Optional[SingleParticleSessionArgs], newest_display: Optional[SingleParticleSessionDisplay], user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[SingleParticleSessionArgs], display: JobArgs[SingleParticleSessionDisplay], num_micrographs: int, num_frames: int, name: str, numbered_name: str) -> None:
+        self.newest_args: Optional[SingleParticleSessionArgs] = newest_args
+        """
+        (no description yet)
+        """
+        self.newest_display: Optional[SingleParticleSessionDisplay] = newest_display
+        """
+        (no description yet)
+        """
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.session_id: str = session_id
+        """
+        (no description yet)
+        """
+        self.session_number: Optional[int] = session_number
+        """
+        (no description yet)
+        """
+        self.created: int = created
+        """
+        (no description yet)
+        """
+        self.permissions: Set[SessionPermission] = permissions
+        """
+        (no description yet)
+        """
+        self.path: str = path
+        """
+        (no description yet)
+        """
+        self.args: JobArgs[SingleParticleSessionArgs] = args
+        """
+        (no description yet)
+        """
+        self.display: JobArgs[SingleParticleSessionDisplay] = display
+        """
+        (no description yet)
+        """
+        self.num_micrographs: int = num_micrographs
+        """
+        (no description yet)
+        """
+        self.num_frames: int = num_frames
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.numbered_name: str = numbered_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'newestArgs': self.newest_args.to_json() if self.newest_args is not None else None,
+            'newestDisplay': self.newest_display.to_json() if self.newest_display is not None else None,
+            'userId': self.user_id,
+            'sessionId': self.session_id,
+            'sessionNumber': self.session_number if self.session_number is not None else None,
+            'created': self.created,
+            'permissions': [x.to_json() for x in self.permissions],
+            'path': self.path,
+            'args': self.args.to_json(),
+            'display': self.display.to_json(),
+            'numMicrographs': self.num_micrographs,
+            'numFrames': self.num_frames,
+            'name': self.name,
+            'numberedName': self.numbered_name,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SingleParticleSessionData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            newest_args=SingleParticleSessionArgs.from_json(json['newestArgs']) if 'newestArgs' in json and json['newestArgs'] is not None else None,
+            newest_display=SingleParticleSessionDisplay.from_json(json['newestDisplay']) if 'newestDisplay' in json and json['newestDisplay'] is not None else None,
+            user_id=cast(str, json['userId']),
+            session_id=cast(str, json['sessionId']),
+            session_number=cast(int, json['sessionNumber']) if 'sessionNumber' in json and json['sessionNumber'] is not None else None,
+            created=cast(int, json['created']),
+            permissions={SessionPermission.from_json(x) for x in json['permissions']},
+            path=cast(str, json['path']),
+            args=JobArgs.from_json(json['args']),
+            display=JobArgs.from_json(json['display']),
+            num_micrographs=cast(int, json['numMicrographs']),
+            num_frames=cast(int, json['numFrames']),
+            name=cast(str, json['name']),
+            numbered_name=cast(str, json['numberedName']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'newest_args={self.newest_args}',
+            f'newest_display={self.newest_display}',
+            f'user_id={self.user_id}',
+            f'session_id={self.session_id}',
+            f'session_number={self.session_number}',
+            f'created={self.created}',
+            f'permissions={self.permissions}',
+            f'path={self.path}',
+            f'args={self.args}',
+            f'display={self.display}',
+            f'num_micrographs={self.num_micrographs}',
+            f'num_frames={self.num_frames}',
+            f'name={self.name}',
+            f'numbered_name={self.numbered_name}',
+        ])
+        return f'SingleParticleSessionData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SingleParticleSessionData):
+            return NotImplemented
+        return self.newest_args == other.newest_args \
+            and self.newest_display == other.newest_display \
+            and self.user_id == other.user_id \
+            and self.session_id == other.session_id \
+            and self.session_number == other.session_number \
+            and self.created == other.created \
+            and self.permissions == other.permissions \
+            and self.path == other.path \
+            and self.args == other.args \
+            and self.display == other.display \
+            and self.num_micrographs == other.num_micrographs \
+            and self.num_frames == other.num_frames \
+            and self.name == other.name \
+            and self.numbered_name == other.numbered_name
+
+
+class TomographySessionArgs:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomographySessionArgs'
+    
+    def __init__(self, name: str, group_id: str, values: ArgValuesToml) -> None:
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.group_id: str = group_id
+        """
+        (no description yet)
+        """
+        self.values: ArgValuesToml = values
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'name': self.name,
+            'groupId': self.group_id,
+            'values': self.values,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> TomographySessionArgs:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            name=cast(str, json['name']),
+            group_id=cast(str, json['groupId']),
+            values=arg_values_toml_from_json(json['values']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'name={self.name}',
+            f'group_id={self.group_id}',
+            f'values={self.values}',
+        ])
+        return f'TomographySessionArgs[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomographySessionArgs):
+            return NotImplemented
+        return self.name == other.name \
+            and self.group_id == other.group_id \
+            and self.values == other.values
+
+
+class TomographySessionData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomographySessionData'
+    
+    def __init__(self, newest_args: Optional[TomographySessionArgs], newest_display: Optional[TomographySessionDisplay], user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[TomographySessionArgs], display: JobArgs[TomographySessionDisplay], num_tilt_series: int, num_tilts: int, name: str, numbered_name: str) -> None:
+        self.newest_args: Optional[TomographySessionArgs] = newest_args
+        """
+        (no description yet)
+        """
+        self.newest_display: Optional[TomographySessionDisplay] = newest_display
+        """
+        (no description yet)
+        """
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.session_id: str = session_id
+        """
+        (no description yet)
+        """
+        self.session_number: Optional[int] = session_number
+        """
+        (no description yet)
+        """
+        self.created: int = created
+        """
+        (no description yet)
+        """
+        self.permissions: Set[SessionPermission] = permissions
+        """
+        (no description yet)
+        """
+        self.path: str = path
+        """
+        (no description yet)
+        """
+        self.args: JobArgs[TomographySessionArgs] = args
+        """
+        (no description yet)
+        """
+        self.display: JobArgs[TomographySessionDisplay] = display
+        """
+        (no description yet)
+        """
+        self.num_tilt_series: int = num_tilt_series
+        """
+        (no description yet)
+        """
+        self.num_tilts: int = num_tilts
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.numbered_name: str = numbered_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'newestArgs': self.newest_args.to_json() if self.newest_args is not None else None,
+            'newestDisplay': self.newest_display.to_json() if self.newest_display is not None else None,
+            'userId': self.user_id,
+            'sessionId': self.session_id,
+            'sessionNumber': self.session_number if self.session_number is not None else None,
+            'created': self.created,
+            'permissions': [x.to_json() for x in self.permissions],
+            'path': self.path,
+            'args': self.args.to_json(),
+            'display': self.display.to_json(),
+            'numTiltSeries': self.num_tilt_series,
+            'numTilts': self.num_tilts,
+            'name': self.name,
+            'numberedName': self.numbered_name,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> TomographySessionData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            newest_args=TomographySessionArgs.from_json(json['newestArgs']) if 'newestArgs' in json and json['newestArgs'] is not None else None,
+            newest_display=TomographySessionDisplay.from_json(json['newestDisplay']) if 'newestDisplay' in json and json['newestDisplay'] is not None else None,
+            user_id=cast(str, json['userId']),
+            session_id=cast(str, json['sessionId']),
+            session_number=cast(int, json['sessionNumber']) if 'sessionNumber' in json and json['sessionNumber'] is not None else None,
+            created=cast(int, json['created']),
+            permissions={SessionPermission.from_json(x) for x in json['permissions']},
+            path=cast(str, json['path']),
+            args=JobArgs.from_json(json['args']),
+            display=JobArgs.from_json(json['display']),
+            num_tilt_series=cast(int, json['numTiltSeries']),
+            num_tilts=cast(int, json['numTilts']),
+            name=cast(str, json['name']),
+            numbered_name=cast(str, json['numberedName']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'newest_args={self.newest_args}',
+            f'newest_display={self.newest_display}',
+            f'user_id={self.user_id}',
+            f'session_id={self.session_id}',
+            f'session_number={self.session_number}',
+            f'created={self.created}',
+            f'permissions={self.permissions}',
+            f'path={self.path}',
+            f'args={self.args}',
+            f'display={self.display}',
+            f'num_tilt_series={self.num_tilt_series}',
+            f'num_tilts={self.num_tilts}',
+            f'name={self.name}',
+            f'numbered_name={self.numbered_name}',
+        ])
+        return f'TomographySessionData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomographySessionData):
+            return NotImplemented
+        return self.newest_args == other.newest_args \
+            and self.newest_display == other.newest_display \
+            and self.user_id == other.user_id \
+            and self.session_id == other.session_id \
+            and self.session_number == other.session_number \
+            and self.created == other.created \
+            and self.permissions == other.permissions \
+            and self.path == other.path \
+            and self.args == other.args \
+            and self.display == other.display \
+            and self.num_tilt_series == other.num_tilt_series \
+            and self.num_tilts == other.num_tilts \
+            and self.name == other.name \
+            and self.numbered_name == other.numbered_name
+
+
+class SessionDaemon:
+    """
+    (no description yet)
+    """
+    
+    Fypd: SessionDaemon
+    Pypd: SessionDaemon
+    Streampyp: SessionDaemon
+    
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
+    def to_json(self) -> str:
+        """
+        Converts this enum value into JSON
+        """
+        
+        return self.name
+    
+    @classmethod
+    def from_json(cls, name: str) -> SessionDaemon:
+        """
+        Reads this enum value from JSON
+        """
+        
+        if name == 'Fypd':
+            return SessionDaemon.Fypd
+        elif name == 'Pypd':
+            return SessionDaemon.Pypd
+        elif name == 'Streampyp':
+            return SessionDaemon.Streampyp
+        else:
+            return cls(name)
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __len__(self) -> int:
+        return 3
+    
+    def __iter__(self) -> Iterator[SessionDaemon]:
+        return [SessionDaemon.Fypd, SessionDaemon.Pypd, SessionDaemon.Streampyp].__iter__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionDaemon):
+            return NotImplemented
+        return self.name == other.name
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+SessionDaemon.Fypd = SessionDaemon('Fypd')
+SessionDaemon.Pypd = SessionDaemon('Pypd')
+SessionDaemon.Streampyp = SessionDaemon('Streampyp')
+
+
+class RunningSessions:
+    """
+    because polymorphic serialization in KVision is too much of a pain
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RunningSessions'
+    
+    def __init__(self, single_particle: List[SingleParticleSessionData], tomography: List[TomographySessionData]) -> None:
+        self.single_particle: List[SingleParticleSessionData] = single_particle
+        """
+        (no description yet)
+        """
+        self.tomography: List[TomographySessionData] = tomography
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'singleParticle': [x.to_json() for x in self.single_particle],
+            'tomography': [x.to_json() for x in self.tomography],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> RunningSessions:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            single_particle=[SingleParticleSessionData.from_json(x) for x in json['singleParticle']],
+            tomography=[TomographySessionData.from_json(x) for x in json['tomography']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'single_particle={self.single_particle}',
+            f'tomography={self.tomography}',
+        ])
+        return f'RunningSessions[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RunningSessions):
+            return NotImplemented
+        return self.single_particle == other.single_particle \
+            and self.tomography == other.tomography
+
+
+class SessionLogs:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionLogs'
+    
+    def __init__(self, logs: List[SessionLogData]) -> None:
+        self.logs: List[SessionLogData] = logs
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'logs': [x.to_json() for x in self.logs],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionLogs:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            logs=[SessionLogData.from_json(x) for x in json['logs']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'logs={self.logs}',
+        ])
+        return f'SessionLogs[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionLogs):
+            return NotImplemented
+        return self.logs == other.logs
+
+
+class SessionCommands:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionCommands'
+    
+    def __init__(self, command: str) -> None:
+        self.command: str = command
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'command': self.command,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionCommands:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            command=cast(str, json['command']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'command={self.command}',
+        ])
+        return f'SessionCommands[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionCommands):
+            return NotImplemented
+        return self.command == other.command
+
+
+class SessionLog:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionLog'
+    
+    def __init__(self, log: Optional[str]) -> None:
+        self.log: Optional[str] = log
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'log': self.log if self.log is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionLog:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            log=cast(str, json['log']) if 'log' in json and json['log'] is not None else None,
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'log={self.log}',
+        ])
+        return f'SessionLog[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionLog):
+            return NotImplemented
+        return self.log == other.log
+
+
+class SessionSpeeds:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionSpeeds'
+    
+    def __init__(self, transfers: List[float]) -> None:
+        self.transfers: List[float] = transfers
+        """
+        for file transfers, in Gbps
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'transfers': [x for x in self.transfers],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionSpeeds:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            transfers=[cast(float, x) for x in json['transfers']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'transfers={self.transfers}',
+        ])
+        return f'SessionSpeeds[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionSpeeds):
+            return NotImplemented
+        return self.transfers == other.transfers
+
+
+class SessionJobsLogs:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobsLogs'
+    
+    def __init__(self, jobs: List[SessionJobLogData]) -> None:
+        self.jobs: List[SessionJobLogData] = jobs
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobs': [x.to_json() for x in self.jobs],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionJobsLogs:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            jobs=[SessionJobLogData.from_json(x) for x in json['jobs']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'jobs={self.jobs}',
+        ])
+        return f'SessionJobsLogs[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionJobsLogs):
+            return NotImplemented
+        return self.jobs == other.jobs
+
+
+class SessionJobLogs:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLogs'
+    
+    def __init__(self, representative_command: str, logs: List[SessionJobLog]) -> None:
+        self.representative_command: str = representative_command
+        """
+        (no description yet)
+        """
+        self.logs: List[SessionJobLog] = logs
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'representativeCommand': self.representative_command,
+            'logs': [x.to_json() for x in self.logs],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionJobLogs:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            representative_command=cast(str, json['representativeCommand']),
+            logs=[SessionJobLog.from_json(x) for x in json['logs']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'representative_command={self.representative_command}',
+            f'logs={self.logs}',
+        ])
+        return f'SessionJobLogs[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionJobLogs):
+            return NotImplemented
+        return self.representative_command == other.representative_command \
+            and self.logs == other.logs
+
+
+class AvgRotData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.AvgRotData'
+    
+    def __init__(self, spatial_freq: List[float], avg_rot: List[float], ctf_fit: List[float], cross_correlation: List[float], min_res: float) -> None:
+        self.spatial_freq: List[float] = spatial_freq
+        """
+        (no description yet)
+        """
+        self.avg_rot: List[float] = avg_rot
+        """
+        (no description yet)
+        """
+        self.ctf_fit: List[float] = ctf_fit
+        """
+        (no description yet)
+        """
+        self.cross_correlation: List[float] = cross_correlation
+        """
+        (no description yet)
+        """
+        self.min_res: float = min_res
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'spatialFreq': [x for x in self.spatial_freq],
+            'avgRot': [x for x in self.avg_rot],
+            'ctfFit': [x for x in self.ctf_fit],
+            'crossCorrelation': [x for x in self.cross_correlation],
+            'minRes': self.min_res,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> AvgRotData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            spatial_freq=[cast(float, x) for x in json['spatialFreq']],
+            avg_rot=[cast(float, x) for x in json['avgRot']],
+            ctf_fit=[cast(float, x) for x in json['ctfFit']],
+            cross_correlation=[cast(float, x) for x in json['crossCorrelation']],
+            min_res=cast(float, json['minRes']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'spatial_freq={self.spatial_freq}',
+            f'avg_rot={self.avg_rot}',
+            f'ctf_fit={self.ctf_fit}',
+            f'cross_correlation={self.cross_correlation}',
+            f'min_res={self.min_res}',
+        ])
+        return f'AvgRotData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, AvgRotData):
+            return NotImplemented
+        return self.spatial_freq == other.spatial_freq \
+            and self.avg_rot == other.avg_rot \
+            and self.ctf_fit == other.ctf_fit \
+            and self.cross_correlation == other.cross_correlation \
+            and self.min_res == other.min_res
+
+
+class MotionData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MotionData'
+    
+    def __init__(self, x: List[float], y: List[float]) -> None:
+        self.x: List[float] = x
+        """
+        (no description yet)
+        """
+        self.y: List[float] = y
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'x': [x for x in self.x],
+            'y': [x for x in self.y],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> MotionData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            x=[cast(float, x) for x in json['x']],
+            y=[cast(float, x) for x in json['y']],
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'x={self.x}',
+            f'y={self.y}',
+        ])
+        return f'MotionData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, MotionData):
+            return NotImplemented
+        return self.x == other.x \
+            and self.y == other.y
+
+
+class DriftMetadata:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.DriftMetadata'
+    
+    def __init__(self, tilts: List[float], drifts: List[List[DriftXY]], ctf_values: List[CtfTiltValues], ctf_profiles: List[AvgRotData], tilt_axis_angle: float) -> None:
+        self.tilts: List[float] = tilts
+        """
+        (no description yet)
+        """
+        self.drifts: List[List[DriftXY]] = drifts
+        """
+        (no description yet)
+        """
+        self.ctf_values: List[CtfTiltValues] = ctf_values
+        """
+        (no description yet)
+        """
+        self.ctf_profiles: List[AvgRotData] = ctf_profiles
+        """
+        (no description yet)
+        """
+        self.tilt_axis_angle: float = tilt_axis_angle
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'tilts': [x for x in self.tilts],
+            'drifts': [[x.to_json() for x in x] for x in self.drifts],
+            'ctfValues': [x.to_json() for x in self.ctf_values],
+            'ctfProfiles': [x.to_json() for x in self.ctf_profiles],
+            'tiltAxisAngle': self.tilt_axis_angle,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> DriftMetadata:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            tilts=[cast(float, x) for x in json['tilts']],
+            drifts=[[DriftXY.from_json(x) for x in x] for x in json['drifts']],
+            ctf_values=[CtfTiltValues.from_json(x) for x in json['ctfValues']],
+            ctf_profiles=[AvgRotData.from_json(x) for x in json['ctfProfiles']],
+            tilt_axis_angle=cast(float, json['tiltAxisAngle']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'tilts={self.tilts}',
+            f'drifts={self.drifts}',
+            f'ctf_values={self.ctf_values}',
+            f'ctf_profiles={self.ctf_profiles}',
+            f'tilt_axis_angle={self.tilt_axis_angle}',
+        ])
+        return f'DriftMetadata[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, DriftMetadata):
+            return NotImplemented
+        return self.tilts == other.tilts \
+            and self.drifts == other.drifts \
+            and self.ctf_values == other.ctf_values \
+            and self.ctf_profiles == other.ctf_profiles \
+            and self.tilt_axis_angle == other.tilt_axis_angle
 
 
 class Block:
@@ -1998,6 +5215,69 @@ class AppPermissionData:
             return NotImplemented
         return self.app_permission_id == other.app_permission_id \
             and self.description == other.description
+
+
+class PreprocessingPropRange:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.PreprocessingPropRange'
+    
+    def __init__(self, prop_id: str, min: float, max: float) -> None:
+        self.prop_id: str = prop_id
+        """
+        must be one of PreprocessingDataProperty.id
+        """
+        self.min: float = min
+        """
+        (no description yet)
+        """
+        self.max: float = max
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'propId': self.prop_id,
+            'min': self.min,
+            'max': self.max,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> PreprocessingPropRange:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            prop_id=cast(str, json['propId']),
+            min=cast(float, json['min']),
+            max=cast(float, json['max']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'prop_id={self.prop_id}',
+            f'min={self.min}',
+            f'max={self.max}',
+        ])
+        return f'PreprocessingPropRange[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, PreprocessingPropRange):
+            return NotImplemented
+        return self.prop_id == other.prop_id \
+            and self.min == other.min \
+            and self.max == other.max
 
 
 class ReconstructionData:
@@ -2355,6 +5635,84 @@ ProjectPermission.Write = ProjectPermission('Write')
 ProjectPermission.Read = ProjectPermission('Read')
 
 
+class JobArgs(Generic[T]):
+    """
+    Argument storage for jobs.
+    Jobs can have two sets of arguments. The 
+    finished
+     arguments: the arguments that were used when running the job the last time. And/or the 
+    next
+     arguments: the arguments that will be used to run the job the next time.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobArgs'
+    
+    def __init__(self, finished: Optional[T], next: Optional[T]) -> None:
+        self.finished: Optional[T] = finished
+        """
+        job arguments that have been processed by a run ie, describes the current state of the job's output files
+        """
+        self.next: Optional[T] = next
+        """
+        job arguments pending for the next run ie, describes how the job's output files could be in the one possible future
+        """
+        self._generics: Dict[str,Optional[str]] = {
+            'T': None
+        }
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        def writer_polymorphic_T(val: Any) -> Any:
+            type_id = self._generics['T']
+            if type_id == 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs':
+                return val.to_json()
+            else:
+                raise Exception(f'Failed to serialize type, unrecognized type id `{type_id}` for type parameter T')
+        
+        return {
+            'finished': writer_polymorphic_T(self.finished) if self.finished is not None else None,
+            'next': writer_polymorphic_T(self.next) if self.next is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> JobArgs[T]:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        def reader_polymorphic_T(type_id: str, json: Dict[str,Any]) -> Any:
+            if type_id == 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs':
+                return SingleParticleSessionArgs.from_json(json)
+            else:
+                raise Exception(f'Failed to deserialize type, unrecognized type id `{type_id}` for type parameter T')
+        
+        type_id = cast(str, json['type'])
+        
+        return cls(
+            finished=reader_polymorphic_T(type_id, json['finished']) if 'finished' in json and json['finished'] is not None else None,
+            next=reader_polymorphic_T(type_id, json['next']) if 'next' in json and json['next'] is not None else None,
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'finished={self.finished}',
+            f'next={self.next}',
+        ])
+        return f'JobArgs[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, JobArgs):
+            return NotImplemented
+        return self.finished == other.finished \
+            and self.next == other.next
+
+
 class UserData:
     """
     (no description yet)
@@ -2686,14 +6044,288 @@ class StreamLogMsg:
             and self.msg == other.msg
 
 
-class SessionDaemon:
+class SingleParticleSessionDisplay:
     """
     (no description yet)
     """
     
-    Fypd: SessionDaemon
-    Pypd: SessionDaemon
-    Streampyp: SessionDaemon
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SingleParticleSessionDisplay'
+    
+    def __init__(self, group_name: str) -> None:
+        self.group_name: str = group_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'groupName': self.group_name,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SingleParticleSessionDisplay:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            group_name=cast(str, json['groupName']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'group_name={self.group_name}',
+        ])
+        return f'SingleParticleSessionDisplay[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SingleParticleSessionDisplay):
+            return NotImplemented
+        return self.group_name == other.group_name
+
+
+class TomographySessionDisplay:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomographySessionDisplay'
+    
+    def __init__(self, group_name: str) -> None:
+        self.group_name: str = group_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'groupName': self.group_name,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> TomographySessionDisplay:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            group_name=cast(str, json['groupName']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'group_name={self.group_name}',
+        ])
+        return f'TomographySessionDisplay[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomographySessionDisplay):
+            return NotImplemented
+        return self.group_name == other.group_name
+
+
+class SessionLogData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionLogData'
+    
+    def __init__(self, job_id: str, daemon: SessionDaemon, timestamp: int) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.daemon: SessionDaemon = daemon
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'daemon': self.daemon.to_json(),
+            'timestamp': self.timestamp,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionLogData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            daemon=SessionDaemon.from_json(json['daemon']),
+            timestamp=cast(int, json['timestamp']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'daemon={self.daemon}',
+            f'timestamp={self.timestamp}',
+        ])
+        return f'SessionLogData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionLogData):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.daemon == other.daemon \
+            and self.timestamp == other.timestamp
+
+
+class SessionJobLogData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLogData'
+    
+    def __init__(self, job_id: str, name: str, timestamp: int) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'name': self.name,
+            'timestamp': self.timestamp,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionJobLogData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            job_id=cast(str, json['jobId']),
+            name=cast(str, json['name']),
+            timestamp=cast(int, json['timestamp']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'name={self.name}',
+            f'timestamp={self.timestamp}',
+        ])
+        return f'SessionJobLogData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionJobLogData):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.name == other.name \
+            and self.timestamp == other.timestamp
+
+
+class SessionJobLog:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLog'
+    
+    def __init__(self, array_id: Optional[int], log: Optional[str]) -> None:
+        self.array_id: Optional[int] = array_id
+        """
+        (no description yet)
+        """
+        self.log: Optional[str] = log
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'arrayId': self.array_id if self.array_id is not None else None,
+            'log': self.log if self.log is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> SessionJobLog:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            array_id=cast(int, json['arrayId']) if 'arrayId' in json and json['arrayId'] is not None else None,
+            log=cast(str, json['log']) if 'log' in json and json['log'] is not None else None,
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'array_id={self.array_id}',
+            f'log={self.log}',
+        ])
+        return f'SessionJobLog[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionJobLog):
+            return NotImplemented
+        return self.array_id == other.array_id \
+            and self.log == other.log
+
+
+class SessionPermission:
+    """
+    (no description yet)
+    """
+    
+    Write: SessionPermission
+    Read: SessionPermission
     
     def __init__(self, name: str) -> None:
         self.name = name
@@ -2706,17 +6338,15 @@ class SessionDaemon:
         return self.name
     
     @classmethod
-    def from_json(cls, name: str) -> SessionDaemon:
+    def from_json(cls, name: str) -> SessionPermission:
         """
         Reads this enum value from JSON
         """
         
-        if name == 'Fypd':
-            return SessionDaemon.Fypd
-        elif name == 'Pypd':
-            return SessionDaemon.Pypd
-        elif name == 'Streampyp':
-            return SessionDaemon.Streampyp
+        if name == 'Write':
+            return SessionPermission.Write
+        elif name == 'Read':
+            return SessionPermission.Read
         else:
             return cls(name)
     
@@ -2727,22 +6357,21 @@ class SessionDaemon:
         return self.__str__()
     
     def __len__(self) -> int:
-        return 3
+        return 2
     
-    def __iter__(self) -> Iterator[SessionDaemon]:
-        return [SessionDaemon.Fypd, SessionDaemon.Pypd, SessionDaemon.Streampyp].__iter__()
+    def __iter__(self) -> Iterator[SessionPermission]:
+        return [SessionPermission.Write, SessionPermission.Read].__iter__()
     
     def __eq__(self, other: object) -> Any:
-        if not isinstance(other, SessionDaemon):
+        if not isinstance(other, SessionPermission):
             return NotImplemented
         return self.name == other.name
     
     def __hash__(self) -> int:
         return hash(self.name)
 
-SessionDaemon.Fypd = SessionDaemon('Fypd')
-SessionDaemon.Pypd = SessionDaemon('Pypd')
-SessionDaemon.Streampyp = SessionDaemon('Streampyp')
+SessionPermission.Write = SessionPermission('Write')
+SessionPermission.Read = SessionPermission('Read')
 
 
 class SessionExportData:
@@ -3131,6 +6760,148 @@ class TiltSeriesData:
             and self.average_motion == other.average_motion \
             and self.num_particles == other.num_particles \
             and self.source_dims == other.source_dims
+
+
+class DriftXY:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.DriftXY'
+    
+    def __init__(self, x: float, y: float) -> None:
+        self.x: float = x
+        """
+        (no description yet)
+        """
+        self.y: float = y
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'x': self.x,
+            'y': self.y,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> DriftXY:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            x=cast(float, json['x']),
+            y=cast(float, json['y']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'x={self.x}',
+            f'y={self.y}',
+        ])
+        return f'DriftXY[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, DriftXY):
+            return NotImplemented
+        return self.x == other.x \
+            and self.y == other.y
+
+
+class CtfTiltValues:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.CtfTiltValues'
+    
+    def __init__(self, index: int, defocus1: float, defocus2: float, astigmatism: float, cc: float, resolution: float) -> None:
+        self.index: int = index
+        """
+        (no description yet)
+        """
+        self.defocus1: float = defocus1
+        """
+        (no description yet)
+        """
+        self.defocus2: float = defocus2
+        """
+        (no description yet)
+        """
+        self.astigmatism: float = astigmatism
+        """
+        (no description yet)
+        """
+        self.cc: float = cc
+        """
+        (no description yet)
+        """
+        self.resolution: float = resolution
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'index': self.index,
+            'defocus1': self.defocus1,
+            'defocus2': self.defocus2,
+            'astigmatism': self.astigmatism,
+            'cc': self.cc,
+            'resolution': self.resolution,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any]) -> CtfTiltValues:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            index=cast(int, json['index']),
+            defocus1=cast(float, json['defocus1']),
+            defocus2=cast(float, json['defocus2']),
+            astigmatism=cast(float, json['astigmatism']),
+            cc=cast(float, json['cc']),
+            resolution=cast(float, json['resolution']),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'index={self.index}',
+            f'defocus1={self.defocus1}',
+            f'defocus2={self.defocus2}',
+            f'astigmatism={self.astigmatism}',
+            f'cc={self.cc}',
+            f'resolution={self.resolution}',
+        ])
+        return f'CtfTiltValues[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, CtfTiltValues):
+            return NotImplemented
+        return self.index == other.index \
+            and self.defocus1 == other.defocus1 \
+            and self.defocus2 == other.defocus2 \
+            and self.astigmatism == other.astigmatism \
+            and self.cc == other.cc \
+            and self.resolution == other.resolution
 
 
 class ImageDims:
