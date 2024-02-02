@@ -133,7 +133,10 @@ class Client:
         """
         Asks the nextPYP website for its API version number and compares it to the version
         number built into this client. This client is compatible with the website if (and only if)
-        the two major version numbers match.
+        the two major version numbers match and the client minor version is less than or equal to the server.
+
+        In this case, compatibility means that every service supported by the client is also supported
+        by the server.
         """
 
         # collect the version numbers
@@ -141,7 +144,8 @@ class Client:
         remote_api_version = semver.Version.parse(self.services.apps.versions().api_version)
 
         # two SemVer versions are compatible iff the major numbers match
-        return local_api_version.major == remote_api_version.major
+        return local_api_version.major == remote_api_version.major \
+            and local_api_version.minor <= remote_api_version.minor
 
 
 class NetworkTransport:

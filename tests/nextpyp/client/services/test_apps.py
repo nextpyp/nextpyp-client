@@ -37,14 +37,16 @@ def test_is_compatible() -> None:
     assert check('1.2.3', '1.2.2') is True
     assert check('1.2.3', '1.2.0') is True
 
-    # minor change is ok
+    # newer minor change is ok
     assert check('1.2.3', '1.3.0') is True
     assert check('1.2.3', '1.3.3') is True
     assert check('1.2.3', '1.3.4') is True
     assert check('1.2.3', '1.4.0') is True
     assert check('1.2.3', '1.44.0') is True
-    assert check('1.2.3', '1.1.0') is True
-    assert check('1.2.3', '1.0.0') is True
+
+    # older minor change is not ok
+    assert check('1.2.3', '1.1.0') is False
+    assert check('1.2.3', '1.0.0') is False
 
     # major change is not
     assert check('1.2.3', '0.0.0') is False
