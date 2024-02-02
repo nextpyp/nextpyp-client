@@ -1141,7 +1141,7 @@ class RemoteOption:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RemoteOption:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RemoteOption:
         """
         Creates a new class instance from JSON
         """
@@ -1219,7 +1219,7 @@ class Group:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> Group:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> Group:
         """
         Creates a new class instance from JSON
         """
@@ -1277,7 +1277,7 @@ class VersionData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> VersionData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> VersionData:
         """
         Creates a new class instance from JSON
         """
@@ -1337,7 +1337,7 @@ class AppTokenRequestData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> AppTokenRequestData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> AppTokenRequestData:
         """
         Creates a new class instance from JSON
         """
@@ -1400,7 +1400,7 @@ class PreprocessingFilter:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> PreprocessingFilter:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> PreprocessingFilter:
         """
         Creates a new class instance from JSON
         """
@@ -1488,7 +1488,7 @@ class ProjectData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ProjectData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectData:
         """
         Creates a new class instance from JSON
         """
@@ -1550,7 +1550,7 @@ class RealTimeC2S:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2S:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2S:
         """
         Creates a new class instance from JSON
         """
@@ -1600,7 +1600,7 @@ class RealTimeC2SListenToProject:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2SListenToProject:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SListenToProject:
         """
         Creates a new class instance from JSON
         """
@@ -1650,7 +1650,7 @@ class RealTimeC2SListenToSession:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2SListenToSession:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SListenToSession:
         """
         Creates a new class instance from JSON
         """
@@ -1691,7 +1691,7 @@ class RealTimeC2SSessionSettingsSaved:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeC2SSessionSettingsSaved:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SSessionSettingsSaved:
         """
         Creates a new class instance from JSON
         """
@@ -1730,7 +1730,7 @@ class RealTimeS2C:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2C:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2C:
         """
         Creates a new class instance from JSON
         """
@@ -1780,7 +1780,7 @@ class RealTimeS2CError:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CError:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CError:
         """
         Creates a new class instance from JSON
         """
@@ -1840,7 +1840,7 @@ class RealTimeS2CProjectStatus:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectStatus:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectStatus:
         """
         Creates a new class instance from JSON
         """
@@ -1903,7 +1903,7 @@ class RealTimeS2CProjectRunInit:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectRunInit:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectRunInit:
         """
         Creates a new class instance from JSON
         """
@@ -1956,7 +1956,7 @@ class RealTimeS2CProjectRunStart:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectRunStart:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectRunStart:
         """
         Creates a new class instance from JSON
         """
@@ -2008,7 +2008,7 @@ class RealTimeS2CJobStart:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CJobStart:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CJobStart:
         """
         Creates a new class instance from JSON
         """
@@ -2063,7 +2063,7 @@ class RealTimeS2CJobUpdate:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CJobUpdate:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CJobUpdate:
         """
         Creates a new class instance from JSON
         """
@@ -2128,7 +2128,7 @@ class RealTimeS2CJobFinish:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CJobFinish:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CJobFinish:
         """
         Creates a new class instance from JSON
         """
@@ -2189,7 +2189,7 @@ class RealTimeS2CProjectRunFinish:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CProjectRunFinish:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectRunFinish:
         """
         Creates a new class instance from JSON
         """
@@ -2259,7 +2259,7 @@ class RealTimeS2CClusterJobSubmit:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobSubmit:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobSubmit:
         """
         Creates a new class instance from JSON
         """
@@ -2328,7 +2328,7 @@ class RealTimeS2CClusterJobStart:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobStart:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobStart:
         """
         Creates a new class instance from JSON
         """
@@ -2401,7 +2401,7 @@ class RealTimeS2CClusterJobArrayStart:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobArrayStart:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobArrayStart:
         """
         Creates a new class instance from JSON
         """
@@ -2490,7 +2490,7 @@ class RealTimeS2CClusterJobArrayEnd:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobArrayEnd:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobArrayEnd:
         """
         Creates a new class instance from JSON
         """
@@ -2570,7 +2570,7 @@ class RealTimeS2CClusterJobEnd:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CClusterJobEnd:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobEnd:
         """
         Creates a new class instance from JSON
         """
@@ -2631,7 +2631,7 @@ class RealTimeS2CUpdatedParameters:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CUpdatedParameters:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CUpdatedParameters:
         """
         Creates a new class instance from JSON
         """
@@ -2706,7 +2706,7 @@ class RealTimeS2CSessionStatus:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionStatus:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionStatus:
         """
         Creates a new class instance from JSON
         """
@@ -2768,7 +2768,7 @@ class RealTimeS2CSessionSmallData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionSmallData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionSmallData:
         """
         Creates a new class instance from JSON
         """
@@ -2825,7 +2825,7 @@ class RealTimeS2CSessionLargeData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionLargeData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionLargeData:
         """
         Creates a new class instance from JSON
         """
@@ -2893,7 +2893,7 @@ class RealTimeS2CSessionRunningJob:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionRunningJob:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionRunningJob:
         """
         Creates a new class instance from JSON
         """
@@ -2954,7 +2954,7 @@ class RealTimeS2CSessionDaemonSubmitted:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionDaemonSubmitted:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionDaemonSubmitted:
         """
         Creates a new class instance from JSON
         """
@@ -3009,7 +3009,7 @@ class RealTimeS2CSessionDaemonStarted:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionDaemonStarted:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionDaemonStarted:
         """
         Creates a new class instance from JSON
         """
@@ -3064,7 +3064,7 @@ class RealTimeS2CSessionDaemonFinished:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionDaemonFinished:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionDaemonFinished:
         """
         Creates a new class instance from JSON
         """
@@ -3124,7 +3124,7 @@ class RealTimeS2CSessionJobSubmitted:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionJobSubmitted:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobSubmitted:
         """
         Creates a new class instance from JSON
         """
@@ -3177,7 +3177,7 @@ class RealTimeS2CSessionJobStarted:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionJobStarted:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobStarted:
         """
         Creates a new class instance from JSON
         """
@@ -3229,7 +3229,7 @@ class RealTimeS2CSessionJobFinished:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionJobFinished:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobFinished:
         """
         Creates a new class instance from JSON
         """
@@ -3304,7 +3304,7 @@ class RealTimeS2CSessionFilesystem:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionFilesystem:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionFilesystem:
         """
         Creates a new class instance from JSON
         """
@@ -3366,7 +3366,7 @@ class RealTimeS2CSessionFilesystems:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionFilesystems:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionFilesystems:
         """
         Creates a new class instance from JSON
         """
@@ -3413,7 +3413,7 @@ class RealTimeS2CSessionTransferInit:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferInit:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferInit:
         """
         Creates a new class instance from JSON
         """
@@ -3470,7 +3470,7 @@ class RealTimeS2CSessionTransferInitFileInfo:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferInitFileInfo:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferInitFileInfo:
         """
         Creates a new class instance from JSON
         """
@@ -3523,7 +3523,7 @@ class RealTimeS2CSessionTransferWaiting:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferWaiting:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferWaiting:
         """
         Creates a new class instance from JSON
         """
@@ -3575,7 +3575,7 @@ class RealTimeS2CSessionTransferStarted:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferStarted:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferStarted:
         """
         Creates a new class instance from JSON
         """
@@ -3630,7 +3630,7 @@ class RealTimeS2CSessionTransferProgress:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferProgress:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferProgress:
         """
         Creates a new class instance from JSON
         """
@@ -3680,7 +3680,7 @@ class RealTimeS2CSessionTransferFinished:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTransferFinished:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferFinished:
         """
         Creates a new class instance from JSON
         """
@@ -3727,7 +3727,7 @@ class RealTimeS2CSessionMicrograph:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionMicrograph:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionMicrograph:
         """
         Creates a new class instance from JSON
         """
@@ -3784,7 +3784,7 @@ class RealTimeS2CSessionTiltSeries:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTiltSeries:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTiltSeries:
         """
         Creates a new class instance from JSON
         """
@@ -3837,7 +3837,7 @@ class RealTimeS2CSessionTwoDClasses:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionTwoDClasses:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTwoDClasses:
         """
         Creates a new class instance from JSON
         """
@@ -3884,7 +3884,7 @@ class RealTimeS2CSessionExport:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RealTimeS2CSessionExport:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionExport:
         """
         Creates a new class instance from JSON
         """
@@ -3941,7 +3941,7 @@ class SingleParticleSessionArgs:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SingleParticleSessionArgs:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SingleParticleSessionArgs:
         """
         Creates a new class instance from JSON
         """
@@ -3978,15 +3978,7 @@ class SingleParticleSessionData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SingleParticleSessionData'
     
-    def __init__(self, newest_args: Optional[SingleParticleSessionArgs], newest_display: Optional[SingleParticleSessionDisplay], user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[SingleParticleSessionArgs], display: JobArgs[SingleParticleSessionDisplay], num_micrographs: int, num_frames: int, name: str, numbered_name: str) -> None:
-        self.newest_args: Optional[SingleParticleSessionArgs] = newest_args
-        """
-        (no description yet)
-        """
-        self.newest_display: Optional[SingleParticleSessionDisplay] = newest_display
-        """
-        (no description yet)
-        """
+    def __init__(self, user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[SingleParticleSessionArgs], display: JobArgs[SingleParticleSessionDisplay], num_micrographs: int, num_frames: int) -> None:
         self.user_id: str = user_id
         """
         (no description yet)
@@ -4027,14 +4019,6 @@ class SingleParticleSessionData:
         """
         (no description yet)
         """
-        self.name: str = name
-        """
-        (no description yet)
-        """
-        self.numbered_name: str = numbered_name
-        """
-        (no description yet)
-        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -4042,8 +4026,6 @@ class SingleParticleSessionData:
         """
         
         return {
-            'newestArgs': self.newest_args.to_json() if self.newest_args is not None else None,
-            'newestDisplay': self.newest_display.to_json() if self.newest_display is not None else None,
             'userId': self.user_id,
             'sessionId': self.session_id,
             'sessionNumber': self.session_number if self.session_number is not None else None,
@@ -4054,37 +4036,29 @@ class SingleParticleSessionData:
             'display': self.display.to_json(),
             'numMicrographs': self.num_micrographs,
             'numFrames': self.num_frames,
-            'name': self.name,
-            'numberedName': self.numbered_name,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SingleParticleSessionData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SingleParticleSessionData:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            newest_args=SingleParticleSessionArgs.from_json(json['newestArgs']) if 'newestArgs' in json and json['newestArgs'] is not None else None,
-            newest_display=SingleParticleSessionDisplay.from_json(json['newestDisplay']) if 'newestDisplay' in json and json['newestDisplay'] is not None else None,
             user_id=cast(str, json['userId']),
             session_id=cast(str, json['sessionId']),
             session_number=cast(int, json['sessionNumber']) if 'sessionNumber' in json and json['sessionNumber'] is not None else None,
             created=cast(int, json['created']),
             permissions={SessionPermission.from_json(x) for x in json['permissions']},
             path=cast(str, json['path']),
-            args=JobArgs.from_json(json['args']),
-            display=JobArgs.from_json(json['display']),
+            args=JobArgs.from_json(json['args'], type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs'}),
+            display=JobArgs.from_json(json['display'], type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay'}),
             num_micrographs=cast(int, json['numMicrographs']),
             num_frames=cast(int, json['numFrames']),
-            name=cast(str, json['name']),
-            numbered_name=cast(str, json['numberedName']),
         )
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'newest_args={self.newest_args}',
-            f'newest_display={self.newest_display}',
             f'user_id={self.user_id}',
             f'session_id={self.session_id}',
             f'session_number={self.session_number}',
@@ -4095,8 +4069,6 @@ class SingleParticleSessionData:
             f'display={self.display}',
             f'num_micrographs={self.num_micrographs}',
             f'num_frames={self.num_frames}',
-            f'name={self.name}',
-            f'numbered_name={self.numbered_name}',
         ])
         return f'SingleParticleSessionData[{props}]'
     
@@ -4106,9 +4078,7 @@ class SingleParticleSessionData:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, SingleParticleSessionData):
             return NotImplemented
-        return self.newest_args == other.newest_args \
-            and self.newest_display == other.newest_display \
-            and self.user_id == other.user_id \
+        return self.user_id == other.user_id \
             and self.session_id == other.session_id \
             and self.session_number == other.session_number \
             and self.created == other.created \
@@ -4117,9 +4087,7 @@ class SingleParticleSessionData:
             and self.args == other.args \
             and self.display == other.display \
             and self.num_micrographs == other.num_micrographs \
-            and self.num_frames == other.num_frames \
-            and self.name == other.name \
-            and self.numbered_name == other.numbered_name
+            and self.num_frames == other.num_frames
 
 
 class TomographySessionArgs:
@@ -4155,7 +4123,7 @@ class TomographySessionArgs:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> TomographySessionArgs:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TomographySessionArgs:
         """
         Creates a new class instance from JSON
         """
@@ -4192,15 +4160,7 @@ class TomographySessionData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomographySessionData'
     
-    def __init__(self, newest_args: Optional[TomographySessionArgs], newest_display: Optional[TomographySessionDisplay], user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[TomographySessionArgs], display: JobArgs[TomographySessionDisplay], num_tilt_series: int, num_tilts: int, name: str, numbered_name: str) -> None:
-        self.newest_args: Optional[TomographySessionArgs] = newest_args
-        """
-        (no description yet)
-        """
-        self.newest_display: Optional[TomographySessionDisplay] = newest_display
-        """
-        (no description yet)
-        """
+    def __init__(self, user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[TomographySessionArgs], display: JobArgs[TomographySessionDisplay], num_tilt_series: int, num_tilts: int) -> None:
         self.user_id: str = user_id
         """
         (no description yet)
@@ -4241,14 +4201,6 @@ class TomographySessionData:
         """
         (no description yet)
         """
-        self.name: str = name
-        """
-        (no description yet)
-        """
-        self.numbered_name: str = numbered_name
-        """
-        (no description yet)
-        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -4256,8 +4208,6 @@ class TomographySessionData:
         """
         
         return {
-            'newestArgs': self.newest_args.to_json() if self.newest_args is not None else None,
-            'newestDisplay': self.newest_display.to_json() if self.newest_display is not None else None,
             'userId': self.user_id,
             'sessionId': self.session_id,
             'sessionNumber': self.session_number if self.session_number is not None else None,
@@ -4268,37 +4218,29 @@ class TomographySessionData:
             'display': self.display.to_json(),
             'numTiltSeries': self.num_tilt_series,
             'numTilts': self.num_tilts,
-            'name': self.name,
-            'numberedName': self.numbered_name,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> TomographySessionData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TomographySessionData:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            newest_args=TomographySessionArgs.from_json(json['newestArgs']) if 'newestArgs' in json and json['newestArgs'] is not None else None,
-            newest_display=TomographySessionDisplay.from_json(json['newestDisplay']) if 'newestDisplay' in json and json['newestDisplay'] is not None else None,
             user_id=cast(str, json['userId']),
             session_id=cast(str, json['sessionId']),
             session_number=cast(int, json['sessionNumber']) if 'sessionNumber' in json and json['sessionNumber'] is not None else None,
             created=cast(int, json['created']),
             permissions={SessionPermission.from_json(x) for x in json['permissions']},
             path=cast(str, json['path']),
-            args=JobArgs.from_json(json['args']),
-            display=JobArgs.from_json(json['display']),
+            args=JobArgs.from_json(json['args'], type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs'}),
+            display=JobArgs.from_json(json['display'], type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay'}),
             num_tilt_series=cast(int, json['numTiltSeries']),
             num_tilts=cast(int, json['numTilts']),
-            name=cast(str, json['name']),
-            numbered_name=cast(str, json['numberedName']),
         )
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'newest_args={self.newest_args}',
-            f'newest_display={self.newest_display}',
             f'user_id={self.user_id}',
             f'session_id={self.session_id}',
             f'session_number={self.session_number}',
@@ -4309,8 +4251,6 @@ class TomographySessionData:
             f'display={self.display}',
             f'num_tilt_series={self.num_tilt_series}',
             f'num_tilts={self.num_tilts}',
-            f'name={self.name}',
-            f'numbered_name={self.numbered_name}',
         ])
         return f'TomographySessionData[{props}]'
     
@@ -4320,9 +4260,7 @@ class TomographySessionData:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, TomographySessionData):
             return NotImplemented
-        return self.newest_args == other.newest_args \
-            and self.newest_display == other.newest_display \
-            and self.user_id == other.user_id \
+        return self.user_id == other.user_id \
             and self.session_id == other.session_id \
             and self.session_number == other.session_number \
             and self.created == other.created \
@@ -4331,9 +4269,7 @@ class TomographySessionData:
             and self.args == other.args \
             and self.display == other.display \
             and self.num_tilt_series == other.num_tilt_series \
-            and self.num_tilts == other.num_tilts \
-            and self.name == other.name \
-            and self.numbered_name == other.numbered_name
+            and self.num_tilts == other.num_tilts
 
 
 class SessionDaemon:
@@ -4423,7 +4359,7 @@ class RunningSessions:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RunningSessions:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RunningSessions:
         """
         Creates a new class instance from JSON
         """
@@ -4473,7 +4409,7 @@ class SessionLogs:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionLogs:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionLogs:
         """
         Creates a new class instance from JSON
         """
@@ -4520,7 +4456,7 @@ class SessionCommands:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionCommands:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionCommands:
         """
         Creates a new class instance from JSON
         """
@@ -4567,7 +4503,7 @@ class SessionLog:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionLog:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionLog:
         """
         Creates a new class instance from JSON
         """
@@ -4614,7 +4550,7 @@ class SessionSpeeds:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionSpeeds:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionSpeeds:
         """
         Creates a new class instance from JSON
         """
@@ -4661,7 +4597,7 @@ class SessionJobsLogs:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionJobsLogs:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionJobsLogs:
         """
         Creates a new class instance from JSON
         """
@@ -4713,7 +4649,7 @@ class SessionJobLogs:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionJobLogs:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionJobLogs:
         """
         Creates a new class instance from JSON
         """
@@ -4783,7 +4719,7 @@ class AvgRotData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> AvgRotData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> AvgRotData:
         """
         Creates a new class instance from JSON
         """
@@ -4847,7 +4783,7 @@ class MotionData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> MotionData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MotionData:
         """
         Creates a new class instance from JSON
         """
@@ -4917,7 +4853,7 @@ class DriftMetadata:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> DriftMetadata:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> DriftMetadata:
         """
         Creates a new class instance from JSON
         """
@@ -4991,7 +4927,7 @@ class Block:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> Block:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> Block:
         """
         Creates a new class instance from JSON
         """
@@ -5057,7 +4993,7 @@ class ImagesScale:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ImagesScale:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ImagesScale:
         """
         Creates a new class instance from JSON
         """
@@ -5190,7 +5126,7 @@ class AppPermissionData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> AppPermissionData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> AppPermissionData:
         """
         Creates a new class instance from JSON
         """
@@ -5250,7 +5186,7 @@ class PreprocessingPropRange:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> PreprocessingPropRange:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> PreprocessingPropRange:
         """
         Creates a new class instance from JSON
         """
@@ -5318,7 +5254,7 @@ class ReconstructionData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ReconstructionData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ReconstructionData:
         """
         Creates a new class instance from JSON
         """
@@ -5394,7 +5330,7 @@ class RefinementData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RefinementData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RefinementData:
         """
         Creates a new class instance from JSON
         """
@@ -5473,7 +5409,7 @@ class RefinementBundleData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> RefinementBundleData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RefinementBundleData:
         """
         Creates a new class instance from JSON
         """
@@ -5547,7 +5483,7 @@ class PypStats:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> PypStats:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> PypStats:
         """
         Creates a new class instance from JSON
         """
@@ -5669,6 +5605,12 @@ class JobArgs(Generic[T]):
             type_id = self._generics['T']
             if type_id == 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs':
                 return val.to_json()
+            elif type_id == 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs':
+                return val.to_json()
+            elif type_id == 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay':
+                return val.to_json()
+            elif type_id == 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay':
+                return val.to_json()
             else:
                 raise Exception(f'Failed to serialize type, unrecognized type id `{type_id}` for type parameter T')
         
@@ -5678,22 +5620,33 @@ class JobArgs(Generic[T]):
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> JobArgs[T]:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> JobArgs[T]:
         """
         Creates a new class instance from JSON
         """
         
-        def reader_polymorphic_T(type_id: str, json: Dict[str,Any]) -> Any:
+        def reader_polymorphic_T(json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = type_ids) -> Any:
+            if type_ids is None:
+                raise Exception('JobArgs.from_json() failed because no type ids were given')
+            try:
+                type_id = type_ids['T']
+            except KeyError:
+                raise Exception('JobArgs.from_json() failed because no type id was found for type parameter T')
             if type_id == 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs':
                 return SingleParticleSessionArgs.from_json(json)
+            elif type_id == 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs':
+                return TomographySessionArgs.from_json(json)
+            elif type_id == 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay':
+                return SingleParticleSessionDisplay.from_json(json)
+            elif type_id == 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay':
+                return TomographySessionDisplay.from_json(json)
             else:
                 raise Exception(f'Failed to deserialize type, unrecognized type id `{type_id}` for type parameter T')
         
-        type_id = cast(str, json['type'])
         
         return cls(
-            finished=reader_polymorphic_T(type_id, json['finished']) if 'finished' in json and json['finished'] is not None else None,
-            next=reader_polymorphic_T(type_id, json['next']) if 'next' in json and json['next'] is not None else None,
+            finished=reader_polymorphic_T(json['finished']) if 'finished' in json and json['finished'] is not None else None,
+            next=reader_polymorphic_T(json['next']) if 'next' in json and json['next'] is not None else None,
         )
     
     def __str__(self) -> str:
@@ -5741,7 +5694,7 @@ class UserData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> UserData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> UserData:
         """
         Creates a new class instance from JSON
         """
@@ -5806,7 +5759,7 @@ class ProjectRunData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ProjectRunData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectRunData:
         """
         Creates a new class instance from JSON
         """
@@ -6008,7 +5961,7 @@ class StreamLogMsg:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> StreamLogMsg:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> StreamLogMsg:
         """
         Creates a new class instance from JSON
         """
@@ -6067,7 +6020,7 @@ class SingleParticleSessionDisplay:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SingleParticleSessionDisplay:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SingleParticleSessionDisplay:
         """
         Creates a new class instance from JSON
         """
@@ -6114,7 +6067,7 @@ class TomographySessionDisplay:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> TomographySessionDisplay:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TomographySessionDisplay:
         """
         Creates a new class instance from JSON
         """
@@ -6171,7 +6124,7 @@ class SessionLogData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionLogData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionLogData:
         """
         Creates a new class instance from JSON
         """
@@ -6234,7 +6187,7 @@ class SessionJobLogData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionJobLogData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionJobLogData:
         """
         Creates a new class instance from JSON
         """
@@ -6292,7 +6245,7 @@ class SessionJobLog:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionJobLog:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionJobLog:
         """
         Creates a new class instance from JSON
         """
@@ -6422,7 +6375,7 @@ class SessionExportData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> SessionExportData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportData:
         """
         Creates a new class instance from JSON
         """
@@ -6529,7 +6482,7 @@ class MicrographMetadata:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> MicrographMetadata:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MicrographMetadata:
         """
         Creates a new class instance from JSON
         """
@@ -6613,7 +6566,7 @@ class TwoDClassesData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> TwoDClassesData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TwoDClassesData:
         """
         Creates a new class instance from JSON
         """
@@ -6711,7 +6664,7 @@ class TiltSeriesData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> TiltSeriesData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TiltSeriesData:
         """
         Creates a new class instance from JSON
         """
@@ -6790,7 +6743,7 @@ class DriftXY:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> DriftXY:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> DriftXY:
         """
         Creates a new class instance from JSON
         """
@@ -6865,7 +6818,7 @@ class CtfTiltValues:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> CtfTiltValues:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> CtfTiltValues:
         """
         Creates a new class instance from JSON
         """
@@ -6947,7 +6900,7 @@ class ImageDims:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ImageDims:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ImageDims:
         """
         Creates a new class instance from JSON
         """
@@ -7016,7 +6969,7 @@ class JobRunData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> JobRunData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> JobRunData:
         """
         Creates a new class instance from JSON
         """
@@ -7089,7 +7042,7 @@ class ClusterJobData:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ClusterJobData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobData:
         """
         Creates a new class instance from JSON
         """
@@ -7168,7 +7121,7 @@ class ClusterJobDataArrayInfo:
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any]) -> ClusterJobDataArrayInfo:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobDataArrayInfo:
         """
         Creates a new class instance from JSON
         """
