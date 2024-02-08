@@ -1,4 +1,5 @@
 
+from nextpyp.client.args import block_args, PypArgValues, PypBlock
 from nextpyp.client.gen import SessionPermission
 
 from testlib import MockTransport
@@ -36,6 +37,7 @@ def test_spa_list() -> None:
 
     assert len(sessions) == 1
 
+    # check the session data
     assert sessions[0].user_id == 'jeff'
     assert sessions[0].session_id == 'eQMBiHKJK5YsOLdQ'
     assert sessions[0].session_number is None
@@ -53,7 +55,18 @@ def test_spa_list() -> None:
     assert sessions[0].num_micrographs == 2
     assert sessions[0].num_frames == 120
 
+    # check the pyp args
+    arg_values = PypArgValues.from_toml(block_args(PypBlock.SessionSingleParticle), sessions[0].args.finished.values)
+    assert arg_values.data_path == '/media/pyp/tests/spr/raw/*.tif'
+    assert arg_values.gain_reference == '/media/pyp/tests/spr/raw/K3_gain.mrc'
+    assert arg_values.scope_pixel == 1.0
+    assert arg_values.scope_voltage == 300
+    assert arg_values.detect_rad == 75.0
+    assert arg_values.detect_method == 'all'
+    assert arg_values.class2d_min == 10
+    assert arg_values.slurm_verbose is True
+    assert arg_values.slurm_memory == 2
+    assert arg_values.slurm_class2d_memory == 2
 
 # TODO: test tomo list
 # TODO: test other session functions
-# TODO: how to handle the args system? TOML serialization? deserialization?
