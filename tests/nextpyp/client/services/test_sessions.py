@@ -1,12 +1,14 @@
 
 from nextpyp.client.args import block_args, PypArgValues, PypBlock
 from nextpyp.client.gen import (
+    RemoteOption,
     SessionPermission,
     SingleParticleSessionArgs,
     SingleParticleSessionData,
     TomographySessionArgs,
     TomographySessionData
 )
+from nextpyp.client.ids import SessionTypes
 
 from testlib import MockTransport
 
@@ -473,6 +475,33 @@ def test_tomo_delete() -> None:
 
     assert transport.last_params == ['sid']
 
+
+def test_session_options() -> None:
+
+    transport = MockTransport()
+    client = transport.client()
+    transport.next_response = [
+        {
+            "value": "eQMBiHKJK5YsOLdQ",
+            "text": "Single-particle"
+        },
+        {
+            "value": "evKcXLQz3JlrDgV6",
+            "text": "S2-Test blank"
+        }
+    ]
+
+    options = client.services.sessions.session_options('a', None, SessionTypes.SINGLE_PARTICLE)
+
+    assert len(options) == 2
+
+    assert type(options[0]) is RemoteOption
+    assert options[0].value == 'eQMBiHKJK5YsOLdQ'
+    assert options[0].text == 'Single-particle'
+
+    assert type(options[1]) is RemoteOption
+    assert options[1].value == 'evKcXLQz3JlrDgV6'
+    assert options[1].text == 'S2-Test blank'
 
 
 # TODO: test other session functions
