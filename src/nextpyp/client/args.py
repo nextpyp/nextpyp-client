@@ -57,6 +57,9 @@ class TFloat(PypArgType):
     def check(self, value: Any) -> Any:
         if type(value) is float:
             return value
+        elif type(value) is int:
+            # allow implicit promotion from int
+            return float(value)
         else:
             raise TypeError(f'value is a {type(value)} instead of a float')
 
@@ -508,9 +511,10 @@ class PypArgs:
 class PypArgValues:
 
     @classmethod
-    def from_toml(cls, args: PypArgs, toml_str: str) -> PypArgValues:
+    def from_toml(cls, args: PypArgs, toml_str: Optional[str] = None) -> PypArgValues:
         values = PypArgValues(args)
-        values.read(toml_str)
+        if toml_str is not None:
+            values.read(toml_str)
         return values
 
     def __init__(self, args: PypArgs) -> None:

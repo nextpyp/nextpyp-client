@@ -129,7 +129,7 @@ class AppsService:
         :Permission Needed: none
         """
         path = '/kv/apps/requestToken'
-        response = self.client._transport.call(path, [user_id, app_name, app_permission_ids])
+        response = self.client._transport.call(path, [user_id, app_name, [x for x in app_permission_ids]])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return AppTokenRequestData.from_json(response)
@@ -171,7 +171,7 @@ class SessionsService:
         :Permission Needed: ``session_list``
         """
         path = '/kv/sessions/sessionOptions'
-        response = self.client._transport.call(path, [search, initial, state])
+        response = self.client._transport.call(path, [search if search is not None else None, initial if initial is not None else None, state if state is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return [RemoteOption.from_json(x) for x in response]
@@ -195,7 +195,7 @@ class SessionsService:
         :Permission Needed: ``group_list``
         """
         path = '/kv/sessions/groupOptions'
-        response = self.client._transport.call(path, [search, initial, state])
+        response = self.client._transport.call(path, [search if search is not None else None, initial if initial is not None else None, state if state is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return [RemoteOption.from_json(x) for x in response]
@@ -219,7 +219,7 @@ class SessionsService:
         :Permission Needed: ``session_read``
         """
         path = '/kv/sessions/isRunning'
-        response = self.client._transport.call(path, [session_id, daemon])
+        response = self.client._transport.call(path, [session_id, daemon.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return cast(bool, response)
@@ -231,7 +231,7 @@ class SessionsService:
         :Permission Needed: ``session_control``
         """
         path = '/kv/sessions/start'
-        self.client._transport.call(path, [session_id, daemon])
+        self.client._transport.call(path, [session_id, daemon.to_json()])
 
     def restart(self, session_id: str, daemon: SessionDaemon) -> None:
         """
@@ -240,7 +240,7 @@ class SessionsService:
         :Permission Needed: ``session_control``
         """
         path = '/kv/sessions/restart'
-        self.client._transport.call(path, [session_id, daemon])
+        self.client._transport.call(path, [session_id, daemon.to_json()])
 
     def clear(self, session_id: str, daemon: SessionDaemon) -> None:
         """
@@ -249,7 +249,7 @@ class SessionsService:
         :Permission Needed: ``session_control``
         """
         path = '/kv/sessions/clear'
-        self.client._transport.call(path, [session_id, daemon])
+        self.client._transport.call(path, [session_id, daemon.to_json()])
 
     def stop(self, session_id: str, daemon: SessionDaemon) -> None:
         """
@@ -258,7 +258,7 @@ class SessionsService:
         :Permission Needed: ``session_control``
         """
         path = '/kv/sessions/stop'
-        self.client._transport.call(path, [session_id, daemon])
+        self.client._transport.call(path, [session_id, daemon.to_json()])
 
     def cancel(self, session_id: str) -> None:
         """
@@ -276,7 +276,7 @@ class SessionsService:
         :Permission Needed: ``session_read``
         """
         path = '/kv/sessions/logs'
-        response = self.client._transport.call(path, [session_id, daemon])
+        response = self.client._transport.call(path, [session_id, daemon.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return SessionLogs.from_json(response)
@@ -408,7 +408,7 @@ class SessionsService:
         :Permission Needed: ``session_write``
         """
         path = '/kv/sessions/saveFilter'
-        self.client._transport.call(path, [session_id, filter])
+        self.client._transport.call(path, [session_id, filter.to_json()])
 
     def delete_filter(self, session_id: str, name: str) -> None:
         """
@@ -426,7 +426,7 @@ class SessionsService:
         :Permission Needed: ``session_read``
         """
         path = '/kv/sessions/filterOptions'
-        response = self.client._transport.call(path, [search, initial, state])
+        response = self.client._transport.call(path, [search if search is not None else None, initial if initial is not None else None, state if state is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return [RemoteOption.from_json(x) for x in response]
@@ -477,7 +477,7 @@ class SingleParticleSessionsService:
         :Permission Needed: ``session_create``
         """
         path = '/kv/session/single-particle/create'
-        response = self.client._transport.call(path, [args])
+        response = self.client._transport.call(path, [args.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return SingleParticleSessionData.from_json(response)
@@ -489,7 +489,7 @@ class SingleParticleSessionsService:
         :Permission Needed: ``session_write``
         """
         path = '/kv/session/single-particle/edit'
-        response = self.client._transport.call(path, [session_id, args])
+        response = self.client._transport.call(path, [session_id, args.to_json() if args is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return SingleParticleSessionData.from_json(response)
@@ -514,18 +514,6 @@ class SingleParticleSessionsService:
         """
         path = '/kv/session/single-particle/delete'
         self.client._transport.call(path, [session_id])
-
-    def get_args(self) -> str:
-        """
-        (no description yet)
-        
-        :Permission Needed: ``session_read``
-        """
-        path = '/kv/session/single-particle/getArgs'
-        response = self.client._transport.call(path, [])
-        if response is None:
-            raise Exception(f'response expected from {path}, but none received')
-        return cast(str, response)
 
 
 class TomographySessionsService:
@@ -555,7 +543,7 @@ class TomographySessionsService:
         :Permission Needed: ``session_create``
         """
         path = '/kv/session/tomography/create'
-        response = self.client._transport.call(path, [args])
+        response = self.client._transport.call(path, [args.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return TomographySessionData.from_json(response)
@@ -567,7 +555,7 @@ class TomographySessionsService:
         :Permission Needed: ``session_write``
         """
         path = '/kv/session/tomography/edit'
-        response = self.client._transport.call(path, [session_id, args])
+        response = self.client._transport.call(path, [session_id, args.to_json() if args is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return TomographySessionData.from_json(response)
@@ -592,18 +580,6 @@ class TomographySessionsService:
         """
         path = '/kv/session/tomography/delete'
         self.client._transport.call(path, [session_id])
-
-    def get_args(self) -> str:
-        """
-        (no description yet)
-        
-        :Permission Needed: ``session_read``
-        """
-        path = '/kv/session/tomography/getArgs'
-        response = self.client._transport.call(path, [])
-        if response is None:
-            raise Exception(f'response expected from {path}, but none received')
-        return cast(str, response)
 
     def get_drift_metadata(self, session_id: str, tilt_series_id: str) -> Option[DriftMetadata]:
         """

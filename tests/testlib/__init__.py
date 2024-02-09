@@ -23,8 +23,6 @@ class MockTransport:
 
     def call(self, _endpoint: str, params: List[Any]) -> Optional[Any]:
         self.last_params = params
-        if self.next_response is None:
-            raise Exception("set a next_response")
         out = self.next_response
         self.next_response = None
         return out
