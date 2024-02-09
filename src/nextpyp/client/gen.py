@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING, Union, cast, TypeVar, Generic
+from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING, Union, cast, TypeVar, Generic, Callable
 
 import json
 from websockets.legacy.client import WebSocketClientProtocol
@@ -15,24 +15,54 @@ API_VERSION = '1.0.0'
 
 
 T = TypeVar('T')
+R = TypeVar('R')
 
 
 ArgValuesToml = str
 Option = List
+Serialized = str
+SerializedSessionExportRequest = Serialized
 
 
-def option_from_json(val: Any) -> Option[T]:
+def optional_map(val: Optional[T], func: Callable[[T], R]) -> Optional[R]:
+    """
+    map the optional type,
+    so we can avoid using intermediate variables and simplify the code generator
+    """
+    if val is None:
+        return None
+    else:
+        return func(val)
+
+
+def none_map(val: Optional[T], func: Callable[[], T]) -> T:
+    """
+    map the None value in the optional type,
+    so we can avoid using intermediate variables and simplify the code generator
+    """
+    if val is None:
+        return func()
+    else:
+        return val
+
+
+def none_raise(val: Optional[T], func: Callable[[], Exception]) -> T:
+    """
+    if the optional type is None, raise the exception created by the lambda
+    (because apparently Python doesn't allow lambdas consisting only of raise statements),
+    so we can avoid using intermediate variables and simplify the code generator
+    """
+    if val is None:
+        raise func()
+    else:
+        return val
+
+
+def option_unwrap(val: Any) -> Optional[Any]:
     if len(val) == 1:
-        return cast(Option[T], val[0])
+        return val[0]
     else:
-        return cast(Option[T], None)
-
-
-def option_to_json(val: Option[T]) -> List[T]:
-    if val is not None:
-        return [cast(T, val)]
-    else:
-        return []
+        return None
 
 
 def arg_values_toml_from_json(val: Any) -> ArgValuesToml:
@@ -153,7 +183,7 @@ class ProjectsService:
         response = self.client._transport.call(path, [user_id])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [ProjectData.from_json(x) for x in response]
+        return [ProjectData.from_json(x) for x in cast(List[Any], response)]
 
 
 class SessionsService:
@@ -174,7 +204,7 @@ class SessionsService:
         response = self.client._transport.call(path, [search if search is not None else None, initial if initial is not None else None, state if state is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [RemoteOption.from_json(x) for x in response]
+        return [RemoteOption.from_json(x) for x in cast(List[Any], response)]
 
     def groups(self) -> List[Group]:
         """
@@ -186,7 +216,7 @@ class SessionsService:
         response = self.client._transport.call(path, [])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [Group.from_json(x) for x in response]
+        return [Group.from_json(x) for x in cast(List[Any], response)]
 
     def group_options(self, search: Optional[str], initial: Optional[str], state: Optional[str]) -> List[RemoteOption]:
         """
@@ -198,7 +228,7 @@ class SessionsService:
         response = self.client._transport.call(path, [search if search is not None else None, initial if initial is not None else None, state if state is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [RemoteOption.from_json(x) for x in response]
+        return [RemoteOption.from_json(x) for x in cast(List[Any], response)]
 
     def running(self) -> RunningSessions:
         """
@@ -341,7 +371,7 @@ class SessionsService:
             raise Exception(f'response expected from {path}, but none received')
         return SessionJobLogs.from_json(response)
 
-    def get_avg_rot(self, session_id: str, data_id: str) -> Option[AvgRotData]:
+    def get_avg_rot(self, session_id: str, data_id: str) -> Optional[AvgRotData]:
         """
         (no description yet)
         
@@ -351,9 +381,9 @@ class SessionsService:
         response = self.client._transport.call(path, [session_id, data_id])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return option_from_json(response)
+        return optional_map(option_unwrap(response), lambda x: AvgRotData.from_json(x))
 
-    def get_motion(self, session_id: str, data_id: str) -> Option[MotionData]:
+    def get_motion(self, session_id: str, data_id: str) -> Optional[MotionData]:
         """
         (no description yet)
         
@@ -363,7 +393,7 @@ class SessionsService:
         response = self.client._transport.call(path, [session_id, data_id])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return option_from_json(response)
+        return optional_map(option_unwrap(response), lambda x: MotionData.from_json(x))
 
     def data_log(self, session_id: str, data_id: str) -> str:
         """
@@ -387,7 +417,7 @@ class SessionsService:
         response = self.client._transport.call(path, [session_id])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [cast(str, x) for x in response]
+        return [cast(str, x) for x in cast(List[Any], response)]
 
     def get_filter(self, session_id: str, name: str) -> PreprocessingFilter:
         """
@@ -429,9 +459,9 @@ class SessionsService:
         response = self.client._transport.call(path, [search if search is not None else None, initial if initial is not None else None, state if state is not None else None])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [RemoteOption.from_json(x) for x in response]
+        return [RemoteOption.from_json(x) for x in cast(List[Any], response)]
 
-    def export(self, session_id: str, request: str, slurm_values: ArgValuesToml) -> None:
+    def export(self, session_id: str, request: SerializedSessionExportRequest, slurm_values: ArgValuesToml) -> None:
         """
         (no description yet)
         
@@ -468,7 +498,7 @@ class SingleParticleSessionsService:
         response = self.client._transport.call(path, [])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [SingleParticleSessionData.from_json(x) for x in response]
+        return [SingleParticleSessionData.from_json(x) for x in cast(List[Any], response)]
 
     def create(self, args: SingleParticleSessionArgs) -> SingleParticleSessionData:
         """
@@ -534,7 +564,7 @@ class TomographySessionsService:
         response = self.client._transport.call(path, [])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return [TomographySessionData.from_json(x) for x in response]
+        return [TomographySessionData.from_json(x) for x in cast(List[Any], response)]
 
     def create(self, args: TomographySessionArgs) -> TomographySessionData:
         """
@@ -581,7 +611,7 @@ class TomographySessionsService:
         path = '/kv/session/tomography/delete'
         self.client._transport.call(path, [session_id])
 
-    def get_drift_metadata(self, session_id: str, tilt_series_id: str) -> Option[DriftMetadata]:
+    def get_drift_metadata(self, session_id: str, tilt_series_id: str) -> Optional[DriftMetadata]:
         """
         (no description yet)
         
@@ -591,7 +621,7 @@ class TomographySessionsService:
         response = self.client._transport.call(path, [session_id, tilt_series_id])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
-        return option_from_json(response)
+        return optional_map(option_unwrap(response), lambda x: DriftMetadata.from_json(x))
 
 
 class RealtimeServices:
@@ -1122,71 +1152,15 @@ class RemoteOption:
         Creates a new class instance from JSON
         """
         
-        value: Optional[str]
-        temp = json.get('value', None)
-        if temp is not None:
-            value = cast(str, temp)
-        else:
-            value = None
-        
-        text: Optional[str]
-        temp = json.get('text', None)
-        if temp is not None:
-            text = cast(str, temp)
-        else:
-            text = None
-        
-        class_name: Optional[str]
-        temp = json.get('className', None)
-        if temp is not None:
-            class_name = cast(str, temp)
-        else:
-            class_name = None
-        
-        subtext: Optional[str]
-        temp = json.get('subtext', None)
-        if temp is not None:
-            subtext = cast(str, temp)
-        else:
-            subtext = None
-        
-        icon: Optional[str]
-        temp = json.get('icon', None)
-        if temp is not None:
-            icon = cast(str, temp)
-        else:
-            icon = None
-        
-        content: Optional[str]
-        temp = json.get('content', None)
-        if temp is not None:
-            content = cast(str, temp)
-        else:
-            content = None
-        
-        disabled: bool
-        temp = json.get('disabled', None)
-        if temp is not None:
-            disabled = cast(bool, temp)
-        else:
-            disabled = False
-        
-        divider: bool
-        temp = json.get('divider', None)
-        if temp is not None:
-            divider = cast(bool, temp)
-        else:
-            divider = False
-        
         return cls(
-            value,
-            text,
-            class_name,
-            subtext,
-            icon,
-            content,
-            disabled,
-            divider,
+            optional_map(json.get('value', None), lambda it: cast(str, it)),
+            optional_map(json.get('text', None), lambda it: cast(str, it)),
+            optional_map(json.get('className', None), lambda it: cast(str, it)),
+            optional_map(json.get('subtext', None), lambda it: cast(str, it)),
+            optional_map(json.get('icon', None), lambda it: cast(str, it)),
+            optional_map(json.get('content', None), lambda it: cast(str, it)),
+            none_map(optional_map(json.get('disabled', None), lambda it: cast(bool, it)), lambda: False),
+            none_map(optional_map(json.get('divider', None), lambda it: cast(bool, it)), lambda: False),
         )
     
     def __str__(self) -> str:
@@ -1225,11 +1199,7 @@ class Group:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.Group'
     
-    def __init__(self, id_or_throw: str, name: str, id: Optional[str]) -> None:
-        self.id_or_throw: str = id_or_throw
-        """
-        (no description yet)
-        """
+    def __init__(self, name: str, id: Optional[str]) -> None:
         self.name: str = name
         """
         a display name
@@ -1245,7 +1215,6 @@ class Group:
         """
         
         return {
-            'idOrThrow': self.id_or_throw,
             'name': self.name,
             'id': self.id if self.id is not None else None,
         }
@@ -1256,36 +1225,13 @@ class Group:
         Creates a new class instance from JSON
         """
         
-        id_or_throw: str
-        temp = json.get('idOrThrow', None)
-        if temp is not None:
-            id_or_throw = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: idOrThrow')
-        
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        id: Optional[str]
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            id = None
-        
         return cls(
-            id_or_throw,
-            name,
-            id,
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            optional_map(json.get('id', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'id_or_throw={self.id_or_throw}',
             f'name={self.name}',
             f'id={self.id}',
         ])
@@ -1297,8 +1243,7 @@ class Group:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, Group):
             return NotImplemented
-        return self.id_or_throw == other.id_or_throw \
-            and self.name == other.name \
+        return self.name == other.name \
             and self.id == other.id
 
 
@@ -1335,23 +1280,9 @@ class VersionData:
         Creates a new class instance from JSON
         """
         
-        version: str
-        temp = json.get('version', None)
-        if temp is not None:
-            version = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: version')
-        
-        api_version: str
-        temp = json.get('apiVersion', None)
-        if temp is not None:
-            api_version = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: apiVersion')
-        
         return cls(
-            version,
-            api_version,
+            none_raise(optional_map(json.get('version', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: version')),
+            none_raise(optional_map(json.get('apiVersion', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: apiVersion')),
         )
     
     def __str__(self) -> str:
@@ -1409,31 +1340,10 @@ class AppTokenRequestData:
         Creates a new class instance from JSON
         """
         
-        request_id: str
-        temp = json.get('requestId', None)
-        if temp is not None:
-            request_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: requestId')
-        
-        app_name: str
-        temp = json.get('appName', None)
-        if temp is not None:
-            app_name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: appName')
-        
-        permissions: List[AppPermissionData]
-        temp = json.get('permissions', None)
-        if temp is not None:
-            permissions = [AppPermissionData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: permissions')
-        
         return cls(
-            request_id,
-            app_name,
-            permissions,
+            none_raise(optional_map(json.get('requestId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: requestId')),
+            none_raise(optional_map(json.get('appName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: appName')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: [AppPermissionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: permissions')),
         )
     
     def __str__(self) -> str:
@@ -1493,31 +1403,10 @@ class PreprocessingFilter:
         Creates a new class instance from JSON
         """
         
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        ranges: List[PreprocessingPropRange]
-        temp = json.get('ranges', None)
-        if temp is not None:
-            ranges = [PreprocessingPropRange.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: ranges')
-        
-        excluded_ids: List[str]
-        temp = json.get('excludedIds', None)
-        if temp is not None:
-            excluded_ids = [cast(str, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: excludedIds')
-        
         return cls(
-            name,
-            ranges,
-            excluded_ids,
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('ranges', None), lambda it: [PreprocessingPropRange.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: ranges')),
+            none_raise(optional_map(json.get('excludedIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: excludedIds')),
         )
     
     def __str__(self) -> str:
@@ -1602,71 +1491,15 @@ class ProjectData:
         Creates a new class instance from JSON
         """
         
-        owner: UserData
-        temp = json.get('owner', None)
-        if temp is not None:
-            owner = UserData.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: owner')
-        
-        permissions: Set[ProjectPermission]
-        temp = json.get('permissions', None)
-        if temp is not None:
-            permissions = {ProjectPermission.from_json(x) for x in temp}
-        else:
-            raise KeyError('missing JSON key: permissions')
-        
-        project_id: str
-        temp = json.get('projectId', None)
-        if temp is not None:
-            project_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: projectId')
-        
-        project_number: Optional[int]
-        temp = json.get('projectNumber', None)
-        if temp is not None:
-            project_number = cast(int, temp)
-        else:
-            project_number = None
-        
-        project_name: str
-        temp = json.get('projectName', None)
-        if temp is not None:
-            project_name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: projectName')
-        
-        created: int
-        temp = json.get('created', None)
-        if temp is not None:
-            created = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: created')
-        
-        images: List[str]
-        temp = json.get('images', None)
-        if temp is not None:
-            images = [cast(str, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: images')
-        
-        path: str
-        temp = json.get('path', None)
-        if temp is not None:
-            path = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: path')
-        
         return cls(
-            owner,
-            permissions,
-            project_id,
-            project_number,
-            project_name,
-            created,
-            images,
-            path,
+            none_raise(optional_map(json.get('owner', None), lambda it: UserData.from_json(it)), lambda: KeyError('missing JSON key: owner')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: {ProjectPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError('missing JSON key: permissions')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: projectId')),
+            optional_map(json.get('projectNumber', None), lambda it: cast(int, it)),
+            none_raise(optional_map(json.get('projectName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: projectName')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
+            none_raise(optional_map(json.get('images', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: images')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
         )
     
     def __str__(self) -> str:
@@ -1770,23 +1603,9 @@ class RealTimeC2SListenToProject:
         Creates a new class instance from JSON
         """
         
-        user_id: str
-        temp = json.get('userId', None)
-        if temp is not None:
-            user_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: userId')
-        
-        project_id: str
-        temp = json.get('projectId', None)
-        if temp is not None:
-            project_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: projectId')
-        
         return cls(
-            user_id,
-            project_id,
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: userId')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: projectId')),
         )
     
     def __str__(self) -> str:
@@ -1834,15 +1653,8 @@ class RealTimeC2SListenToSession:
         Creates a new class instance from JSON
         """
         
-        session_id: str
-        temp = json.get('sessionId', None)
-        if temp is not None:
-            session_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: sessionId')
-        
         return cls(
-            session_id,
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: sessionId')),
         )
     
     def __str__(self) -> str:
@@ -1971,23 +1783,9 @@ class RealTimeS2CError:
         Creates a new class instance from JSON
         """
         
-        name: Optional[str]
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            name = None
-        
-        msg: Optional[str]
-        temp = json.get('msg', None)
-        if temp is not None:
-            msg = cast(str, temp)
-        else:
-            msg = None
-        
         return cls(
-            name,
-            msg,
+            optional_map(json.get('name', None), lambda it: cast(str, it)),
+            optional_map(json.get('msg', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
@@ -2045,31 +1843,10 @@ class RealTimeS2CProjectStatus:
         Creates a new class instance from JSON
         """
         
-        recent_runs: List[ProjectRunData]
-        temp = json.get('recentRuns', None)
-        if temp is not None:
-            recent_runs = [ProjectRunData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: recentRuns')
-        
-        has_older_runs: bool
-        temp = json.get('hasOlderRuns', None)
-        if temp is not None:
-            has_older_runs = cast(bool, temp)
-        else:
-            raise KeyError('missing JSON key: hasOlderRuns')
-        
-        blocks: List[Block]
-        temp = json.get('blocks', None)
-        if temp is not None:
-            blocks = [Block.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: blocks')
-        
         return cls(
-            recent_runs,
-            has_older_runs,
-            blocks,
+            none_raise(optional_map(json.get('recentRuns', None), lambda it: [ProjectRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: recentRuns')),
+            none_raise(optional_map(json.get('hasOlderRuns', None), lambda it: cast(bool, it)), lambda: KeyError('missing JSON key: hasOlderRuns')),
+            none_raise(optional_map(json.get('blocks', None), lambda it: [Block.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: blocks')),
         )
     
     def __str__(self) -> str:
@@ -2129,31 +1906,10 @@ class RealTimeS2CProjectRunInit:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
-        job_ids: List[str]
-        temp = json.get('jobIds', None)
-        if temp is not None:
-            job_ids = [cast(str, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: jobIds')
-        
         return cls(
-            run_id,
-            timestamp,
-            job_ids,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+            none_raise(optional_map(json.get('jobIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobIds')),
         )
     
     def __str__(self) -> str:
@@ -2203,15 +1959,8 @@ class RealTimeS2CProjectRunStart:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
         return cls(
-            run_id,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
         )
     
     def __str__(self) -> str:
@@ -2262,23 +2011,9 @@ class RealTimeS2CJobStart:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
         return cls(
-            run_id,
-            job_id,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
         )
     
     def __str__(self) -> str:
@@ -2331,23 +2066,9 @@ class RealTimeS2CJobUpdate:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        job_string: str
-        temp = json.get('jobString', None)
-        if temp is not None:
-            job_string = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobString')
-        
         return cls(
-            job_id,
-            job_string,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobString')),
         )
     
     def __str__(self) -> str:
@@ -2410,39 +2131,11 @@ class RealTimeS2CJobFinish:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        job_string: str
-        temp = json.get('jobString', None)
-        if temp is not None:
-            job_string = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobString')
-        
-        status: RunStatus
-        temp = json.get('status', None)
-        if temp is not None:
-            status = RunStatus.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: status')
-        
         return cls(
-            run_id,
-            job_id,
-            job_string,
-            status,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobString')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
         )
     
     def __str__(self) -> str:
@@ -2499,23 +2192,9 @@ class RealTimeS2CProjectRunFinish:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        status: RunStatus
-        temp = json.get('status', None)
-        if temp is not None:
-            status = RunStatus.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: status')
-        
         return cls(
-            run_id,
-            status,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
         )
     
     def __str__(self) -> str:
@@ -2583,47 +2262,12 @@ class RealTimeS2CClusterJobSubmit:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        cluster_job_id: str
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: clusterJobId')
-        
-        cluster_job_name: Optional[str]
-        temp = json.get('clusterJobName', None)
-        if temp is not None:
-            cluster_job_name = cast(str, temp)
-        else:
-            cluster_job_name = None
-        
-        array_size: Optional[int]
-        temp = json.get('arraySize', None)
-        if temp is not None:
-            array_size = cast(int, temp)
-        else:
-            array_size = None
-        
         return cls(
-            run_id,
-            job_id,
-            cluster_job_id,
-            cluster_job_name,
-            array_size,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
+            optional_map(json.get('clusterJobName', None), lambda it: cast(str, it)),
+            optional_map(json.get('arraySize', None), lambda it: cast(int, it)),
         )
     
     def __str__(self) -> str:
@@ -2687,31 +2331,10 @@ class RealTimeS2CClusterJobStart:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        cluster_job_id: str
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: clusterJobId')
-        
         return cls(
-            run_id,
-            job_id,
-            cluster_job_id,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
         )
     
     def __str__(self) -> str:
@@ -2781,47 +2404,12 @@ class RealTimeS2CClusterJobArrayStart:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        cluster_job_id: str
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: clusterJobId')
-        
-        array_index: int
-        temp = json.get('arrayIndex', None)
-        if temp is not None:
-            array_index = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: arrayIndex')
-        
-        num_started: int
-        temp = json.get('numStarted', None)
-        if temp is not None:
-            num_started = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numStarted')
-        
         return cls(
-            run_id,
-            job_id,
-            cluster_job_id,
-            array_index,
-            num_started,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
+            none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: arrayIndex')),
+            none_raise(optional_map(json.get('numStarted', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numStarted')),
         )
     
     def __str__(self) -> str:
@@ -2905,63 +2493,14 @@ class RealTimeS2CClusterJobArrayEnd:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        cluster_job_id: str
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: clusterJobId')
-        
-        array_index: int
-        temp = json.get('arrayIndex', None)
-        if temp is not None:
-            array_index = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: arrayIndex')
-        
-        num_ended: int
-        temp = json.get('numEnded', None)
-        if temp is not None:
-            num_ended = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numEnded')
-        
-        num_canceled: int
-        temp = json.get('numCanceled', None)
-        if temp is not None:
-            num_canceled = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numCanceled')
-        
-        num_failed: int
-        temp = json.get('numFailed', None)
-        if temp is not None:
-            num_failed = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numFailed')
-        
         return cls(
-            run_id,
-            job_id,
-            cluster_job_id,
-            array_index,
-            num_ended,
-            num_canceled,
-            num_failed,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
+            none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: arrayIndex')),
+            none_raise(optional_map(json.get('numEnded', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numEnded')),
+            none_raise(optional_map(json.get('numCanceled', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numCanceled')),
+            none_raise(optional_map(json.get('numFailed', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numFailed')),
         )
     
     def __str__(self) -> str:
@@ -3034,39 +2573,11 @@ class RealTimeS2CClusterJobEnd:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        cluster_job_id: str
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: clusterJobId')
-        
-        result_type: ClusterJobResultType
-        temp = json.get('resultType', None)
-        if temp is not None:
-            result_type = ClusterJobResultType.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: resultType')
-        
         return cls(
-            run_id,
-            job_id,
-            cluster_job_id,
-            result_type,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
+            none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError('missing JSON key: resultType')),
         )
     
     def __str__(self) -> str:
@@ -3123,23 +2634,9 @@ class RealTimeS2CUpdatedParameters:
         Creates a new class instance from JSON
         """
         
-        pyp_stats: PypStats
-        temp = json.get('pypStats', None)
-        if temp is not None:
-            pyp_stats = PypStats.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: pypStats')
-        
-        images_scale: ImagesScale
-        temp = json.get('imagesScale', None)
-        if temp is not None:
-            images_scale = ImagesScale.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: imagesScale')
-        
         return cls(
-            pyp_stats,
-            images_scale,
+            none_raise(optional_map(json.get('pypStats', None), lambda it: PypStats.from_json(it)), lambda: KeyError('missing JSON key: pypStats')),
+            none_raise(optional_map(json.get('imagesScale', None), lambda it: ImagesScale.from_json(it)), lambda: KeyError('missing JSON key: imagesScale')),
         )
     
     def __str__(self) -> str:
@@ -3212,55 +2709,13 @@ class RealTimeS2CSessionStatus:
         Creates a new class instance from JSON
         """
         
-        daemons_running: List[bool]
-        temp = json.get('daemonsRunning', None)
-        if temp is not None:
-            daemons_running = [cast(bool, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: daemonsRunning')
-        
-        jobs_running: List[RealTimeS2CSessionRunningJob]
-        temp = json.get('jobsRunning', None)
-        if temp is not None:
-            jobs_running = [RealTimeS2CSessionRunningJob.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: jobsRunning')
-        
-        images_scale: Optional[ImagesScale]
-        temp = json.get('imagesScale', None)
-        if temp is not None:
-            images_scale = ImagesScale.from_json(temp)
-        else:
-            images_scale = None
-        
-        tomo_vir_method: TomoVirMethod
-        temp = json.get('tomoVirMethod', None)
-        if temp is not None:
-            tomo_vir_method = TomoVirMethod.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: tomoVirMethod')
-        
-        tomo_vir_rad: float
-        temp = json.get('tomoVirRad', None)
-        if temp is not None:
-            tomo_vir_rad = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: tomoVirRad')
-        
-        tomo_vir_binn: int
-        temp = json.get('tomoVirBinn', None)
-        if temp is not None:
-            tomo_vir_binn = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: tomoVirBinn')
-        
         return cls(
-            daemons_running,
-            jobs_running,
-            images_scale,
-            tomo_vir_method,
-            tomo_vir_rad,
-            tomo_vir_binn,
+            none_raise(optional_map(json.get('daemonsRunning', None), lambda it: [cast(bool, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: daemonsRunning')),
+            none_raise(optional_map(json.get('jobsRunning', None), lambda it: [RealTimeS2CSessionRunningJob.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobsRunning')),
+            optional_map(json.get('imagesScale', None), lambda it: ImagesScale.from_json(it)),
+            none_raise(optional_map(json.get('tomoVirMethod', None), lambda it: TomoVirMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoVirMethod')),
+            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: tomoVirRad')),
+            none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: tomoVirBinn')),
         )
     
     def __str__(self) -> str:
@@ -3316,15 +2771,8 @@ class RealTimeS2CSessionSmallData:
         Creates a new class instance from JSON
         """
         
-        exports: List[SessionExportData]
-        temp = json.get('exports', None)
-        if temp is not None:
-            exports = [SessionExportData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: exports')
-        
         return cls(
-            exports,
+            none_raise(optional_map(json.get('exports', None), lambda it: [SessionExportData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: exports')),
         )
     
     def __str__(self) -> str:
@@ -3380,31 +2828,10 @@ class RealTimeS2CSessionLargeData:
         Creates a new class instance from JSON
         """
         
-        micrographs: List[MicrographMetadata]
-        temp = json.get('micrographs', None)
-        if temp is not None:
-            micrographs = [MicrographMetadata.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: micrographs')
-        
-        tilt_serieses: List[TiltSeriesData]
-        temp = json.get('tiltSerieses', None)
-        if temp is not None:
-            tilt_serieses = [TiltSeriesData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: tiltSerieses')
-        
-        two_dclasses: List[TwoDClassesData]
-        temp = json.get('twoDClasses', None)
-        if temp is not None:
-            two_dclasses = [TwoDClassesData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: twoDClasses')
-        
         return cls(
-            micrographs,
-            tilt_serieses,
-            two_dclasses,
+            none_raise(optional_map(json.get('micrographs', None), lambda it: [MicrographMetadata.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: micrographs')),
+            none_raise(optional_map(json.get('tiltSerieses', None), lambda it: [TiltSeriesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: tiltSerieses')),
+            none_raise(optional_map(json.get('twoDClasses', None), lambda it: [TwoDClassesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: twoDClasses')),
         )
     
     def __str__(self) -> str:
@@ -3469,39 +2896,11 @@ class RealTimeS2CSessionRunningJob:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        size: int
-        temp = json.get('size', None)
-        if temp is not None:
-            size = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: size')
-        
-        status: RunStatus
-        temp = json.get('status', None)
-        if temp is not None:
-            status = RunStatus.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: status')
-        
         return cls(
-            job_id,
-            name,
-            size,
-            status,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: size')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
         )
     
     def __str__(self) -> str:
@@ -3558,23 +2957,9 @@ class RealTimeS2CSessionDaemonSubmitted:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        daemon: SessionDaemon
-        temp = json.get('daemon', None)
-        if temp is not None:
-            daemon = SessionDaemon.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: daemon')
-        
         return cls(
-            job_id,
-            daemon,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
         )
     
     def __str__(self) -> str:
@@ -3627,23 +3012,9 @@ class RealTimeS2CSessionDaemonStarted:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        daemon: SessionDaemon
-        temp = json.get('daemon', None)
-        if temp is not None:
-            daemon = SessionDaemon.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: daemon')
-        
         return cls(
-            job_id,
-            daemon,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
         )
     
     def __str__(self) -> str:
@@ -3696,23 +3067,9 @@ class RealTimeS2CSessionDaemonFinished:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        daemon: SessionDaemon
-        temp = json.get('daemon', None)
-        if temp is not None:
-            daemon = SessionDaemon.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: daemon')
-        
         return cls(
-            job_id,
-            daemon,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
         )
     
     def __str__(self) -> str:
@@ -3770,31 +3127,10 @@ class RealTimeS2CSessionJobSubmitted:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        size: int
-        temp = json.get('size', None)
-        if temp is not None:
-            size = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: size')
-        
         return cls(
-            job_id,
-            name,
-            size,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: size')),
         )
     
     def __str__(self) -> str:
@@ -3844,15 +3180,8 @@ class RealTimeS2CSessionJobStarted:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
         return cls(
-            job_id,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
         )
     
     def __str__(self) -> str:
@@ -3903,23 +3232,9 @@ class RealTimeS2CSessionJobFinished:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        result_type: ClusterJobResultType
-        temp = json.get('resultType', None)
-        if temp is not None:
-            result_type = ClusterJobResultType.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: resultType')
-        
         return cls(
-            job_id,
-            result_type,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError('missing JSON key: resultType')),
         )
     
     def __str__(self) -> str:
@@ -3992,55 +3307,13 @@ class RealTimeS2CSessionFilesystem:
         Creates a new class instance from JSON
         """
         
-        used: float
-        temp = json.get('used', None)
-        if temp is not None:
-            used = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: used')
-        
-        bytes_available: int
-        temp = json.get('bytesAvailable', None)
-        if temp is not None:
-            bytes_available = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytesAvailable')
-        
-        path: str
-        temp = json.get('path', None)
-        if temp is not None:
-            path = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: path')
-        
-        type: str
-        temp = json.get('type', None)
-        if temp is not None:
-            type = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: type')
-        
-        bytes: int
-        temp = json.get('bytes', None)
-        if temp is not None:
-            bytes = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytes')
-        
-        bytes_used: int
-        temp = json.get('bytesUsed', None)
-        if temp is not None:
-            bytes_used = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytesUsed')
-        
         return cls(
-            used,
-            bytes_available,
-            path,
-            type,
-            bytes,
-            bytes_used,
+            none_raise(optional_map(json.get('used', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: used')),
+            none_raise(optional_map(json.get('bytesAvailable', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesAvailable')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
+            none_raise(optional_map(json.get('type', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: type')),
+            none_raise(optional_map(json.get('bytes', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytes')),
+            none_raise(optional_map(json.get('bytesUsed', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesUsed')),
         )
     
     def __str__(self) -> str:
@@ -4096,15 +3369,8 @@ class RealTimeS2CSessionFilesystems:
         Creates a new class instance from JSON
         """
         
-        filesystems: List[RealTimeS2CSessionFilesystem]
-        temp = json.get('filesystems', None)
-        if temp is not None:
-            filesystems = [RealTimeS2CSessionFilesystem.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: filesystems')
-        
         return cls(
-            filesystems,
+            none_raise(optional_map(json.get('filesystems', None), lambda it: [RealTimeS2CSessionFilesystem.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: filesystems')),
         )
     
     def __str__(self) -> str:
@@ -4150,15 +3416,8 @@ class RealTimeS2CSessionTransferInit:
         Creates a new class instance from JSON
         """
         
-        files: List[RealTimeS2CSessionTransferInitFileInfo]
-        temp = json.get('files', None)
-        if temp is not None:
-            files = [RealTimeS2CSessionTransferInitFileInfo.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: files')
-        
         return cls(
-            files,
+            none_raise(optional_map(json.get('files', None), lambda it: [RealTimeS2CSessionTransferInitFileInfo.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: files')),
         )
     
     def __str__(self) -> str:
@@ -4214,31 +3473,10 @@ class RealTimeS2CSessionTransferInitFileInfo:
         Creates a new class instance from JSON
         """
         
-        filename: str
-        temp = json.get('filename', None)
-        if temp is not None:
-            filename = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: filename')
-        
-        bytes_total: int
-        temp = json.get('bytesTotal', None)
-        if temp is not None:
-            bytes_total = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytesTotal')
-        
-        bytes_transfered: int
-        temp = json.get('bytesTransfered', None)
-        if temp is not None:
-            bytes_transfered = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytesTransfered')
-        
         return cls(
-            filename,
-            bytes_total,
-            bytes_transfered,
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
+            none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTotal')),
+            none_raise(optional_map(json.get('bytesTransfered', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTransfered')),
         )
     
     def __str__(self) -> str:
@@ -4288,15 +3526,8 @@ class RealTimeS2CSessionTransferWaiting:
         Creates a new class instance from JSON
         """
         
-        filename: str
-        temp = json.get('filename', None)
-        if temp is not None:
-            filename = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: filename')
-        
         return cls(
-            filename,
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
         )
     
     def __str__(self) -> str:
@@ -4347,23 +3578,9 @@ class RealTimeS2CSessionTransferStarted:
         Creates a new class instance from JSON
         """
         
-        filename: str
-        temp = json.get('filename', None)
-        if temp is not None:
-            filename = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: filename')
-        
-        bytes_total: int
-        temp = json.get('bytesTotal', None)
-        if temp is not None:
-            bytes_total = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytesTotal')
-        
         return cls(
-            filename,
-            bytes_total,
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
+            none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTotal')),
         )
     
     def __str__(self) -> str:
@@ -4416,23 +3633,9 @@ class RealTimeS2CSessionTransferProgress:
         Creates a new class instance from JSON
         """
         
-        filename: str
-        temp = json.get('filename', None)
-        if temp is not None:
-            filename = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: filename')
-        
-        bytes_transferred: int
-        temp = json.get('bytesTransferred', None)
-        if temp is not None:
-            bytes_transferred = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: bytesTransferred')
-        
         return cls(
-            filename,
-            bytes_transferred,
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
+            none_raise(optional_map(json.get('bytesTransferred', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTransferred')),
         )
     
     def __str__(self) -> str:
@@ -4480,15 +3683,8 @@ class RealTimeS2CSessionTransferFinished:
         Creates a new class instance from JSON
         """
         
-        filename: str
-        temp = json.get('filename', None)
-        if temp is not None:
-            filename = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: filename')
-        
         return cls(
-            filename,
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
         )
     
     def __str__(self) -> str:
@@ -4534,15 +3730,8 @@ class RealTimeS2CSessionMicrograph:
         Creates a new class instance from JSON
         """
         
-        micrograph: MicrographMetadata
-        temp = json.get('micrograph', None)
-        if temp is not None:
-            micrograph = MicrographMetadata.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: micrograph')
-        
         return cls(
-            micrograph,
+            none_raise(optional_map(json.get('micrograph', None), lambda it: MicrographMetadata.from_json(it)), lambda: KeyError('missing JSON key: micrograph')),
         )
     
     def __str__(self) -> str:
@@ -4598,31 +3787,10 @@ class RealTimeS2CSessionTiltSeries:
         Creates a new class instance from JSON
         """
         
-        tilt_series: TiltSeriesData
-        temp = json.get('tiltSeries', None)
-        if temp is not None:
-            tilt_series = TiltSeriesData.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: tiltSeries')
-        
-        num_auto_particles: Optional[int]
-        temp = json.get('numAutoParticles', None)
-        if temp is not None:
-            num_auto_particles = cast(int, temp)
-        else:
-            num_auto_particles = None
-        
-        num_auto_virions: Optional[int]
-        temp = json.get('numAutoVirions', None)
-        if temp is not None:
-            num_auto_virions = cast(int, temp)
-        else:
-            num_auto_virions = None
-        
         return cls(
-            tilt_series,
-            num_auto_particles,
-            num_auto_virions,
+            none_raise(optional_map(json.get('tiltSeries', None), lambda it: TiltSeriesData.from_json(it)), lambda: KeyError('missing JSON key: tiltSeries')),
+            optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)),
+            optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)),
         )
     
     def __str__(self) -> str:
@@ -4672,15 +3840,8 @@ class RealTimeS2CSessionTwoDClasses:
         Creates a new class instance from JSON
         """
         
-        two_dclasses: TwoDClassesData
-        temp = json.get('twoDClasses', None)
-        if temp is not None:
-            two_dclasses = TwoDClassesData.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: twoDClasses')
-        
         return cls(
-            two_dclasses,
+            none_raise(optional_map(json.get('twoDClasses', None), lambda it: TwoDClassesData.from_json(it)), lambda: KeyError('missing JSON key: twoDClasses')),
         )
     
     def __str__(self) -> str:
@@ -4726,15 +3887,8 @@ class RealTimeS2CSessionExport:
         Creates a new class instance from JSON
         """
         
-        export: SessionExportData
-        temp = json.get('export', None)
-        if temp is not None:
-            export = SessionExportData.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: export')
-        
         return cls(
-            export,
+            none_raise(optional_map(json.get('export', None), lambda it: SessionExportData.from_json(it)), lambda: KeyError('missing JSON key: export')),
         )
     
     def __str__(self) -> str:
@@ -4790,31 +3944,10 @@ class SingleParticleSessionArgs:
         Creates a new class instance from JSON
         """
         
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        group_id: str
-        temp = json.get('groupId', None)
-        if temp is not None:
-            group_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: groupId')
-        
-        values: ArgValuesToml
-        temp = json.get('values', None)
-        if temp is not None:
-            values = arg_values_toml_from_json(temp)
-        else:
-            raise KeyError('missing JSON key: values')
-        
         return cls(
-            name,
-            group_id,
-            values,
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupId')),
+            none_raise(optional_map(json.get('values', None), lambda it: arg_values_toml_from_json(it)), lambda: KeyError('missing JSON key: values')),
         )
     
     def __str__(self) -> str:
@@ -4909,87 +4042,17 @@ class SingleParticleSessionData:
         Creates a new class instance from JSON
         """
         
-        user_id: str
-        temp = json.get('userId', None)
-        if temp is not None:
-            user_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: userId')
-        
-        session_id: str
-        temp = json.get('sessionId', None)
-        if temp is not None:
-            session_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: sessionId')
-        
-        session_number: Optional[int]
-        temp = json.get('sessionNumber', None)
-        if temp is not None:
-            session_number = cast(int, temp)
-        else:
-            session_number = None
-        
-        created: int
-        temp = json.get('created', None)
-        if temp is not None:
-            created = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: created')
-        
-        permissions: Set[SessionPermission]
-        temp = json.get('permissions', None)
-        if temp is not None:
-            permissions = {SessionPermission.from_json(x) for x in temp}
-        else:
-            raise KeyError('missing JSON key: permissions')
-        
-        path: str
-        temp = json.get('path', None)
-        if temp is not None:
-            path = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: path')
-        
-        args: JobArgs[SingleParticleSessionArgs]
-        temp = json.get('args', None)
-        if temp is not None:
-            args = JobArgs.from_json(temp, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs'})
-        else:
-            raise KeyError('missing JSON key: args')
-        
-        display: JobArgs[SingleParticleSessionDisplay]
-        temp = json.get('display', None)
-        if temp is not None:
-            display = JobArgs.from_json(temp, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay'})
-        else:
-            raise KeyError('missing JSON key: display')
-        
-        num_micrographs: int
-        temp = json.get('numMicrographs', None)
-        if temp is not None:
-            num_micrographs = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numMicrographs')
-        
-        num_frames: int
-        temp = json.get('numFrames', None)
-        if temp is not None:
-            num_frames = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numFrames')
-        
         return cls(
-            user_id,
-            session_id,
-            session_number,
-            created,
-            permissions,
-            path,
-            args,
-            display,
-            num_micrographs,
-            num_frames,
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: userId')),
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: sessionId')),
+            optional_map(json.get('sessionNumber', None), lambda it: cast(int, it)),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: {SessionPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError('missing JSON key: permissions')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
+            none_raise(optional_map(json.get('args', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs'})), lambda: KeyError('missing JSON key: args')),
+            none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay'})), lambda: KeyError('missing JSON key: display')),
+            none_raise(optional_map(json.get('numMicrographs', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numMicrographs')),
+            none_raise(optional_map(json.get('numFrames', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numFrames')),
         )
     
     def __str__(self) -> str:
@@ -5063,31 +4126,10 @@ class TomographySessionArgs:
         Creates a new class instance from JSON
         """
         
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        group_id: str
-        temp = json.get('groupId', None)
-        if temp is not None:
-            group_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: groupId')
-        
-        values: ArgValuesToml
-        temp = json.get('values', None)
-        if temp is not None:
-            values = arg_values_toml_from_json(temp)
-        else:
-            raise KeyError('missing JSON key: values')
-        
         return cls(
-            name,
-            group_id,
-            values,
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupId')),
+            none_raise(optional_map(json.get('values', None), lambda it: arg_values_toml_from_json(it)), lambda: KeyError('missing JSON key: values')),
         )
     
     def __str__(self) -> str:
@@ -5182,87 +4224,17 @@ class TomographySessionData:
         Creates a new class instance from JSON
         """
         
-        user_id: str
-        temp = json.get('userId', None)
-        if temp is not None:
-            user_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: userId')
-        
-        session_id: str
-        temp = json.get('sessionId', None)
-        if temp is not None:
-            session_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: sessionId')
-        
-        session_number: Optional[int]
-        temp = json.get('sessionNumber', None)
-        if temp is not None:
-            session_number = cast(int, temp)
-        else:
-            session_number = None
-        
-        created: int
-        temp = json.get('created', None)
-        if temp is not None:
-            created = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: created')
-        
-        permissions: Set[SessionPermission]
-        temp = json.get('permissions', None)
-        if temp is not None:
-            permissions = {SessionPermission.from_json(x) for x in temp}
-        else:
-            raise KeyError('missing JSON key: permissions')
-        
-        path: str
-        temp = json.get('path', None)
-        if temp is not None:
-            path = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: path')
-        
-        args: JobArgs[TomographySessionArgs]
-        temp = json.get('args', None)
-        if temp is not None:
-            args = JobArgs.from_json(temp, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs'})
-        else:
-            raise KeyError('missing JSON key: args')
-        
-        display: JobArgs[TomographySessionDisplay]
-        temp = json.get('display', None)
-        if temp is not None:
-            display = JobArgs.from_json(temp, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay'})
-        else:
-            raise KeyError('missing JSON key: display')
-        
-        num_tilt_series: int
-        temp = json.get('numTiltSeries', None)
-        if temp is not None:
-            num_tilt_series = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numTiltSeries')
-        
-        num_tilts: int
-        temp = json.get('numTilts', None)
-        if temp is not None:
-            num_tilts = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numTilts')
-        
         return cls(
-            user_id,
-            session_id,
-            session_number,
-            created,
-            permissions,
-            path,
-            args,
-            display,
-            num_tilt_series,
-            num_tilts,
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: userId')),
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: sessionId')),
+            optional_map(json.get('sessionNumber', None), lambda it: cast(int, it)),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: {SessionPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError('missing JSON key: permissions')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
+            none_raise(optional_map(json.get('args', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs'})), lambda: KeyError('missing JSON key: args')),
+            none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay'})), lambda: KeyError('missing JSON key: display')),
+            none_raise(optional_map(json.get('numTiltSeries', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numTiltSeries')),
+            none_raise(optional_map(json.get('numTilts', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numTilts')),
         )
     
     def __str__(self) -> str:
@@ -5390,23 +4362,9 @@ class RunningSessions:
         Creates a new class instance from JSON
         """
         
-        single_particle: List[SingleParticleSessionData]
-        temp = json.get('singleParticle', None)
-        if temp is not None:
-            single_particle = [SingleParticleSessionData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: singleParticle')
-        
-        tomography: List[TomographySessionData]
-        temp = json.get('tomography', None)
-        if temp is not None:
-            tomography = [TomographySessionData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: tomography')
-        
         return cls(
-            single_particle,
-            tomography,
+            none_raise(optional_map(json.get('singleParticle', None), lambda it: [SingleParticleSessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: singleParticle')),
+            none_raise(optional_map(json.get('tomography', None), lambda it: [TomographySessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: tomography')),
         )
     
     def __str__(self) -> str:
@@ -5454,15 +4412,8 @@ class SessionLogs:
         Creates a new class instance from JSON
         """
         
-        logs: List[SessionLogData]
-        temp = json.get('logs', None)
-        if temp is not None:
-            logs = [SessionLogData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: logs')
-        
         return cls(
-            logs,
+            none_raise(optional_map(json.get('logs', None), lambda it: [SessionLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: logs')),
         )
     
     def __str__(self) -> str:
@@ -5508,15 +4459,8 @@ class SessionCommands:
         Creates a new class instance from JSON
         """
         
-        command: str
-        temp = json.get('command', None)
-        if temp is not None:
-            command = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: command')
-        
         return cls(
-            command,
+            none_raise(optional_map(json.get('command', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: command')),
         )
     
     def __str__(self) -> str:
@@ -5562,15 +4506,8 @@ class SessionLog:
         Creates a new class instance from JSON
         """
         
-        log: Optional[str]
-        temp = json.get('log', None)
-        if temp is not None:
-            log = cast(str, temp)
-        else:
-            log = None
-        
         return cls(
-            log,
+            optional_map(json.get('log', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
@@ -5616,15 +4553,8 @@ class SessionSpeeds:
         Creates a new class instance from JSON
         """
         
-        transfers: List[float]
-        temp = json.get('transfers', None)
-        if temp is not None:
-            transfers = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: transfers')
-        
         return cls(
-            transfers,
+            none_raise(optional_map(json.get('transfers', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: transfers')),
         )
     
     def __str__(self) -> str:
@@ -5670,15 +4600,8 @@ class SessionJobsLogs:
         Creates a new class instance from JSON
         """
         
-        jobs: List[SessionJobLogData]
-        temp = json.get('jobs', None)
-        if temp is not None:
-            jobs = [SessionJobLogData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: jobs')
-        
         return cls(
-            jobs,
+            none_raise(optional_map(json.get('jobs', None), lambda it: [SessionJobLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobs')),
         )
     
     def __str__(self) -> str:
@@ -5729,23 +4652,9 @@ class SessionJobLogs:
         Creates a new class instance from JSON
         """
         
-        representative_command: str
-        temp = json.get('representativeCommand', None)
-        if temp is not None:
-            representative_command = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: representativeCommand')
-        
-        logs: List[SessionJobLog]
-        temp = json.get('logs', None)
-        if temp is not None:
-            logs = [SessionJobLog.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: logs')
-        
         return cls(
-            representative_command,
-            logs,
+            none_raise(optional_map(json.get('representativeCommand', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: representativeCommand')),
+            none_raise(optional_map(json.get('logs', None), lambda it: [SessionJobLog.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: logs')),
         )
     
     def __str__(self) -> str:
@@ -5763,6 +4672,93 @@ class SessionJobLogs:
             return NotImplemented
         return self.representative_command == other.representative_command \
             and self.logs == other.logs
+
+
+class SessionExportRequest:
+    """
+    WARNING: be very careful changing these classes! They get saved in the sessionExports database in serialized form, so deserializing old data could cause problems depending on how backwards compatible kotlinx.serialization is. Making changes here may require database migrations.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportRequest'
+    
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportRequest:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+        ])
+        return f'SessionExportRequest[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionExportRequest):
+            return NotImplemented
+        return True  # we are all the same! =D
+
+
+class SessionExportRequestFilter:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter'
+    
+    def __init__(self, name: str) -> None:
+        self.name: str = name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'type': 'edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter',
+            'name': self.name,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportRequestFilter:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+        )
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'name={self.name}',
+        ])
+        return f'SessionExportRequestFilter[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionExportRequestFilter):
+            return NotImplemented
+        return self.name == other.name
 
 
 class AvgRotData:
@@ -5813,47 +4809,12 @@ class AvgRotData:
         Creates a new class instance from JSON
         """
         
-        spatial_freq: List[float]
-        temp = json.get('spatialFreq', None)
-        if temp is not None:
-            spatial_freq = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: spatialFreq')
-        
-        avg_rot: List[float]
-        temp = json.get('avgRot', None)
-        if temp is not None:
-            avg_rot = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: avgRot')
-        
-        ctf_fit: List[float]
-        temp = json.get('ctfFit', None)
-        if temp is not None:
-            ctf_fit = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: ctfFit')
-        
-        cross_correlation: List[float]
-        temp = json.get('crossCorrelation', None)
-        if temp is not None:
-            cross_correlation = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: crossCorrelation')
-        
-        min_res: float
-        temp = json.get('minRes', None)
-        if temp is not None:
-            min_res = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: minRes')
-        
         return cls(
-            spatial_freq,
-            avg_rot,
-            ctf_fit,
-            cross_correlation,
-            min_res,
+            none_raise(optional_map(json.get('spatialFreq', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: spatialFreq')),
+            none_raise(optional_map(json.get('avgRot', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: avgRot')),
+            none_raise(optional_map(json.get('ctfFit', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: ctfFit')),
+            none_raise(optional_map(json.get('crossCorrelation', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: crossCorrelation')),
+            none_raise(optional_map(json.get('minRes', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: minRes')),
         )
     
     def __str__(self) -> str:
@@ -5912,23 +4873,9 @@ class MotionData:
         Creates a new class instance from JSON
         """
         
-        x: List[float]
-        temp = json.get('x', None)
-        if temp is not None:
-            x = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: x')
-        
-        y: List[float]
-        temp = json.get('y', None)
-        if temp is not None:
-            y = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: y')
-        
         return cls(
-            x,
-            y,
+            none_raise(optional_map(json.get('x', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: x')),
+            none_raise(optional_map(json.get('y', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: y')),
         )
     
     def __str__(self) -> str:
@@ -5996,47 +4943,12 @@ class DriftMetadata:
         Creates a new class instance from JSON
         """
         
-        tilts: List[float]
-        temp = json.get('tilts', None)
-        if temp is not None:
-            tilts = [cast(float, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: tilts')
-        
-        drifts: List[List[DriftXY]]
-        temp = json.get('drifts', None)
-        if temp is not None:
-            drifts = [[DriftXY.from_json(x) for x in x] for x in temp]
-        else:
-            raise KeyError('missing JSON key: drifts')
-        
-        ctf_values: List[CtfTiltValues]
-        temp = json.get('ctfValues', None)
-        if temp is not None:
-            ctf_values = [CtfTiltValues.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: ctfValues')
-        
-        ctf_profiles: List[AvgRotData]
-        temp = json.get('ctfProfiles', None)
-        if temp is not None:
-            ctf_profiles = [AvgRotData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: ctfProfiles')
-        
-        tilt_axis_angle: float
-        temp = json.get('tiltAxisAngle', None)
-        if temp is not None:
-            tilt_axis_angle = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: tiltAxisAngle')
-        
         return cls(
-            tilts,
-            drifts,
-            ctf_values,
-            ctf_profiles,
-            tilt_axis_angle,
+            none_raise(optional_map(json.get('tilts', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: tilts')),
+            none_raise(optional_map(json.get('drifts', None), lambda it: [[DriftXY.from_json(x) for x in cast(List[Any], x)] for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: drifts')),
+            none_raise(optional_map(json.get('ctfValues', None), lambda it: [CtfTiltValues.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: ctfValues')),
+            none_raise(optional_map(json.get('ctfProfiles', None), lambda it: [AvgRotData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: ctfProfiles')),
+            none_raise(optional_map(json.get('tiltAxisAngle', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: tiltAxisAngle')),
         )
     
     def __str__(self) -> str:
@@ -6105,39 +5017,11 @@ class Block:
         Creates a new class instance from JSON
         """
         
-        block_id: str
-        temp = json.get('blockId', None)
-        if temp is not None:
-            block_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: blockId')
-        
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        description: str
-        temp = json.get('description', None)
-        if temp is not None:
-            description = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: description')
-        
-        group_ids: List[str]
-        temp = json.get('groupIds', None)
-        if temp is not None:
-            group_ids = [cast(str, x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: groupIds')
-        
         return cls(
-            block_id,
-            name,
-            description,
-            group_ids,
+            none_raise(optional_map(json.get('blockId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: blockId')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('description', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: description')),
+            none_raise(optional_map(json.get('groupIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: groupIds')),
         )
     
     def __str__(self) -> str:
@@ -6199,31 +5083,10 @@ class ImagesScale:
         Creates a new class instance from JSON
         """
         
-        particle_radius_unbinned: float
-        temp = json.get('particleRadiusUnbinned', None)
-        if temp is not None:
-            particle_radius_unbinned = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: particleRadiusUnbinned')
-        
-        pixel_a: float
-        temp = json.get('pixelA', None)
-        if temp is not None:
-            pixel_a = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: pixelA')
-        
-        particle_radius_a: float
-        temp = json.get('particleRadiusA', None)
-        if temp is not None:
-            particle_radius_a = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: particleRadiusA')
-        
         return cls(
-            particle_radius_unbinned,
-            pixel_a,
-            particle_radius_a,
+            none_raise(optional_map(json.get('particleRadiusUnbinned', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: particleRadiusUnbinned')),
+            none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: pixelA')),
+            none_raise(optional_map(json.get('particleRadiusA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: particleRadiusA')),
         )
     
     def __str__(self) -> str:
@@ -6353,23 +5216,9 @@ class AppPermissionData:
         Creates a new class instance from JSON
         """
         
-        app_permission_id: str
-        temp = json.get('appPermissionId', None)
-        if temp is not None:
-            app_permission_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: appPermissionId')
-        
-        description: Optional[str]
-        temp = json.get('description', None)
-        if temp is not None:
-            description = cast(str, temp)
-        else:
-            description = None
-        
         return cls(
-            app_permission_id,
-            description,
+            none_raise(optional_map(json.get('appPermissionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: appPermissionId')),
+            optional_map(json.get('description', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
@@ -6427,31 +5276,10 @@ class PreprocessingPropRange:
         Creates a new class instance from JSON
         """
         
-        prop_id: str
-        temp = json.get('propId', None)
-        if temp is not None:
-            prop_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: propId')
-        
-        min: float
-        temp = json.get('min', None)
-        if temp is not None:
-            min = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: min')
-        
-        max: float
-        temp = json.get('max', None)
-        if temp is not None:
-            max = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: max')
-        
         return cls(
-            prop_id,
-            min,
-            max,
+            none_raise(optional_map(json.get('propId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: propId')),
+            none_raise(optional_map(json.get('min', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: min')),
+            none_raise(optional_map(json.get('max', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: max')),
         )
     
     def __str__(self) -> str:
@@ -6516,39 +5344,11 @@ class ReconstructionData:
         Creates a new class instance from JSON
         """
         
-        id: str
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: id')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
-        class_num: int
-        temp = json.get('classNum', None)
-        if temp is not None:
-            class_num = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: classNum')
-        
-        iteration: int
-        temp = json.get('iteration', None)
-        if temp is not None:
-            iteration = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: iteration')
-        
         return cls(
-            id,
-            timestamp,
-            class_num,
-            iteration,
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+            none_raise(optional_map(json.get('classNum', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: classNum')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: iteration')),
         )
     
     def __str__(self) -> str:
@@ -6620,47 +5420,12 @@ class RefinementData:
         Creates a new class instance from JSON
         """
         
-        id: str
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: id')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        data_id: str
-        temp = json.get('dataId', None)
-        if temp is not None:
-            data_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: dataId')
-        
-        iteration: int
-        temp = json.get('iteration', None)
-        if temp is not None:
-            iteration = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: iteration')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
         return cls(
-            id,
-            job_id,
-            data_id,
-            iteration,
-            timestamp,
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('dataId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: dataId')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: iteration')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
     
     def __str__(self) -> str:
@@ -6734,47 +5499,12 @@ class RefinementBundleData:
         Creates a new class instance from JSON
         """
         
-        id: str
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: id')
-        
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        refinement_bundle_id: str
-        temp = json.get('refinementBundleId', None)
-        if temp is not None:
-            refinement_bundle_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: refinementBundleId')
-        
-        iteration: int
-        temp = json.get('iteration', None)
-        if temp is not None:
-            iteration = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: iteration')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
         return cls(
-            id,
-            job_id,
-            refinement_bundle_id,
-            iteration,
-            timestamp,
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('refinementBundleId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: refinementBundleId')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: iteration')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
     
     def __str__(self) -> str:
@@ -6843,39 +5573,11 @@ class PypStats:
         Creates a new class instance from JSON
         """
         
-        scope_voltage: Optional[float]
-        temp = json.get('scopeVoltage', None)
-        if temp is not None:
-            scope_voltage = cast(float, temp)
-        else:
-            scope_voltage = None
-        
-        scope_pixel: Optional[float]
-        temp = json.get('scopePixel', None)
-        if temp is not None:
-            scope_pixel = cast(float, temp)
-        else:
-            scope_pixel = None
-        
-        scope_dose_rate: Optional[float]
-        temp = json.get('scopeDoseRate', None)
-        if temp is not None:
-            scope_dose_rate = cast(float, temp)
-        else:
-            scope_dose_rate = None
-        
-        particle_radius: Optional[float]
-        temp = json.get('particleRadius', None)
-        if temp is not None:
-            particle_radius = cast(float, temp)
-        else:
-            particle_radius = None
-        
         return cls(
-            scope_voltage,
-            scope_pixel,
-            scope_dose_rate,
-            particle_radius,
+            optional_map(json.get('scopeVoltage', None), lambda it: cast(float, it)),
+            optional_map(json.get('scopePixel', None), lambda it: cast(float, it)),
+            optional_map(json.get('scopeDoseRate', None), lambda it: cast(float, it)),
+            optional_map(json.get('particleRadius', None), lambda it: cast(float, it)),
         )
     
     def __str__(self) -> str:
@@ -7026,24 +5728,9 @@ class JobArgs(Generic[T]):
             else:
                 raise Exception(f'Failed to deserialize type, unrecognized type id `{type_id}` for type parameter T')
         
-        
-        finished: Optional[T]
-        temp = json.get('finished', None)
-        if temp is not None:
-            finished = reader_polymorphic_T(temp)
-        else:
-            finished = None
-        
-        next: Optional[T]
-        temp = json.get('next', None)
-        if temp is not None:
-            next = reader_polymorphic_T(temp)
-        else:
-            next = None
-        
         return cls(
-            finished,
-            next,
+            optional_map(json.get('finished', None), lambda it: reader_polymorphic_T(it)),
+            optional_map(json.get('next', None), lambda it: reader_polymorphic_T(it)),
         )
     
     def __str__(self) -> str:
@@ -7096,23 +5783,9 @@ class UserData:
         Creates a new class instance from JSON
         """
         
-        id: str
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: id')
-        
-        name: Optional[str]
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            name = None
-        
         return cls(
-            id,
-            name,
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
+            optional_map(json.get('name', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
@@ -7175,39 +5848,11 @@ class ProjectRunData:
         Creates a new class instance from JSON
         """
         
-        run_id: int
-        temp = json.get('runId', None)
-        if temp is not None:
-            run_id = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: runId')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
-        status: RunStatus
-        temp = json.get('status', None)
-        if temp is not None:
-            status = RunStatus.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: status')
-        
-        jobs: List[JobRunData]
-        temp = json.get('jobs', None)
-        if temp is not None:
-            jobs = [JobRunData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: jobs')
-        
         return cls(
-            run_id,
-            timestamp,
-            status,
-            jobs,
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
+            none_raise(optional_map(json.get('jobs', None), lambda it: [JobRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobs')),
         )
     
     def __str__(self) -> str:
@@ -7405,47 +6050,12 @@ class StreamLogMsg:
         Creates a new class instance from JSON
         """
         
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
-        level: int
-        temp = json.get('level', None)
-        if temp is not None:
-            level = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: level')
-        
-        path: str
-        temp = json.get('path', None)
-        if temp is not None:
-            path = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: path')
-        
-        line: int
-        temp = json.get('line', None)
-        if temp is not None:
-            line = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: line')
-        
-        msg: str
-        temp = json.get('msg', None)
-        if temp is not None:
-            msg = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: msg')
-        
         return cls(
-            timestamp,
-            level,
-            path,
-            line,
-            msg,
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+            none_raise(optional_map(json.get('level', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: level')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
+            none_raise(optional_map(json.get('line', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: line')),
+            none_raise(optional_map(json.get('msg', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: msg')),
         )
     
     def __str__(self) -> str:
@@ -7499,15 +6109,8 @@ class SingleParticleSessionDisplay:
         Creates a new class instance from JSON
         """
         
-        group_name: str
-        temp = json.get('groupName', None)
-        if temp is not None:
-            group_name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: groupName')
-        
         return cls(
-            group_name,
+            none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupName')),
         )
     
     def __str__(self) -> str:
@@ -7553,15 +6156,8 @@ class TomographySessionDisplay:
         Creates a new class instance from JSON
         """
         
-        group_name: str
-        temp = json.get('groupName', None)
-        if temp is not None:
-            group_name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: groupName')
-        
         return cls(
-            group_name,
+            none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupName')),
         )
     
     def __str__(self) -> str:
@@ -7617,31 +6213,10 @@ class SessionLogData:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        daemon: SessionDaemon
-        temp = json.get('daemon', None)
-        if temp is not None:
-            daemon = SessionDaemon.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: daemon')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
         return cls(
-            job_id,
-            daemon,
-            timestamp,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
     
     def __str__(self) -> str:
@@ -7701,31 +6276,10 @@ class SessionJobLogData:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        name: str
-        temp = json.get('name', None)
-        if temp is not None:
-            name = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: name')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
         return cls(
-            job_id,
-            name,
-            timestamp,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
     
     def __str__(self) -> str:
@@ -7780,23 +6334,9 @@ class SessionJobLog:
         Creates a new class instance from JSON
         """
         
-        array_id: Optional[int]
-        temp = json.get('arrayId', None)
-        if temp is not None:
-            array_id = cast(int, temp)
-        else:
-            array_id = None
-        
-        log: Optional[str]
-        temp = json.get('log', None)
-        if temp is not None:
-            log = cast(str, temp)
-        else:
-            log = None
-        
         return cls(
-            array_id,
-            log,
+            optional_map(json.get('arrayId', None), lambda it: cast(int, it)),
+            optional_map(json.get('log', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
@@ -7924,55 +6464,13 @@ class SessionExportData:
         Creates a new class instance from JSON
         """
         
-        session_id: str
-        temp = json.get('sessionId', None)
-        if temp is not None:
-            session_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: sessionId')
-        
-        export_id: str
-        temp = json.get('exportId', None)
-        if temp is not None:
-            export_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: exportId')
-        
-        request: str
-        temp = json.get('request', None)
-        if temp is not None:
-            request = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: request')
-        
-        created: int
-        temp = json.get('created', None)
-        if temp is not None:
-            created = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: created')
-        
-        cluster_job_id: Optional[str]
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            cluster_job_id = None
-        
-        result: Optional[str]
-        temp = json.get('result', None)
-        if temp is not None:
-            result = cast(str, temp)
-        else:
-            result = None
-        
         return cls(
-            session_id,
-            export_id,
-            request,
-            created,
-            cluster_job_id,
-            result,
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: sessionId')),
+            none_raise(optional_map(json.get('exportId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: exportId')),
+            none_raise(optional_map(json.get('request', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: request')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
+            optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)),
+            optional_map(json.get('result', None), lambda it: cast(str, it)),
         )
     
     def __str__(self) -> str:
@@ -8073,87 +6571,17 @@ class MicrographMetadata:
         Creates a new class instance from JSON
         """
         
-        id: str
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: id')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
-        ccc: float
-        temp = json.get('ccc', None)
-        if temp is not None:
-            ccc = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: ccc')
-        
-        cccc: float
-        temp = json.get('cccc', None)
-        if temp is not None:
-            cccc = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: cccc')
-        
-        defocus1: float
-        temp = json.get('defocus1', None)
-        if temp is not None:
-            defocus1 = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: defocus1')
-        
-        defocus2: float
-        temp = json.get('defocus2', None)
-        if temp is not None:
-            defocus2 = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: defocus2')
-        
-        angle_astig: float
-        temp = json.get('angleAstig', None)
-        if temp is not None:
-            angle_astig = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: angleAstig')
-        
-        average_motion: float
-        temp = json.get('averageMotion', None)
-        if temp is not None:
-            average_motion = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: averageMotion')
-        
-        num_particles: int
-        temp = json.get('numParticles', None)
-        if temp is not None:
-            num_particles = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numParticles')
-        
-        source_dims: Optional[ImageDims]
-        temp = json.get('sourceDims', None)
-        if temp is not None:
-            source_dims = ImageDims.from_json(temp)
-        else:
-            source_dims = None
-        
         return cls(
-            id,
-            timestamp,
-            ccc,
-            cccc,
-            defocus1,
-            defocus2,
-            angle_astig,
-            average_motion,
-            num_particles,
-            source_dims,
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+            none_raise(optional_map(json.get('ccc', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: ccc')),
+            none_raise(optional_map(json.get('cccc', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: cccc')),
+            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus1')),
+            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus2')),
+            none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: angleAstig')),
+            none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: averageMotion')),
+            none_raise(optional_map(json.get('numParticles', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numParticles')),
+            optional_map(json.get('sourceDims', None), lambda it: ImageDims.from_json(it)),
         )
     
     def __str__(self) -> str:
@@ -8227,31 +6655,10 @@ class TwoDClassesData:
         Creates a new class instance from JSON
         """
         
-        owner_id: str
-        temp = json.get('ownerId', None)
-        if temp is not None:
-            owner_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: ownerId')
-        
-        two_dclasses_id: str
-        temp = json.get('twoDClassesId', None)
-        if temp is not None:
-            two_dclasses_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: twoDClassesId')
-        
-        created: int
-        temp = json.get('created', None)
-        if temp is not None:
-            created = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: created')
-        
         return cls(
-            owner_id,
-            two_dclasses_id,
-            created,
+            none_raise(optional_map(json.get('ownerId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: ownerId')),
+            none_raise(optional_map(json.get('twoDClassesId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: twoDClassesId')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
         )
     
     def __str__(self) -> str:
@@ -8346,87 +6753,17 @@ class TiltSeriesData:
         Creates a new class instance from JSON
         """
         
-        id: str
-        temp = json.get('id', None)
-        if temp is not None:
-            id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: id')
-        
-        timestamp: int
-        temp = json.get('timestamp', None)
-        if temp is not None:
-            timestamp = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: timestamp')
-        
-        ccc: float
-        temp = json.get('ccc', None)
-        if temp is not None:
-            ccc = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: ccc')
-        
-        cccc: float
-        temp = json.get('cccc', None)
-        if temp is not None:
-            cccc = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: cccc')
-        
-        defocus1: float
-        temp = json.get('defocus1', None)
-        if temp is not None:
-            defocus1 = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: defocus1')
-        
-        defocus2: float
-        temp = json.get('defocus2', None)
-        if temp is not None:
-            defocus2 = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: defocus2')
-        
-        angle_astig: float
-        temp = json.get('angleAstig', None)
-        if temp is not None:
-            angle_astig = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: angleAstig')
-        
-        average_motion: float
-        temp = json.get('averageMotion', None)
-        if temp is not None:
-            average_motion = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: averageMotion')
-        
-        num_particles: int
-        temp = json.get('numParticles', None)
-        if temp is not None:
-            num_particles = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numParticles')
-        
-        source_dims: Optional[ImageDims]
-        temp = json.get('sourceDims', None)
-        if temp is not None:
-            source_dims = ImageDims.from_json(temp)
-        else:
-            source_dims = None
-        
         return cls(
-            id,
-            timestamp,
-            ccc,
-            cccc,
-            defocus1,
-            defocus2,
-            angle_astig,
-            average_motion,
-            num_particles,
-            source_dims,
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+            none_raise(optional_map(json.get('ccc', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: ccc')),
+            none_raise(optional_map(json.get('cccc', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: cccc')),
+            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus1')),
+            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus2')),
+            none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: angleAstig')),
+            none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: averageMotion')),
+            none_raise(optional_map(json.get('numParticles', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numParticles')),
+            optional_map(json.get('sourceDims', None), lambda it: ImageDims.from_json(it)),
         )
     
     def __str__(self) -> str:
@@ -8495,23 +6832,9 @@ class DriftXY:
         Creates a new class instance from JSON
         """
         
-        x: float
-        temp = json.get('x', None)
-        if temp is not None:
-            x = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: x')
-        
-        y: float
-        temp = json.get('y', None)
-        if temp is not None:
-            y = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: y')
-        
         return cls(
-            x,
-            y,
+            none_raise(optional_map(json.get('x', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: x')),
+            none_raise(optional_map(json.get('y', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: y')),
         )
     
     def __str__(self) -> str:
@@ -8584,55 +6907,13 @@ class CtfTiltValues:
         Creates a new class instance from JSON
         """
         
-        index: int
-        temp = json.get('index', None)
-        if temp is not None:
-            index = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: index')
-        
-        defocus1: float
-        temp = json.get('defocus1', None)
-        if temp is not None:
-            defocus1 = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: defocus1')
-        
-        defocus2: float
-        temp = json.get('defocus2', None)
-        if temp is not None:
-            defocus2 = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: defocus2')
-        
-        astigmatism: float
-        temp = json.get('astigmatism', None)
-        if temp is not None:
-            astigmatism = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: astigmatism')
-        
-        cc: float
-        temp = json.get('cc', None)
-        if temp is not None:
-            cc = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: cc')
-        
-        resolution: float
-        temp = json.get('resolution', None)
-        if temp is not None:
-            resolution = cast(float, temp)
-        else:
-            raise KeyError('missing JSON key: resolution')
-        
         return cls(
-            index,
-            defocus1,
-            defocus2,
-            astigmatism,
-            cc,
-            resolution,
+            none_raise(optional_map(json.get('index', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: index')),
+            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus1')),
+            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus2')),
+            none_raise(optional_map(json.get('astigmatism', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: astigmatism')),
+            none_raise(optional_map(json.get('cc', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: cc')),
+            none_raise(optional_map(json.get('resolution', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: resolution')),
         )
     
     def __str__(self) -> str:
@@ -8708,47 +6989,12 @@ class ImageDims:
         Creates a new class instance from JSON
         """
         
-        num_slices: int
-        temp = json.get('numSlices', None)
-        if temp is not None:
-            num_slices = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: numSlices')
-        
-        width: int
-        temp = json.get('width', None)
-        if temp is not None:
-            width = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: width')
-        
-        height: int
-        temp = json.get('height', None)
-        if temp is not None:
-            height = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: height')
-        
-        depth: int
-        temp = json.get('depth', None)
-        if temp is not None:
-            depth = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: depth')
-        
-        binning_factor: int
-        temp = json.get('binningFactor', None)
-        if temp is not None:
-            binning_factor = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: binningFactor')
-        
         return cls(
-            num_slices,
-            width,
-            height,
-            depth,
-            binning_factor,
+            none_raise(optional_map(json.get('numSlices', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numSlices')),
+            none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: width')),
+            none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: height')),
+            none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: depth')),
+            none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: binningFactor')),
         )
     
     def __str__(self) -> str:
@@ -8812,31 +7058,10 @@ class JobRunData:
         Creates a new class instance from JSON
         """
         
-        job_id: str
-        temp = json.get('jobId', None)
-        if temp is not None:
-            job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: jobId')
-        
-        status: RunStatus
-        temp = json.get('status', None)
-        if temp is not None:
-            status = RunStatus.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: status')
-        
-        cluster_jobs: List[ClusterJobData]
-        temp = json.get('clusterJobs', None)
-        if temp is not None:
-            cluster_jobs = [ClusterJobData.from_json(x) for x in temp]
-        else:
-            raise KeyError('missing JSON key: clusterJobs')
-        
         return cls(
-            job_id,
-            status,
-            cluster_jobs,
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
+            none_raise(optional_map(json.get('clusterJobs', None), lambda it: [ClusterJobData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: clusterJobs')),
         )
     
     def __str__(self) -> str:
@@ -8906,47 +7131,12 @@ class ClusterJobData:
         Creates a new class instance from JSON
         """
         
-        cluster_job_id: str
-        temp = json.get('clusterJobId', None)
-        if temp is not None:
-            cluster_job_id = cast(str, temp)
-        else:
-            raise KeyError('missing JSON key: clusterJobId')
-        
-        web_name: Optional[str]
-        temp = json.get('webName', None)
-        if temp is not None:
-            web_name = cast(str, temp)
-        else:
-            web_name = None
-        
-        cluster_name: Optional[str]
-        temp = json.get('clusterName', None)
-        if temp is not None:
-            cluster_name = cast(str, temp)
-        else:
-            cluster_name = None
-        
-        status: RunStatus
-        temp = json.get('status', None)
-        if temp is not None:
-            status = RunStatus.from_json(temp)
-        else:
-            raise KeyError('missing JSON key: status')
-        
-        array_info: Optional[ClusterJobDataArrayInfo]
-        temp = json.get('arrayInfo', None)
-        if temp is not None:
-            array_info = ClusterJobDataArrayInfo.from_json(temp)
-        else:
-            array_info = None
-        
         return cls(
-            cluster_job_id,
-            web_name,
-            cluster_name,
-            status,
-            array_info,
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
+            optional_map(json.get('webName', None), lambda it: cast(str, it)),
+            optional_map(json.get('clusterName', None), lambda it: cast(str, it)),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
+            optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
         )
     
     def __str__(self) -> str:
@@ -9020,47 +7210,12 @@ class ClusterJobDataArrayInfo:
         Creates a new class instance from JSON
         """
         
-        size: int
-        temp = json.get('size', None)
-        if temp is not None:
-            size = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: size')
-        
-        started: int
-        temp = json.get('started', None)
-        if temp is not None:
-            started = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: started')
-        
-        ended: int
-        temp = json.get('ended', None)
-        if temp is not None:
-            ended = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: ended')
-        
-        canceled: int
-        temp = json.get('canceled', None)
-        if temp is not None:
-            canceled = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: canceled')
-        
-        failed: int
-        temp = json.get('failed', None)
-        if temp is not None:
-            failed = cast(int, temp)
-        else:
-            raise KeyError('missing JSON key: failed')
-        
         return cls(
-            size,
-            started,
-            ended,
-            canceled,
-            failed,
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: size')),
+            none_raise(optional_map(json.get('started', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: started')),
+            none_raise(optional_map(json.get('ended', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: ended')),
+            none_raise(optional_map(json.get('canceled', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: canceled')),
+            none_raise(optional_map(json.get('failed', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: failed')),
         )
     
     def __str__(self) -> str:
