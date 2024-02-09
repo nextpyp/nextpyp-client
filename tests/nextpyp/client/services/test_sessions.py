@@ -63,7 +63,7 @@ def test_spa_list() -> None:
     assert sessions[0].num_frames == 120
 
     # check the pyp args
-    arg_values = PypArgValues.from_toml(block_args(PypBlock.SessionSingleParticle), sessions[0].args.finished.values)
+    arg_values = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE), sessions[0].args.finished.values)
     assert arg_values.data_path == '/media/pyp/tests/spr/raw/*.tif'
     assert arg_values.gain_reference == '/media/pyp/tests/spr/raw/K3_gain.mrc'
     assert arg_values.scope_pixel == 1.0
@@ -103,7 +103,7 @@ def test_spa_create() -> None:
         "numFrames": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SessionSingleParticle))
+    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
     pyp_args.data_path = '/foo/bar'
     pyp_args.scope_pixel = 1
     pyp_args.slurm_verbose = True
@@ -170,7 +170,7 @@ def test_spa_edit() -> None:
         "numFrames": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SessionSingleParticle))
+    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
     pyp_args.data_path = '/foo/bar'
     args = SingleParticleSessionArgs(
         'My new session',
@@ -303,7 +303,7 @@ def test_tomo_list() -> None:
     assert sessions[0].num_tilts == 10
 
     # check the pyp args
-    arg_values = PypArgValues.from_toml(block_args(PypBlock.SessionTomography), sessions[0].args.finished.values)
+    arg_values = PypArgValues.from_toml(block_args(PypBlock.SESSION_TOMOGRAPHY), sessions[0].args.finished.values)
     assert arg_values.data_path == '/media/pyp/tests/tomo/raw/tilt*.mrc'
     assert arg_values.scope_pixel == 1.0
     assert arg_values.scope_voltage == 300
@@ -338,7 +338,7 @@ def test_tomo_create() -> None:
         "numTilts": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SessionTomography))
+    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_TOMOGRAPHY))
     pyp_args.data_path = '/foo/bar'
     pyp_args.scope_pixel = 1
     pyp_args.slurm_verbose = True
@@ -405,7 +405,7 @@ def test_tomo_edit() -> None:
         "numTilts": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SessionTomography))
+    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_TOMOGRAPHY))
     pyp_args.data_path = '/foo/bar'
     args = TomographySessionArgs(
         'My new session',
