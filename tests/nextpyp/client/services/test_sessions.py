@@ -1,9 +1,10 @@
 
-import json
-
 from nextpyp.client.args import block_args, PypArgValues, PypBlock
 from nextpyp.client.gen import (
     AvgRotData,
+    CtfTiltValues,
+    DriftMetadata,
+    DriftXY,
     Group,
     MotionData,
     PreprocessingFilter,
@@ -494,7 +495,105 @@ def test_tomo_delete() -> None:
     assert transport.last_params == ['sid']
 
 
-# TODO: tomography getDriftMetadata
+def test_tomo_get_drift_metadata() -> None:
+
+    transport = MockTransport()
+    client = transport.client()
+    transport.next_response = [
+        {
+            "tilts": [-6.0, 6.0],
+            "drifts": [
+                [{"x": 1.2, "y": 3.4}],
+                [{"x": 5.6, "y": 7.8}]
+            ],
+            "ctfValues": [
+                {
+                    "index":  0,
+                    "defocus1": 8244.6484375,
+                    "defocus2": 7961.07958984375,
+                    "astigmatism": 9.464014053344727,
+                    "cc": 0.014696000143885612,
+                    "resolution": 718.0
+                },
+                {
+                    "index": 1,
+                    "defocus1": 7412.55908203125,
+                    "defocus2": 7163.65478515625,
+                    "astigmatism": -7.342753887176514,
+                    "cc": 0.027507999911904335,
+                    "resolution": 5.092198848724365
+                }
+            ],
+            "ctfProfiles": [
+                {
+                    "spatialFreq": [0.0, 0.001393, 0.002786],
+                    "avgRot": [0.030491, 0.030491, 0.030491],
+                    "ctfFit": [0.07, 0.07097, 0.073878],
+                    "crossCorrelation": [1.0, -0.09739, -0.09739],
+                    "minRes": 50.0
+                },
+                {
+                    "spatialFreq": [0.0, 0.001393, 0.002786],
+                    "avgRot": [-0.021156, 3.86222, 3.814014],
+                    "ctfFit": [0.07, 0.070872, 0.073488],
+                    "crossCorrelation": [1.0, 0.018553, 0.018553],
+                    "minRes": 52.0
+                }
+            ],
+            "tiltAxisAngle": -90.0
+        }
+    ]
+
+    dmd = client.services.tomography_sessions.get_drift_metadata('sid', 'tsid')
+
+    assert transport.last_params == [
+        'sid',
+        'tsid'
+    ]
+
+    assert dmd is not None
+    assert type(dmd) is DriftMetadata
+
+    assert dmd.tilts == [-6.0, 6.0]
+    assert dmd.drifts == [
+        [DriftXY(1.2, 3.4)],
+        [DriftXY(5.6, 7.8)]
+    ]
+    assert dmd.ctf_values == [
+        CtfTiltValues(
+            0,
+            8244.6484375,
+            7961.07958984375,
+            9.464014053344727,
+            0.014696000143885612,
+            718.0
+        ),
+        CtfTiltValues(
+            1,
+            7412.55908203125,
+            7163.65478515625,
+            -7.342753887176514,
+            0.027507999911904335,
+            5.092198848724365
+        )
+    ]
+    assert dmd.ctf_profiles == [
+        AvgRotData(
+            [0.0, 0.001393, 0.002786],
+            [0.030491, 0.030491, 0.030491],
+            [0.07, 0.07097, 0.073878],
+            [1.0, -0.09739, -0.09739],
+            50.0
+        ),
+        AvgRotData(
+            [0.0, 0.001393, 0.002786],
+            [-0.021156, 3.86222, 3.814014],
+            [0.07, 0.070872, 0.073488],
+            [1.0, 0.018553, 0.018553],
+            52.0
+        )
+    ]
+    assert dmd.tilt_axis_angle == -90.0
 
 
 def test_session_options() -> None:
@@ -513,6 +612,12 @@ def test_session_options() -> None:
     ]
 
     options = client.services.sessions.session_options('a', None, SessionTypes.SINGLE_PARTICLE)
+
+    assert transport.last_params == [
+        'a',
+        None,
+        SessionTypes.SINGLE_PARTICLE
+    ]
 
     assert len(options) == 2
 
@@ -569,6 +674,12 @@ def test_group_options() -> None:
     ]
 
     options = client.services.sessions.group_options('a', None, None)
+
+    assert transport.last_params == [
+        'a',
+        None,
+        None
+    ]
 
     assert len(options) == 2
 
@@ -1084,14 +1195,13 @@ def test_filter_options() -> None:
     assert filters[2].divider is False
 
 
-
 def test_export() -> None:
 
     transport = MockTransport()
     client = transport.client()
 
     request = SessionExportRequestFilter('Filter A')
-    client.services.sessions.export('a', json.dumps(request.to_json()), '')
+    client.services.sessions.export('a', request.serialize(), '')
 
     assert transport.last_params == [
         "a",

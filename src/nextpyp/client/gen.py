@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Optional, List, Dict, Set, Any, Iterator, TYPE_CHECKING, Union, cast, TypeVar, Generic, Callable
+from abc import ABCMeta, abstractmethod
 
 import json
 from websockets.legacy.client import WebSocketClientProtocol
@@ -19,9 +20,13 @@ R = TypeVar('R')
 
 
 ArgValuesToml = str
-Option = List
-Serialized = str
-SerializedSessionExportRequest = Serialized
+
+
+Option = list
+
+
+Serialized_SessionExportResult = str
+Serialized_SessionExportRequest = str
 
 
 def optional_map(val: Optional[T], func: Callable[[T], R]) -> Optional[R]:
@@ -63,14 +68,6 @@ def option_unwrap(val: Any) -> Optional[Any]:
         return val[0]
     else:
         return None
-
-
-def arg_values_toml_from_json(val: Any) -> ArgValuesToml:
-    return cast(ArgValuesToml, val)
-
-
-def arg_values_toml_to_json(val: ArgValuesToml) -> str:
-    return val
 
 
 class Services:
@@ -461,7 +458,7 @@ class SessionsService:
             raise Exception(f'response expected from {path}, but none received')
         return [RemoteOption.from_json(x) for x in cast(List[Any], response)]
 
-    def export(self, session_id: str, request: SerializedSessionExportRequest, slurm_values: ArgValuesToml) -> None:
+    def export(self, session_id: str, request: Serialized_SessionExportRequest, slurm_values: ArgValuesToml) -> None:
         """
         (no description yet)
         
@@ -1163,6 +1160,13 @@ class RemoteOption:
             none_map(optional_map(json.get('divider', None), lambda it: cast(bool, it)), lambda: False),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RemoteOption:
+        return RemoteOption.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'value={self.value}',
@@ -1230,6 +1234,13 @@ class Group:
             optional_map(json.get('id', None), lambda it: cast(str, it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> Group:
+        return Group.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'name={self.name}',
@@ -1284,6 +1295,13 @@ class VersionData:
             none_raise(optional_map(json.get('version', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: version')),
             none_raise(optional_map(json.get('apiVersion', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: apiVersion')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> VersionData:
+        return VersionData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1345,6 +1363,13 @@ class AppTokenRequestData:
             none_raise(optional_map(json.get('appName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: appName')),
             none_raise(optional_map(json.get('permissions', None), lambda it: [AppPermissionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: permissions')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> AppTokenRequestData:
+        return AppTokenRequestData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1408,6 +1433,13 @@ class PreprocessingFilter:
             none_raise(optional_map(json.get('ranges', None), lambda it: [PreprocessingPropRange.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: ranges')),
             none_raise(optional_map(json.get('excludedIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: excludedIds')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> PreprocessingFilter:
+        return PreprocessingFilter.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1502,6 +1534,13 @@ class ProjectData:
             none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectData:
+        return ProjectData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'owner={self.owner}',
@@ -1538,7 +1577,6 @@ class RealTimeC2S:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S'
     
-    
     def to_json(self) -> Dict[str,Any]:
         """
         Converts this class instance into JSON
@@ -1555,6 +1593,13 @@ class RealTimeC2S:
         
         return cls(
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2S:
+        return RealTimeC2S.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1608,6 +1653,13 @@ class RealTimeC2SListenToProject:
             none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: projectId')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SListenToProject:
+        return RealTimeC2SListenToProject.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'user_id={self.user_id}',
@@ -1657,6 +1709,13 @@ class RealTimeC2SListenToSession:
             none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: sessionId')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SListenToSession:
+        return RealTimeC2SListenToSession.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'session_id={self.session_id}',
@@ -1679,7 +1738,6 @@ class RealTimeC2SSessionSettingsSaved:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.SessionSettingsSaved'
     
-    
     def to_json(self) -> Dict[str,Any]:
         """
         Converts this class instance into JSON
@@ -1696,6 +1754,13 @@ class RealTimeC2SSessionSettingsSaved:
         
         return cls(
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SSessionSettingsSaved:
+        return RealTimeC2SSessionSettingsSaved.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1718,7 +1783,6 @@ class RealTimeS2C:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C'
     
-    
     def to_json(self) -> Dict[str,Any]:
         """
         Converts this class instance into JSON
@@ -1735,6 +1799,13 @@ class RealTimeS2C:
         
         return cls(
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2C:
+        return RealTimeS2C.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1787,6 +1858,13 @@ class RealTimeS2CError:
             optional_map(json.get('name', None), lambda it: cast(str, it)),
             optional_map(json.get('msg', None), lambda it: cast(str, it)),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CError:
+        return RealTimeS2CError.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1848,6 +1926,13 @@ class RealTimeS2CProjectStatus:
             none_raise(optional_map(json.get('hasOlderRuns', None), lambda it: cast(bool, it)), lambda: KeyError('missing JSON key: hasOlderRuns')),
             none_raise(optional_map(json.get('blocks', None), lambda it: [Block.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: blocks')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectStatus:
+        return RealTimeS2CProjectStatus.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -1912,6 +1997,13 @@ class RealTimeS2CProjectRunInit:
             none_raise(optional_map(json.get('jobIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobIds')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectRunInit:
+        return RealTimeS2CProjectRunInit.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'run_id={self.run_id}',
@@ -1962,6 +2054,13 @@ class RealTimeS2CProjectRunStart:
         return cls(
             none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectRunStart:
+        return RealTimeS2CProjectRunStart.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2015,6 +2114,13 @@ class RealTimeS2CJobStart:
             none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
             none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CJobStart:
+        return RealTimeS2CJobStart.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2070,6 +2176,13 @@ class RealTimeS2CJobUpdate:
             none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
             none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobString')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CJobUpdate:
+        return RealTimeS2CJobUpdate.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2138,6 +2251,13 @@ class RealTimeS2CJobFinish:
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CJobFinish:
+        return RealTimeS2CJobFinish.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'run_id={self.run_id}',
@@ -2196,6 +2316,13 @@ class RealTimeS2CProjectRunFinish:
             none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: runId')),
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectRunFinish:
+        return RealTimeS2CProjectRunFinish.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2270,6 +2397,13 @@ class RealTimeS2CClusterJobSubmit:
             optional_map(json.get('arraySize', None), lambda it: cast(int, it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobSubmit:
+        return RealTimeS2CClusterJobSubmit.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'run_id={self.run_id}',
@@ -2336,6 +2470,13 @@ class RealTimeS2CClusterJobStart:
             none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
             none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobStart:
+        return RealTimeS2CClusterJobStart.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2411,6 +2552,13 @@ class RealTimeS2CClusterJobArrayStart:
             none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: arrayIndex')),
             none_raise(optional_map(json.get('numStarted', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numStarted')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobArrayStart:
+        return RealTimeS2CClusterJobArrayStart.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2503,6 +2651,13 @@ class RealTimeS2CClusterJobArrayEnd:
             none_raise(optional_map(json.get('numFailed', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numFailed')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobArrayEnd:
+        return RealTimeS2CClusterJobArrayEnd.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'run_id={self.run_id}',
@@ -2580,6 +2735,13 @@ class RealTimeS2CClusterJobEnd:
             none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError('missing JSON key: resultType')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CClusterJobEnd:
+        return RealTimeS2CClusterJobEnd.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'run_id={self.run_id}',
@@ -2638,6 +2800,13 @@ class RealTimeS2CUpdatedParameters:
             none_raise(optional_map(json.get('pypStats', None), lambda it: PypStats.from_json(it)), lambda: KeyError('missing JSON key: pypStats')),
             none_raise(optional_map(json.get('imagesScale', None), lambda it: ImagesScale.from_json(it)), lambda: KeyError('missing JSON key: imagesScale')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CUpdatedParameters:
+        return RealTimeS2CUpdatedParameters.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2718,6 +2887,13 @@ class RealTimeS2CSessionStatus:
             none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: tomoVirBinn')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionStatus:
+        return RealTimeS2CSessionStatus.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'daemons_running={self.daemons_running}',
@@ -2774,6 +2950,13 @@ class RealTimeS2CSessionSmallData:
         return cls(
             none_raise(optional_map(json.get('exports', None), lambda it: [SessionExportData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: exports')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionSmallData:
+        return RealTimeS2CSessionSmallData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2833,6 +3016,13 @@ class RealTimeS2CSessionLargeData:
             none_raise(optional_map(json.get('tiltSerieses', None), lambda it: [TiltSeriesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: tiltSerieses')),
             none_raise(optional_map(json.get('twoDClasses', None), lambda it: [TwoDClassesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: twoDClasses')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionLargeData:
+        return RealTimeS2CSessionLargeData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -2903,6 +3093,13 @@ class RealTimeS2CSessionRunningJob:
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionRunningJob:
+        return RealTimeS2CSessionRunningJob.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -2962,6 +3159,13 @@ class RealTimeS2CSessionDaemonSubmitted:
             none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionDaemonSubmitted:
+        return RealTimeS2CSessionDaemonSubmitted.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -3017,6 +3221,13 @@ class RealTimeS2CSessionDaemonStarted:
             none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionDaemonStarted:
+        return RealTimeS2CSessionDaemonStarted.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -3071,6 +3282,13 @@ class RealTimeS2CSessionDaemonFinished:
             none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
             none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionDaemonFinished:
+        return RealTimeS2CSessionDaemonFinished.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3133,6 +3351,13 @@ class RealTimeS2CSessionJobSubmitted:
             none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: size')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobSubmitted:
+        return RealTimeS2CSessionJobSubmitted.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -3183,6 +3408,13 @@ class RealTimeS2CSessionJobStarted:
         return cls(
             none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobStarted:
+        return RealTimeS2CSessionJobStarted.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3237,6 +3469,13 @@ class RealTimeS2CSessionJobFinished:
             none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError('missing JSON key: resultType')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobFinished:
+        return RealTimeS2CSessionJobFinished.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -3261,15 +3500,7 @@ class RealTimeS2CSessionFilesystem:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionFilesystem'
     
-    def __init__(self, used: float, bytes_available: int, path: str, type: str, bytes: int, bytes_used: int) -> None:
-        self.used: float = used
-        """
-        (no description yet)
-        """
-        self.bytes_available: int = bytes_available
-        """
-        (no description yet)
-        """
+    def __init__(self, path: str, type: str, bytes: int, bytes_used: int) -> None:
         self.path: str = path
         """
         (no description yet)
@@ -3293,8 +3524,6 @@ class RealTimeS2CSessionFilesystem:
         """
         
         return {
-            'used': self.used,
-            'bytesAvailable': self.bytes_available,
             'path': self.path,
             'type': self.type,
             'bytes': self.bytes,
@@ -3308,18 +3537,21 @@ class RealTimeS2CSessionFilesystem:
         """
         
         return cls(
-            none_raise(optional_map(json.get('used', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: used')),
-            none_raise(optional_map(json.get('bytesAvailable', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesAvailable')),
             none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
             none_raise(optional_map(json.get('type', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: type')),
             none_raise(optional_map(json.get('bytes', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytes')),
             none_raise(optional_map(json.get('bytesUsed', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesUsed')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionFilesystem:
+        return RealTimeS2CSessionFilesystem.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
-            f'used={self.used}',
-            f'bytes_available={self.bytes_available}',
             f'path={self.path}',
             f'type={self.type}',
             f'bytes={self.bytes}',
@@ -3333,9 +3565,7 @@ class RealTimeS2CSessionFilesystem:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, RealTimeS2CSessionFilesystem):
             return NotImplemented
-        return self.used == other.used \
-            and self.bytes_available == other.bytes_available \
-            and self.path == other.path \
+        return self.path == other.path \
             and self.type == other.type \
             and self.bytes == other.bytes \
             and self.bytes_used == other.bytes_used
@@ -3372,6 +3602,13 @@ class RealTimeS2CSessionFilesystems:
         return cls(
             none_raise(optional_map(json.get('filesystems', None), lambda it: [RealTimeS2CSessionFilesystem.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: filesystems')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionFilesystems:
+        return RealTimeS2CSessionFilesystems.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3419,6 +3656,13 @@ class RealTimeS2CSessionTransferInit:
         return cls(
             none_raise(optional_map(json.get('files', None), lambda it: [RealTimeS2CSessionTransferInitFileInfo.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: files')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferInit:
+        return RealTimeS2CSessionTransferInit.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3479,6 +3723,13 @@ class RealTimeS2CSessionTransferInitFileInfo:
             none_raise(optional_map(json.get('bytesTransfered', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTransfered')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferInitFileInfo:
+        return RealTimeS2CSessionTransferInitFileInfo.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'filename={self.filename}',
@@ -3529,6 +3780,13 @@ class RealTimeS2CSessionTransferWaiting:
         return cls(
             none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferWaiting:
+        return RealTimeS2CSessionTransferWaiting.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3582,6 +3840,13 @@ class RealTimeS2CSessionTransferStarted:
             none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
             none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTotal')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferStarted:
+        return RealTimeS2CSessionTransferStarted.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3638,6 +3903,13 @@ class RealTimeS2CSessionTransferProgress:
             none_raise(optional_map(json.get('bytesTransferred', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: bytesTransferred')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferProgress:
+        return RealTimeS2CSessionTransferProgress.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'filename={self.filename}',
@@ -3687,6 +3959,13 @@ class RealTimeS2CSessionTransferFinished:
             none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: filename')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTransferFinished:
+        return RealTimeS2CSessionTransferFinished.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'filename={self.filename}',
@@ -3733,6 +4012,13 @@ class RealTimeS2CSessionMicrograph:
         return cls(
             none_raise(optional_map(json.get('micrograph', None), lambda it: MicrographMetadata.from_json(it)), lambda: KeyError('missing JSON key: micrograph')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionMicrograph:
+        return RealTimeS2CSessionMicrograph.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3793,6 +4079,13 @@ class RealTimeS2CSessionTiltSeries:
             optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTiltSeries:
+        return RealTimeS2CSessionTiltSeries.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'tilt_series={self.tilt_series}',
@@ -3844,6 +4137,13 @@ class RealTimeS2CSessionTwoDClasses:
             none_raise(optional_map(json.get('twoDClasses', None), lambda it: TwoDClassesData.from_json(it)), lambda: KeyError('missing JSON key: twoDClasses')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionTwoDClasses:
+        return RealTimeS2CSessionTwoDClasses.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'two_dclasses={self.two_dclasses}',
@@ -3890,6 +4190,13 @@ class RealTimeS2CSessionExport:
         return cls(
             none_raise(optional_map(json.get('export', None), lambda it: SessionExportData.from_json(it)), lambda: KeyError('missing JSON key: export')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionExport:
+        return RealTimeS2CSessionExport.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -3947,8 +4254,15 @@ class SingleParticleSessionArgs:
         return cls(
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
             none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupId')),
-            none_raise(optional_map(json.get('values', None), lambda it: arg_values_toml_from_json(it)), lambda: KeyError('missing JSON key: values')),
+            none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError('missing JSON key: values')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SingleParticleSessionArgs:
+        return SingleParticleSessionArgs.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4055,6 +4369,13 @@ class SingleParticleSessionData:
             none_raise(optional_map(json.get('numFrames', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numFrames')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SingleParticleSessionData:
+        return SingleParticleSessionData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'user_id={self.user_id}',
@@ -4129,8 +4450,15 @@ class TomographySessionArgs:
         return cls(
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
             none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupId')),
-            none_raise(optional_map(json.get('values', None), lambda it: arg_values_toml_from_json(it)), lambda: KeyError('missing JSON key: values')),
+            none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError('missing JSON key: values')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TomographySessionArgs:
+        return TomographySessionArgs.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4236,6 +4564,13 @@ class TomographySessionData:
             none_raise(optional_map(json.get('numTiltSeries', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numTiltSeries')),
             none_raise(optional_map(json.get('numTilts', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numTilts')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TomographySessionData:
+        return TomographySessionData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4367,6 +4702,13 @@ class RunningSessions:
             none_raise(optional_map(json.get('tomography', None), lambda it: [TomographySessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: tomography')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RunningSessions:
+        return RunningSessions.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'single_particle={self.single_particle}',
@@ -4416,6 +4758,13 @@ class SessionLogs:
             none_raise(optional_map(json.get('logs', None), lambda it: [SessionLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: logs')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionLogs:
+        return SessionLogs.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'logs={self.logs}',
@@ -4462,6 +4811,13 @@ class SessionCommands:
         return cls(
             none_raise(optional_map(json.get('command', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: command')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionCommands:
+        return SessionCommands.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4510,6 +4866,13 @@ class SessionLog:
             optional_map(json.get('log', None), lambda it: cast(str, it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionLog:
+        return SessionLog.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'log={self.log}',
@@ -4557,6 +4920,13 @@ class SessionSpeeds:
             none_raise(optional_map(json.get('transfers', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: transfers')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionSpeeds:
+        return SessionSpeeds.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'transfers={self.transfers}',
@@ -4603,6 +4973,13 @@ class SessionJobsLogs:
         return cls(
             none_raise(optional_map(json.get('jobs', None), lambda it: [SessionJobLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobs')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionJobsLogs:
+        return SessionJobsLogs.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4657,6 +5034,13 @@ class SessionJobLogs:
             none_raise(optional_map(json.get('logs', None), lambda it: [SessionJobLog.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: logs')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionJobLogs:
+        return SessionJobLogs.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'representative_command={self.representative_command}',
@@ -4680,15 +5064,9 @@ class SessionExportRequest:
     """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportRequest'
-    
-    
+    @abstractmethod
     def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-        }
+        pass
     
     @classmethod
     def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportRequest:
@@ -4696,24 +5074,21 @@ class SessionExportRequest:
         Creates a new class instance from JSON
         """
         
-        return cls(
-        )
+        cls_type = json['type']
+        if cls_type == 'edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter':
+            return SessionExportRequestFilter.from_json(json)
+        else:
+            raise Exception(f'unrecognized polymorphic subtype {cls_type} for supertype SessionExportRequest')
+    @abstractmethod
+    def serialize(self) -> str:
+        pass
     
-    def __str__(self) -> str:
-        props = ', '.join([
-        ])
-        return f'SessionExportRequest[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, SessionExportRequest):
-            return NotImplemented
-        return True  # we are all the same! =D
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportRequest:
+        return SessionExportRequest.from_json(json.loads(serialized), type_ids)
 
 
-class SessionExportRequestFilter:
+class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
     """
     (no description yet)
     """
@@ -4745,6 +5120,13 @@ class SessionExportRequestFilter:
         return cls(
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportRequestFilter:
+        return SessionExportRequestFilter.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4817,6 +5199,13 @@ class AvgRotData:
             none_raise(optional_map(json.get('minRes', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: minRes')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> AvgRotData:
+        return AvgRotData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'spatial_freq={self.spatial_freq}',
@@ -4877,6 +5266,13 @@ class MotionData:
             none_raise(optional_map(json.get('x', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: x')),
             none_raise(optional_map(json.get('y', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: y')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MotionData:
+        return MotionData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -4951,6 +5347,13 @@ class DriftMetadata:
             none_raise(optional_map(json.get('tiltAxisAngle', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: tiltAxisAngle')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> DriftMetadata:
+        return DriftMetadata.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'tilts={self.tilts}',
@@ -5024,6 +5427,13 @@ class Block:
             none_raise(optional_map(json.get('groupIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: groupIds')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> Block:
+        return Block.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'block_id={self.block_id}',
@@ -5052,11 +5462,7 @@ class ImagesScale:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImagesScale'
     
-    def __init__(self, particle_radius_unbinned: float, pixel_a: float, particle_radius_a: float) -> None:
-        self.particle_radius_unbinned: float = particle_radius_unbinned
-        """
-        The particle radius, in unbinned pixels
-        """
+    def __init__(self, pixel_a: float, particle_radius_a: float) -> None:
         self.pixel_a: float = pixel_a
         """
         The size, in Angstroms, of one pixel in the source image
@@ -5072,7 +5478,6 @@ class ImagesScale:
         """
         
         return {
-            'particleRadiusUnbinned': self.particle_radius_unbinned,
             'pixelA': self.pixel_a,
             'particleRadiusA': self.particle_radius_a,
         }
@@ -5084,14 +5489,19 @@ class ImagesScale:
         """
         
         return cls(
-            none_raise(optional_map(json.get('particleRadiusUnbinned', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: particleRadiusUnbinned')),
             none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: pixelA')),
             none_raise(optional_map(json.get('particleRadiusA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: particleRadiusA')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ImagesScale:
+        return ImagesScale.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
-            f'particle_radius_unbinned={self.particle_radius_unbinned}',
             f'pixel_a={self.pixel_a}',
             f'particle_radius_a={self.particle_radius_a}',
         ])
@@ -5103,8 +5513,7 @@ class ImagesScale:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, ImagesScale):
             return NotImplemented
-        return self.particle_radius_unbinned == other.particle_radius_unbinned \
-            and self.pixel_a == other.pixel_a \
+        return self.pixel_a == other.pixel_a \
             and self.particle_radius_a == other.particle_radius_a
 
 
@@ -5221,6 +5630,13 @@ class AppPermissionData:
             optional_map(json.get('description', None), lambda it: cast(str, it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> AppPermissionData:
+        return AppPermissionData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'app_permission_id={self.app_permission_id}',
@@ -5281,6 +5697,13 @@ class PreprocessingPropRange:
             none_raise(optional_map(json.get('min', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: min')),
             none_raise(optional_map(json.get('max', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: max')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> PreprocessingPropRange:
+        return PreprocessingPropRange.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -5350,6 +5773,13 @@ class ReconstructionData:
             none_raise(optional_map(json.get('classNum', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: classNum')),
             none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: iteration')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ReconstructionData:
+        return ReconstructionData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -5427,6 +5857,13 @@ class RefinementData:
             none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: iteration')),
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RefinementData:
+        return RefinementData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -5507,6 +5944,13 @@ class RefinementBundleData:
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RefinementBundleData:
+        return RefinementBundleData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'id={self.id}',
@@ -5579,6 +6023,13 @@ class PypStats:
             optional_map(json.get('scopeDoseRate', None), lambda it: cast(float, it)),
             optional_map(json.get('particleRadius', None), lambda it: cast(float, it)),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> PypStats:
+        return PypStats.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -5733,6 +6184,13 @@ class JobArgs(Generic[T]):
             optional_map(json.get('next', None), lambda it: reader_polymorphic_T(it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> JobArgs[T]:
+        return JobArgs.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'finished={self.finished}',
@@ -5787,6 +6245,13 @@ class UserData:
             none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: id')),
             optional_map(json.get('name', None), lambda it: cast(str, it)),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> UserData:
+        return UserData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -5854,6 +6319,13 @@ class ProjectRunData:
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
             none_raise(optional_map(json.get('jobs', None), lambda it: [JobRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobs')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectRunData:
+        return ProjectRunData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6058,6 +6530,13 @@ class StreamLogMsg:
             none_raise(optional_map(json.get('msg', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: msg')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> StreamLogMsg:
+        return StreamLogMsg.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'timestamp={self.timestamp}',
@@ -6113,6 +6592,13 @@ class SingleParticleSessionDisplay:
             none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupName')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SingleParticleSessionDisplay:
+        return SingleParticleSessionDisplay.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'group_name={self.group_name}',
@@ -6159,6 +6645,13 @@ class TomographySessionDisplay:
         return cls(
             none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupName')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TomographySessionDisplay:
+        return TomographySessionDisplay.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6218,6 +6711,13 @@ class SessionLogData:
             none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionLogData:
+        return SessionLogData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6282,6 +6782,13 @@ class SessionJobLogData:
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionJobLogData:
+        return SessionJobLogData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -6338,6 +6845,13 @@ class SessionJobLog:
             optional_map(json.get('arrayId', None), lambda it: cast(int, it)),
             optional_map(json.get('log', None), lambda it: cast(str, it)),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionJobLog:
+        return SessionJobLog.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6418,7 +6932,7 @@ class SessionExportData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportData'
     
-    def __init__(self, session_id: str, export_id: str, request: str, created: int, cluster_job_id: Optional[str], result: Optional[str]) -> None:
+    def __init__(self, session_id: str, export_id: str, request: Serialized_SessionExportRequest, created: int, cluster_job_id: Optional[str], result: Optional[Serialized_SessionExportResult]) -> None:
         self.session_id: str = session_id
         """
         (no description yet)
@@ -6427,9 +6941,9 @@ class SessionExportData:
         """
         (no description yet)
         """
-        self.request: str = request
+        self.request: Serialized_SessionExportRequest = request
         """
-        serialized SessionExportRequest
+        (no description yet)
         """
         self.created: int = created
         """
@@ -6439,9 +6953,9 @@ class SessionExportData:
         """
         (no description yet)
         """
-        self.result: Optional[str] = result
+        self.result: Optional[Serialized_SessionExportResult] = result
         """
-        serialized SessionExportResult
+        (no description yet)
         """
     
     def to_json(self) -> Dict[str,Any]:
@@ -6467,11 +6981,18 @@ class SessionExportData:
         return cls(
             none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: sessionId')),
             none_raise(optional_map(json.get('exportId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: exportId')),
-            none_raise(optional_map(json.get('request', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: request')),
+            none_raise(optional_map(json.get('request', None), lambda it: cast(Serialized_SessionExportRequest, it)), lambda: KeyError('missing JSON key: request')),
             none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
             optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)),
-            optional_map(json.get('result', None), lambda it: cast(str, it)),
+            optional_map(json.get('result', None), lambda it: cast(Serialized_SessionExportResult, it)),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportData:
+        return SessionExportData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6584,6 +7105,13 @@ class MicrographMetadata:
             optional_map(json.get('sourceDims', None), lambda it: ImageDims.from_json(it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MicrographMetadata:
+        return MicrographMetadata.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'id={self.id}',
@@ -6660,6 +7188,13 @@ class TwoDClassesData:
             none_raise(optional_map(json.get('twoDClassesId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: twoDClassesId')),
             none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: created')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TwoDClassesData:
+        return TwoDClassesData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6766,6 +7301,13 @@ class TiltSeriesData:
             optional_map(json.get('sourceDims', None), lambda it: ImageDims.from_json(it)),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TiltSeriesData:
+        return TiltSeriesData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'id={self.id}',
@@ -6836,6 +7378,13 @@ class DriftXY:
             none_raise(optional_map(json.get('x', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: x')),
             none_raise(optional_map(json.get('y', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: y')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> DriftXY:
+        return DriftXY.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -6916,6 +7465,13 @@ class CtfTiltValues:
             none_raise(optional_map(json.get('resolution', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: resolution')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> CtfTiltValues:
+        return CtfTiltValues.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'index={self.index}',
@@ -6948,11 +7504,7 @@ class ImageDims:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImageDims'
     
-    def __init__(self, num_slices: int, width: int, height: int, depth: int, binning_factor: int) -> None:
-        self.num_slices: int = num_slices
-        """
-        (no description yet)
-        """
+    def __init__(self, width: int, height: int, depth: int, binning_factor: int) -> None:
         self.width: int = width
         """
         image width, in pixels
@@ -6976,7 +7528,6 @@ class ImageDims:
         """
         
         return {
-            'numSlices': self.num_slices,
             'width': self.width,
             'height': self.height,
             'depth': self.depth,
@@ -6990,16 +7541,21 @@ class ImageDims:
         """
         
         return cls(
-            none_raise(optional_map(json.get('numSlices', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numSlices')),
             none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: width')),
             none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: height')),
             none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: depth')),
             none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: binningFactor')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ImageDims:
+        return ImageDims.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
-            f'num_slices={self.num_slices}',
             f'width={self.width}',
             f'height={self.height}',
             f'depth={self.depth}',
@@ -7013,8 +7569,7 @@ class ImageDims:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, ImageDims):
             return NotImplemented
-        return self.num_slices == other.num_slices \
-            and self.width == other.width \
+        return self.width == other.width \
             and self.height == other.height \
             and self.depth == other.depth \
             and self.binning_factor == other.binning_factor
@@ -7064,6 +7619,13 @@ class JobRunData:
             none_raise(optional_map(json.get('clusterJobs', None), lambda it: [ClusterJobData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: clusterJobs')),
         )
     
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> JobRunData:
+        return JobRunData.from_json(json.loads(serialized), type_ids)
+    
     def __str__(self) -> str:
         props = ', '.join([
             f'job_id={self.job_id}',
@@ -7081,6 +7643,281 @@ class JobRunData:
         return self.job_id == other.job_id \
             and self.status == other.status \
             and self.cluster_jobs == other.cluster_jobs
+
+
+class SessionExportResult:
+    """
+    WARNING: be very careful changing these classes! They get saved in the sessionExports database in serialized form, so deserializing old data could cause problems depending on how backwards compatible kotlinx.serialization is. Making changes here may require database migrations.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportResult'
+    @abstractmethod
+    def to_json(self) -> Dict[str,Any]:
+        pass
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportResult:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        cls_type = json['type']
+        if cls_type == 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Canceled':
+            return SessionExportResultCanceled.from_json(json)
+        elif cls_type == 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Failed':
+            return SessionExportResultFailed.from_json(json)
+        elif cls_type == 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded':
+            return SessionExportResultSucceeded.from_json(json)
+        else:
+            raise Exception(f'unrecognized polymorphic subtype {cls_type} for supertype SessionExportResult')
+    @abstractmethod
+    def serialize(self) -> str:
+        pass
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportResult:
+        return SessionExportResult.from_json(json.loads(serialized), type_ids)
+
+
+class SessionExportResultCanceled(SessionExportResult, metaclass=ABCMeta):
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Canceled'
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'type': 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Canceled',
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultCanceled:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultCanceled:
+        return SessionExportResultCanceled.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+        ])
+        return f'SessionExportResultCanceled[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionExportResultCanceled):
+            return NotImplemented
+        return True  # we are all the same! =D
+
+
+class SessionExportResultFailed(SessionExportResult, metaclass=ABCMeta):
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Failed'
+    
+    def __init__(self, reason: str) -> None:
+        self.reason: str = reason
+        """
+        This message is displayed to the user, so make it readable
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'type': 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Failed',
+            'reason': self.reason,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultFailed:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('reason', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: reason')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultFailed:
+        return SessionExportResultFailed.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'reason={self.reason}',
+        ])
+        return f'SessionExportResultFailed[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionExportResultFailed):
+            return NotImplemented
+        return self.reason == other.reason
+
+
+class SessionExportResultSucceeded(SessionExportResult, metaclass=ABCMeta):
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded'
+    
+    def __init__(self, output: SessionExportResultSucceededOutput) -> None:
+        self.output: SessionExportResultSucceededOutput = output
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'type': 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded',
+            'output': self.output.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultSucceeded:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('output', None), lambda it: SessionExportResultSucceededOutput.from_json(it)), lambda: KeyError('missing JSON key: output')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultSucceeded:
+        return SessionExportResultSucceeded.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'output={self.output}',
+        ])
+        return f'SessionExportResultSucceeded[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionExportResultSucceeded):
+            return NotImplemented
+        return self.output == other.output
+
+
+class SessionExportResultSucceededOutput:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded.Output'
+    @abstractmethod
+    def to_json(self) -> Dict[str,Any]:
+        pass
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultSucceededOutput:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        cls_type = json['type']
+        if cls_type == 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded.Output.Filter':
+            return SessionExportResultSucceededOutputFilter.from_json(json)
+        else:
+            raise Exception(f'unrecognized polymorphic subtype {cls_type} for supertype SessionExportResultSucceededOutput')
+    @abstractmethod
+    def serialize(self) -> str:
+        pass
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultSucceededOutput:
+        return SessionExportResultSucceededOutput.from_json(json.loads(serialized), type_ids)
+
+
+class SessionExportResultSucceededOutputFilter(SessionExportResultSucceededOutput, metaclass=ABCMeta):
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded.Output.Filter'
+    
+    def __init__(self, path: str) -> None:
+        self.path: str = path
+        """
+        relative to the session folder
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'type': 'edu.duke.bartesaghi.micromon.services.SessionExportResult.Succeeded.Output.Filter',
+            'path': self.path,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultSucceededOutputFilter:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionExportResultSucceededOutputFilter:
+        return SessionExportResultSucceededOutputFilter.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'path={self.path}',
+        ])
+        return f'SessionExportResultSucceededOutputFilter[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionExportResultSucceededOutputFilter):
+            return NotImplemented
+        return self.path == other.path
 
 
 class ClusterJobData:
@@ -7138,6 +7975,13 @@ class ClusterJobData:
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
             optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobData:
+        return ClusterJobData.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
@@ -7217,6 +8061,13 @@ class ClusterJobDataArrayInfo:
             none_raise(optional_map(json.get('canceled', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: canceled')),
             none_raise(optional_map(json.get('failed', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: failed')),
         )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobDataArrayInfo:
+        return ClusterJobDataArrayInfo.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
