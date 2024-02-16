@@ -213,9 +213,9 @@ Then, just give your new session a name and pick a group ID.
 .. tip::
 
 	If you don't know the group ID you want to use already,
-	you can list all of the current group IDs with :py:meth:`.SessionService.groups`.
+	you can list all of the current group IDs with :py:meth:`.SessionsService.groups`.
 
-Finally, you can start the main session daemon with :py:meth:`.SessionService.start`:
+Finally, you can start the main session daemon with :py:meth:`.SessionsService.start`:
 
 .. code-block:: python3
 
