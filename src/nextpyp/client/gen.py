@@ -140,6 +140,7 @@ class AppsService:
         """
         Returns the version numbers of NextPYP
         
+        
         :Permission Needed: none
         """
         path = '/kv/apps/version'
@@ -152,6 +153,7 @@ class AppsService:
         """
         Request an app token for your app on behalf of a specific user.
         Once requested, the user will need to approve the token request on the website. After approval, the user can copy the app token (it's a string) into your app.
+        
         
         :Permission Needed: none
         """
@@ -6110,11 +6112,10 @@ ProjectPermission.Read = ProjectPermission('Read')
 class JobArgs(Generic[T]):
     """
     Argument storage for jobs.
-    Jobs can have two sets of arguments. The 
-    finished
-     arguments: the arguments that were used when running the job the last time. And/or the 
-    next
-     arguments: the arguments that will be used to run the job the next time.
+    Jobs can have two sets of arguments:
+    
+    * The ``finished`` arguments: the arguments that were used when running the job the last time.
+    * And/or the ``next`` arguments: the arguments that will be used to run the job the next time.
     """
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobArgs'

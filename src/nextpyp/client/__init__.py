@@ -98,9 +98,8 @@ class Client:
             The credentials, if any, to be used with this client.
 
             Omit this parameter to use the client in unauthenticated mode.
-            Unauthenticated mode is only able to access a limited set of services.
-
-            TODO: document what these services are
+            Unauthenticated mode is only able to access a limited set of service functions.
+            These service functions are marked as **Permission Needed:** ``none`` in the documentation.
         """
 
         self.url_base: str = url_base

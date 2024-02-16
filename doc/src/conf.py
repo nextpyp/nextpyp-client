@@ -12,6 +12,11 @@
 #       https://www.sphinx-doc.org/en/master/usage/domains/python.html#python-roles
 
 
+# load local extensions
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '_ext'))
+
 # project info
 project = 'nextpyp-client'
 author = 'Jeff Martin'
@@ -35,13 +40,17 @@ extensions = [
     # https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
     # that are actually documented somewhere!
     # https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+
+    # custom extension to allow additional RST markup
+    'rst_roles'
 ]
 templates_path = ['_templates']
 
 # styling
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
+html_css_files = ['style.css']
 
 # autosummary config
 # https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html#generating-stub-pages-automatically
