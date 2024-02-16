@@ -8,6 +8,6 @@ docs:
     paths:
       - public
   only:
-    # only run this CI pipeline on master
+    # only run this CI pipeline on main
     refs:
-      - master
+      - main
