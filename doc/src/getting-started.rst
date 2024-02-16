@@ -241,7 +241,7 @@ However, since sessions/jobs can start sending messages very quickly after start
 listening to the session before starting it.
 
 After creating the session, but before starting it, start listening to it by sending the
-:py:class:`RealTimeC2SListenToSession` message to the real-time service.
+:py:class:`.RealTimeC2SListenToSession` message to the real-time service.
 Then wait for incoming messages from the server:
 
 .. code-block:: python3
@@ -279,24 +279,8 @@ is designed to run forever, we'll need to cancel it explicitly.
 	# do some stuff, like start the session, wait a bit, etc
 	future.cancel()
 
-Or, if you're currently in a sync context, you can start a new ``asyncio`` runner to run the ``async`` listener:
-
-.. code-block:: python3
-
-	import asyncio
-
-	runner = asyncio.Runner()
-	coro = listen_to_session(client, session_id)
-	future = asyncio.run_coroutine_threadsafe(coro, runner.get_loop())
-	# do some stuff, like start the session, wait a bit, etc
-	future.cancel()
-	runner.close()
-
-.. note::
-
-	``asyncio.Runner`` requires Python 3.11 or newer.
-
-For versions of Python 3 older than 3.11, you can create and poll the event loop manually:
+Or, if you're currently in a sync context, you can start a new event loop to run the ``async`` listener,
+but you'll have to poll the event loop manually to process the tasks:
 
 .. code-block:: python3
 
@@ -316,3 +300,8 @@ For versions of Python 3 older than 3.11, you can create and poll the event loop
 	loop.stop()
 	loop.run_until_complete(task)
 	loop.close()
+
+.. note::
+
+	``asyncio.Runner`` is available in Python 3.11 and newer and may simplify running async
+	tasks from sync contexts.
