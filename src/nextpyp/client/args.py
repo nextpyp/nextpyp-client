@@ -511,10 +511,9 @@ class PypArgs:
 class PypArgValues:
 
     @classmethod
-    def from_toml(cls, args: PypArgs, toml_str: Optional[str] = None) -> PypArgValues:
+    def from_toml(cls, args: PypArgs, toml_str: str) -> PypArgValues:
         values = PypArgValues(args)
-        if toml_str is not None:
-            values.read(toml_str)
+        values.read(toml_str)
         return values
 
     def __init__(self, args: PypArgs) -> None:

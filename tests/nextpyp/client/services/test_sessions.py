@@ -124,7 +124,7 @@ def test_spa_create() -> None:
         "numFrames": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
+    pyp_args = PypArgValues(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
     pyp_args.data_path = '/foo/bar'
     pyp_args.scope_pixel = 1
     pyp_args.slurm_verbose = True
@@ -191,7 +191,7 @@ def test_spa_edit() -> None:
         "numFrames": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
+    pyp_args = PypArgValues(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
     pyp_args.data_path = '/foo/bar'
     args = SingleParticleSessionArgs(
         'My new session',
@@ -359,7 +359,7 @@ def test_tomo_create() -> None:
         "numTilts": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_TOMOGRAPHY))
+    pyp_args = PypArgValues(block_args(PypBlock.SESSION_TOMOGRAPHY))
     pyp_args.data_path = '/foo/bar'
     pyp_args.scope_pixel = 1
     pyp_args.slurm_verbose = True
@@ -426,7 +426,7 @@ def test_tomo_edit() -> None:
         "numTilts": 0
     }
 
-    pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_TOMOGRAPHY))
+    pyp_args = PypArgValues(block_args(PypBlock.SESSION_TOMOGRAPHY))
     pyp_args.data_path = '/foo/bar'
     args = TomographySessionArgs(
         'My new session',

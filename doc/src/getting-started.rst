@@ -194,7 +194,7 @@ Next, we'll create a new single particle session:
 	from nextpyp.client.args import block_args, PypArgValues, PypBlock
 	from nextpyp.client.gen import SingleParticleSessionArgs
 
-	pyp_args = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
+	pyp_args = PypArgValues(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
 	pyp_args.data_path = '/foo/bar'
 	pyp_args.scope_pixel = 1
 	pyp_args.slurm_verbose = True
