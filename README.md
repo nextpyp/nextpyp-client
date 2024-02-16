@@ -10,6 +10,10 @@ to browser clients, including listening to real-time updates from the server.
 
 ## Documentation
 
+The newest version of the documentation is available online at:
+
+https://nextpyp.app/nextpyp-client
+
 Documentation sources are available in the `doc/src` folder.
 
 You can build the documentation with the command:
@@ -19,5 +23,3 @@ tox run -e doc
 Then the full HTML documentation will appear at `doc/build/html/index.html`
 
 Building the documentation requires the [tox](https://tox.wiki) tool.
-
-TODO: make documentation available on a website somewhere using a CI tool?
