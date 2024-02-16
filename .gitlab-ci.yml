@@ -1,0 +1,13 @@
+image: python:3.8.8
+docs:
+  script:
+    - pip install tox
+    - tox run -e doc
+    - mv doc/build/html public
+  artifacts:
+    paths:
+      - public
+  only:
+    # only run this CI pipeline on master
+    refs:
+      - master
