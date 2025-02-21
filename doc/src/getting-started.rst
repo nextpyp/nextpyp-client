@@ -41,7 +41,7 @@ First, check out the project from git. Then install the module in development mo
 
 .. code-block:: shell
 
-	pyp install -e path/to/nextpyp-client
+	pip install -e path/to/nextpyp-client
 
 
 Overview
