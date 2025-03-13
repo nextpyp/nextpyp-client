@@ -166,7 +166,7 @@ and functions.
 		)
 	)
 
-	sessions = client.services.single_particle_sessions.list('jeff')
+	sessions = client.services.single_particle_sessions.list()
 	for session in sessions:
 		print(f'Session ID: {session.session_id}')
 		if session.args.finished is not None:
