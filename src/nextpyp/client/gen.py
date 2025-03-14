@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from nextpyp.client import Client
 
 
-API_VERSION = '1.0.0'
+API_VERSION = '1.1.0'
 
 
 T = TypeVar('T')
@@ -310,30 +310,6 @@ class SessionsService:
             raise Exception(f'response expected from {path}, but none received')
         return SessionLogs.from_json(response)
 
-    def commands(self, session_id: str, job_id: str) -> SessionCommands:
-        """
-        (no description yet)
-        
-        :Permission Needed: ``session_read``
-        """
-        path = '/kv/sessions/cmds'
-        response = self.client._transport.call(path, [session_id, job_id])
-        if response is None:
-            raise Exception(f'response expected from {path}, but none received')
-        return SessionCommands.from_json(response)
-
-    def log(self, session_id: str, job_id: str) -> SessionLog:
-        """
-        (no description yet)
-        
-        :Permission Needed: ``session_read``
-        """
-        path = '/kv/sessions/log'
-        response = self.client._transport.call(path, [session_id, job_id])
-        if response is None:
-            raise Exception(f'response expected from {path}, but none received')
-        return SessionLog.from_json(response)
-
     def speeds(self, session_id: str) -> SessionSpeeds:
         """
         (no description yet)
@@ -357,18 +333,6 @@ class SessionsService:
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return SessionJobsLogs.from_json(response)
-
-    def job_logs(self, session_id: str, job_id: str) -> SessionJobLogs:
-        """
-        (no description yet)
-        
-        :Permission Needed: ``session_read``
-        """
-        path = '/kv/sessions/jobLogs'
-        response = self.client._transport.call(path, [session_id, job_id])
-        if response is None:
-            raise Exception(f'response expected from {path}, but none received')
-        return SessionJobLogs.from_json(response)
 
     def get_avg_rot(self, session_id: str, data_id: str) -> Optional[AvgRotData]:
         """
@@ -511,14 +475,14 @@ class SingleParticleSessionsService:
             raise Exception(f'response expected from {path}, but none received')
         return SingleParticleSessionData.from_json(response)
 
-    def edit(self, session_id: str, args: Optional[SingleParticleSessionArgs]) -> SingleParticleSessionData:
+    def edit(self, session_id: str, args: SingleParticleSessionArgs) -> SingleParticleSessionData:
         """
         (no description yet)
         
         :Permission Needed: ``session_write``
         """
         path = '/kv/session/single-particle/edit'
-        response = self.client._transport.call(path, [session_id, args.to_json() if args is not None else None])
+        response = self.client._transport.call(path, [session_id, args.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return SingleParticleSessionData.from_json(response)
@@ -577,14 +541,14 @@ class TomographySessionsService:
             raise Exception(f'response expected from {path}, but none received')
         return TomographySessionData.from_json(response)
 
-    def edit(self, session_id: str, args: Optional[TomographySessionArgs]) -> TomographySessionData:
+    def edit(self, session_id: str, args: TomographySessionArgs) -> TomographySessionData:
         """
         (no description yet)
         
         :Permission Needed: ``session_write``
         """
         path = '/kv/session/tomography/edit'
-        response = self.client._transport.call(path, [session_id, args.to_json() if args is not None else None])
+        response = self.client._transport.call(path, [session_id, args.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return TomographySessionData.from_json(response)
@@ -2210,7 +2174,7 @@ class RealTimeS2CJobFinish:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.JobFinish'
     
-    def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus) -> None:
+    def __init__(self, run_id: int, job_id: str, job_string: str, status: RunStatus, error_message: Optional[str]) -> None:
         self.run_id: int = run_id
         """
         (no description yet)
@@ -2227,6 +2191,10 @@ class RealTimeS2CJobFinish:
         """
         (no description yet)
         """
+        self.error_message: Optional[str] = error_message
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2238,6 +2206,7 @@ class RealTimeS2CJobFinish:
             'jobId': self.job_id,
             'jobString': self.job_string,
             'status': self.status.to_json(),
+            'errorMessage': self.error_message if self.error_message is not None else None,
         }
     
     @classmethod
@@ -2251,6 +2220,7 @@ class RealTimeS2CJobFinish:
             none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
             none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobString')),
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError('missing JSON key: status')),
+            optional_map(json.get('errorMessage', None), lambda it: cast(str, it)),
         )
     
     def serialize(self) -> str:
@@ -2266,6 +2236,7 @@ class RealTimeS2CJobFinish:
             f'job_id={self.job_id}',
             f'job_string={self.job_string}',
             f'status={self.status}',
+            f'error_message={self.error_message}',
         ])
         return f'RealTimeS2CJobFinish[{props}]'
     
@@ -2278,7 +2249,8 @@ class RealTimeS2CJobFinish:
         return self.run_id == other.run_id \
             and self.job_id == other.job_id \
             and self.job_string == other.job_string \
-            and self.status == other.status
+            and self.status == other.status \
+            and self.error_message == other.error_message
 
 
 class RealTimeS2CProjectRunFinish:
@@ -2772,12 +2744,8 @@ class RealTimeS2CUpdatedParameters:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.UpdatedParameters'
     
-    def __init__(self, pyp_stats: PypStats, images_scale: ImagesScale) -> None:
+    def __init__(self, pyp_stats: PypStats) -> None:
         self.pyp_stats: PypStats = pyp_stats
-        """
-        (no description yet)
-        """
-        self.images_scale: ImagesScale = images_scale
         """
         (no description yet)
         """
@@ -2789,7 +2757,6 @@ class RealTimeS2CUpdatedParameters:
         
         return {
             'pypStats': self.pyp_stats.to_json(),
-            'imagesScale': self.images_scale.to_json(),
         }
     
     @classmethod
@@ -2800,7 +2767,6 @@ class RealTimeS2CUpdatedParameters:
         
         return cls(
             none_raise(optional_map(json.get('pypStats', None), lambda it: PypStats.from_json(it)), lambda: KeyError('missing JSON key: pypStats')),
-            none_raise(optional_map(json.get('imagesScale', None), lambda it: ImagesScale.from_json(it)), lambda: KeyError('missing JSON key: imagesScale')),
         )
     
     def serialize(self) -> str:
@@ -2813,7 +2779,6 @@ class RealTimeS2CUpdatedParameters:
     def __str__(self) -> str:
         props = ', '.join([
             f'pyp_stats={self.pyp_stats}',
-            f'images_scale={self.images_scale}',
         ])
         return f'RealTimeS2CUpdatedParameters[{props}]'
     
@@ -2823,8 +2788,7 @@ class RealTimeS2CUpdatedParameters:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, RealTimeS2CUpdatedParameters):
             return NotImplemented
-        return self.pyp_stats == other.pyp_stats \
-            and self.images_scale == other.images_scale
+        return self.pyp_stats == other.pyp_stats
 
 
 class RealTimeS2CSessionStatus:
@@ -2834,7 +2798,7 @@ class RealTimeS2CSessionStatus:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionStatus'
     
-    def __init__(self, daemons_running: List[bool], jobs_running: List[RealTimeS2CSessionRunningJob], images_scale: Optional[ImagesScale], tomo_vir_method: TomoVirMethod, tomo_vir_rad: float, tomo_vir_binn: int) -> None:
+    def __init__(self, daemons_running: List[bool], jobs_running: List[RealTimeS2CSessionRunningJob], tomo_vir_method: TomoVirMethod, tomo_vir_rad: ValueA, tomo_vir_binn: int, tomo_vir_detect_method: TomoVirDetectMethod, tomo_spk_method: TomoSpkMethod, tomo_spk_rad: ValueA) -> None:
         self.daemons_running: List[bool] = daemons_running
         """
         in order of SessionDaemon.values()
@@ -2843,19 +2807,27 @@ class RealTimeS2CSessionStatus:
         """
         (no description yet)
         """
-        self.images_scale: Optional[ImagesScale] = images_scale
-        """
-        (no description yet)
-        """
         self.tomo_vir_method: TomoVirMethod = tomo_vir_method
         """
         (no description yet)
         """
-        self.tomo_vir_rad: float = tomo_vir_rad
+        self.tomo_vir_rad: ValueA = tomo_vir_rad
         """
         (no description yet)
         """
         self.tomo_vir_binn: int = tomo_vir_binn
+        """
+        (no description yet)
+        """
+        self.tomo_vir_detect_method: TomoVirDetectMethod = tomo_vir_detect_method
+        """
+        (no description yet)
+        """
+        self.tomo_spk_method: TomoSpkMethod = tomo_spk_method
+        """
+        (no description yet)
+        """
+        self.tomo_spk_rad: ValueA = tomo_spk_rad
         """
         (no description yet)
         """
@@ -2868,10 +2840,12 @@ class RealTimeS2CSessionStatus:
         return {
             'daemonsRunning': [x for x in self.daemons_running],
             'jobsRunning': [x.to_json() for x in self.jobs_running],
-            'imagesScale': self.images_scale.to_json() if self.images_scale is not None else None,
             'tomoVirMethod': self.tomo_vir_method.to_json(),
-            'tomoVirRad': self.tomo_vir_rad,
+            'tomoVirRad': self.tomo_vir_rad.to_json(),
             'tomoVirBinn': self.tomo_vir_binn,
+            'tomoVirDetectMethod': self.tomo_vir_detect_method.to_json(),
+            'tomoSpkMethod': self.tomo_spk_method.to_json(),
+            'tomoSpkRad': self.tomo_spk_rad.to_json(),
         }
     
     @classmethod
@@ -2883,10 +2857,12 @@ class RealTimeS2CSessionStatus:
         return cls(
             none_raise(optional_map(json.get('daemonsRunning', None), lambda it: [cast(bool, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: daemonsRunning')),
             none_raise(optional_map(json.get('jobsRunning', None), lambda it: [RealTimeS2CSessionRunningJob.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobsRunning')),
-            optional_map(json.get('imagesScale', None), lambda it: ImagesScale.from_json(it)),
             none_raise(optional_map(json.get('tomoVirMethod', None), lambda it: TomoVirMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoVirMethod')),
-            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: tomoVirRad')),
+            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: ValueA.from_json(it)), lambda: KeyError('missing JSON key: tomoVirRad')),
             none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: tomoVirBinn')),
+            none_raise(optional_map(json.get('tomoVirDetectMethod', None), lambda it: TomoVirDetectMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoVirDetectMethod')),
+            none_raise(optional_map(json.get('tomoSpkMethod', None), lambda it: TomoSpkMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoSpkMethod')),
+            none_raise(optional_map(json.get('tomoSpkRad', None), lambda it: ValueA.from_json(it)), lambda: KeyError('missing JSON key: tomoSpkRad')),
         )
     
     def serialize(self) -> str:
@@ -2900,10 +2876,12 @@ class RealTimeS2CSessionStatus:
         props = ', '.join([
             f'daemons_running={self.daemons_running}',
             f'jobs_running={self.jobs_running}',
-            f'images_scale={self.images_scale}',
             f'tomo_vir_method={self.tomo_vir_method}',
             f'tomo_vir_rad={self.tomo_vir_rad}',
             f'tomo_vir_binn={self.tomo_vir_binn}',
+            f'tomo_vir_detect_method={self.tomo_vir_detect_method}',
+            f'tomo_spk_method={self.tomo_spk_method}',
+            f'tomo_spk_rad={self.tomo_spk_rad}',
         ])
         return f'RealTimeS2CSessionStatus[{props}]'
     
@@ -2915,10 +2893,12 @@ class RealTimeS2CSessionStatus:
             return NotImplemented
         return self.daemons_running == other.daemons_running \
             and self.jobs_running == other.jobs_running \
-            and self.images_scale == other.images_scale \
             and self.tomo_vir_method == other.tomo_vir_method \
             and self.tomo_vir_rad == other.tomo_vir_rad \
-            and self.tomo_vir_binn == other.tomo_vir_binn
+            and self.tomo_vir_binn == other.tomo_vir_binn \
+            and self.tomo_vir_detect_method == other.tomo_vir_detect_method \
+            and self.tomo_spk_method == other.tomo_spk_method \
+            and self.tomo_spk_rad == other.tomo_spk_rad
 
 
 class RealTimeS2CSessionSmallData:
@@ -2982,7 +2962,15 @@ class RealTimeS2CSessionLargeData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionLargeData'
     
-    def __init__(self, micrographs: List[MicrographMetadata], tilt_serieses: List[TiltSeriesData], two_dclasses: List[TwoDClassesData]) -> None:
+    def __init__(self, auto_virions_count: int, auto_particles_count: int, micrographs: List[MicrographMetadata], tilt_serieses: List[TiltSeriesData], two_dclasses: List[TwoDClassesData]) -> None:
+        self.auto_virions_count: int = auto_virions_count
+        """
+        (no description yet)
+        """
+        self.auto_particles_count: int = auto_particles_count
+        """
+        (no description yet)
+        """
         self.micrographs: List[MicrographMetadata] = micrographs
         """
         (no description yet)
@@ -3002,6 +2990,8 @@ class RealTimeS2CSessionLargeData:
         """
         
         return {
+            'autoVirionsCount': self.auto_virions_count,
+            'autoParticlesCount': self.auto_particles_count,
             'micrographs': [x.to_json() for x in self.micrographs],
             'tiltSerieses': [x.to_json() for x in self.tilt_serieses],
             'twoDClasses': [x.to_json() for x in self.two_dclasses],
@@ -3014,6 +3004,8 @@ class RealTimeS2CSessionLargeData:
         """
         
         return cls(
+            none_map(optional_map(json.get('autoVirionsCount', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('autoParticlesCount', None), lambda it: cast(int, it)), lambda: 0),
             none_raise(optional_map(json.get('micrographs', None), lambda it: [MicrographMetadata.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: micrographs')),
             none_raise(optional_map(json.get('tiltSerieses', None), lambda it: [TiltSeriesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: tiltSerieses')),
             none_raise(optional_map(json.get('twoDClasses', None), lambda it: [TwoDClassesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: twoDClasses')),
@@ -3028,6 +3020,8 @@ class RealTimeS2CSessionLargeData:
     
     def __str__(self) -> str:
         props = ', '.join([
+            f'auto_virions_count={self.auto_virions_count}',
+            f'auto_particles_count={self.auto_particles_count}',
             f'micrographs={self.micrographs}',
             f'tilt_serieses={self.tilt_serieses}',
             f'two_dclasses={self.two_dclasses}',
@@ -3040,7 +3034,9 @@ class RealTimeS2CSessionLargeData:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, RealTimeS2CSessionLargeData):
             return NotImplemented
-        return self.micrographs == other.micrographs \
+        return self.auto_virions_count == other.auto_virions_count \
+            and self.auto_particles_count == other.auto_particles_count \
+            and self.micrographs == other.micrographs \
             and self.tilt_serieses == other.tilt_serieses \
             and self.two_dclasses == other.two_dclasses
 
@@ -4044,16 +4040,8 @@ class RealTimeS2CSessionTiltSeries:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionTiltSeries'
     
-    def __init__(self, tilt_series: TiltSeriesData, num_auto_particles: Optional[int], num_auto_virions: Optional[int]) -> None:
+    def __init__(self, tilt_series: TiltSeriesData) -> None:
         self.tilt_series: TiltSeriesData = tilt_series
-        """
-        (no description yet)
-        """
-        self.num_auto_particles: Optional[int] = num_auto_particles
-        """
-        (no description yet)
-        """
-        self.num_auto_virions: Optional[int] = num_auto_virions
         """
         (no description yet)
         """
@@ -4065,8 +4053,6 @@ class RealTimeS2CSessionTiltSeries:
         
         return {
             'tiltSeries': self.tilt_series.to_json(),
-            'numAutoParticles': self.num_auto_particles if self.num_auto_particles is not None else None,
-            'numAutoVirions': self.num_auto_virions if self.num_auto_virions is not None else None,
         }
     
     @classmethod
@@ -4077,8 +4063,6 @@ class RealTimeS2CSessionTiltSeries:
         
         return cls(
             none_raise(optional_map(json.get('tiltSeries', None), lambda it: TiltSeriesData.from_json(it)), lambda: KeyError('missing JSON key: tiltSeries')),
-            optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)),
-            optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)),
         )
     
     def serialize(self) -> str:
@@ -4091,8 +4075,6 @@ class RealTimeS2CSessionTiltSeries:
     def __str__(self) -> str:
         props = ', '.join([
             f'tilt_series={self.tilt_series}',
-            f'num_auto_particles={self.num_auto_particles}',
-            f'num_auto_virions={self.num_auto_virions}',
         ])
         return f'RealTimeS2CSessionTiltSeries[{props}]'
     
@@ -4102,9 +4084,7 @@ class RealTimeS2CSessionTiltSeries:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, RealTimeS2CSessionTiltSeries):
             return NotImplemented
-        return self.tilt_series == other.tilt_series \
-            and self.num_auto_particles == other.num_auto_particles \
-            and self.num_auto_virions == other.num_auto_virions
+        return self.tilt_series == other.tilt_series
 
 
 class RealTimeS2CSessionTwoDClasses:
@@ -4222,8 +4202,12 @@ class SingleParticleSessionArgs:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SingleParticleSessionArgs'
     
-    def __init__(self, name: str, group_id: str, values: ArgValuesToml) -> None:
+    def __init__(self, name: str, path: str, group_id: str, values: ArgValuesToml) -> None:
         self.name: str = name
+        """
+        (no description yet)
+        """
+        self.path: str = path
         """
         (no description yet)
         """
@@ -4243,6 +4227,7 @@ class SingleParticleSessionArgs:
         
         return {
             'name': self.name,
+            'path': self.path,
             'groupId': self.group_id,
             'values': self.values,
         }
@@ -4255,6 +4240,7 @@ class SingleParticleSessionArgs:
         
         return cls(
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
             none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupId')),
             none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError('missing JSON key: values')),
         )
@@ -4269,6 +4255,7 @@ class SingleParticleSessionArgs:
     def __str__(self) -> str:
         props = ', '.join([
             f'name={self.name}',
+            f'path={self.path}',
             f'group_id={self.group_id}',
             f'values={self.values}',
         ])
@@ -4281,6 +4268,7 @@ class SingleParticleSessionArgs:
         if not isinstance(other, SingleParticleSessionArgs):
             return NotImplemented
         return self.name == other.name \
+            and self.path == other.path \
             and self.group_id == other.group_id \
             and self.values == other.values
 
@@ -4418,8 +4406,12 @@ class TomographySessionArgs:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomographySessionArgs'
     
-    def __init__(self, name: str, group_id: str, values: ArgValuesToml) -> None:
+    def __init__(self, name: str, path: str, group_id: str, values: ArgValuesToml) -> None:
         self.name: str = name
+        """
+        (no description yet)
+        """
+        self.path: str = path
         """
         (no description yet)
         """
@@ -4439,6 +4431,7 @@ class TomographySessionArgs:
         
         return {
             'name': self.name,
+            'path': self.path,
             'groupId': self.group_id,
             'values': self.values,
         }
@@ -4451,6 +4444,7 @@ class TomographySessionArgs:
         
         return cls(
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: path')),
             none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: groupId')),
             none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError('missing JSON key: values')),
         )
@@ -4465,6 +4459,7 @@ class TomographySessionArgs:
     def __str__(self) -> str:
         props = ', '.join([
             f'name={self.name}',
+            f'path={self.path}',
             f'group_id={self.group_id}',
             f'values={self.values}',
         ])
@@ -4477,6 +4472,7 @@ class TomographySessionArgs:
         if not isinstance(other, TomographySessionArgs):
             return NotImplemented
         return self.name == other.name \
+            and self.path == other.path \
             and self.group_id == other.group_id \
             and self.values == other.values
 
@@ -4782,114 +4778,6 @@ class SessionLogs:
         return self.logs == other.logs
 
 
-class SessionCommands:
-    """
-    (no description yet)
-    """
-    
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionCommands'
-    
-    def __init__(self, command: str) -> None:
-        self.command: str = command
-        """
-        (no description yet)
-        """
-    
-    def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-            'command': self.command,
-        }
-    
-    @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionCommands:
-        """
-        Creates a new class instance from JSON
-        """
-        
-        return cls(
-            none_raise(optional_map(json.get('command', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: command')),
-        )
-    
-    def serialize(self) -> str:
-        return json.dumps(self.to_json())
-    
-    @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionCommands:
-        return SessionCommands.from_json(json.loads(serialized), type_ids)
-    
-    def __str__(self) -> str:
-        props = ', '.join([
-            f'command={self.command}',
-        ])
-        return f'SessionCommands[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, SessionCommands):
-            return NotImplemented
-        return self.command == other.command
-
-
-class SessionLog:
-    """
-    (no description yet)
-    """
-    
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionLog'
-    
-    def __init__(self, log: Optional[str]) -> None:
-        self.log: Optional[str] = log
-        """
-        (no description yet)
-        """
-    
-    def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-            'log': self.log if self.log is not None else None,
-        }
-    
-    @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionLog:
-        """
-        Creates a new class instance from JSON
-        """
-        
-        return cls(
-            optional_map(json.get('log', None), lambda it: cast(str, it)),
-        )
-    
-    def serialize(self) -> str:
-        return json.dumps(self.to_json())
-    
-    @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionLog:
-        return SessionLog.from_json(json.loads(serialized), type_ids)
-    
-    def __str__(self) -> str:
-        props = ', '.join([
-            f'log={self.log}',
-        ])
-        return f'SessionLog[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, SessionLog):
-            return NotImplemented
-        return self.log == other.log
-
-
 class SessionSpeeds:
     """
     (no description yet)
@@ -4996,68 +4884,6 @@ class SessionJobsLogs:
         if not isinstance(other, SessionJobsLogs):
             return NotImplemented
         return self.jobs == other.jobs
-
-
-class SessionJobLogs:
-    """
-    (no description yet)
-    """
-    
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLogs'
-    
-    def __init__(self, representative_command: str, logs: List[SessionJobLog]) -> None:
-        self.representative_command: str = representative_command
-        """
-        (no description yet)
-        """
-        self.logs: List[SessionJobLog] = logs
-        """
-        (no description yet)
-        """
-    
-    def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-            'representativeCommand': self.representative_command,
-            'logs': [x.to_json() for x in self.logs],
-        }
-    
-    @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionJobLogs:
-        """
-        Creates a new class instance from JSON
-        """
-        
-        return cls(
-            none_raise(optional_map(json.get('representativeCommand', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: representativeCommand')),
-            none_raise(optional_map(json.get('logs', None), lambda it: [SessionJobLog.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: logs')),
-        )
-    
-    def serialize(self) -> str:
-        return json.dumps(self.to_json())
-    
-    @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionJobLogs:
-        return SessionJobLogs.from_json(json.loads(serialized), type_ids)
-    
-    def __str__(self) -> str:
-        props = ', '.join([
-            f'representative_command={self.representative_command}',
-            f'logs={self.logs}',
-        ])
-        return f'SessionJobLogs[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, SessionJobLogs):
-            return NotImplemented
-        return self.representative_command == other.representative_command \
-            and self.logs == other.logs
 
 
 class SessionExportRequest:
@@ -5457,21 +5283,17 @@ class Block:
             and self.group_ids == other.group_ids
 
 
-class ImagesScale:
+class ValueA:
     """
-    A way to represent the physical size of things in micrograph and tomogram images. These are params common to a set of source images.
+    (no description yet)
     """
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImagesScale'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ValueA'
     
-    def __init__(self, pixel_a: float, particle_radius_a: float) -> None:
-        self.pixel_a: float = pixel_a
+    def __init__(self, v: float) -> None:
+        self.v: float = v
         """
-        The size, in Angstroms, of one pixel in the source image
-        """
-        self.particle_radius_a: float = particle_radius_a
-        """
-        The radius, in Angstroms, of a particle
+        (no description yet)
         """
     
     def to_json(self) -> Dict[str,Any]:
@@ -5480,43 +5302,39 @@ class ImagesScale:
         """
         
         return {
-            'pixelA': self.pixel_a,
-            'particleRadiusA': self.particle_radius_a,
+            'v': self.v,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ImagesScale:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ValueA:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: pixelA')),
-            none_raise(optional_map(json.get('particleRadiusA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: particleRadiusA')),
+            none_raise(optional_map(json.get('v', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: v')),
         )
     
     def serialize(self) -> str:
         return json.dumps(self.to_json())
     
     @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ImagesScale:
-        return ImagesScale.from_json(json.loads(serialized), type_ids)
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ValueA:
+        return ValueA.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'pixel_a={self.pixel_a}',
-            f'particle_radius_a={self.particle_radius_a}',
+            f'v={self.v}',
         ])
-        return f'ImagesScale[{props}]'
+        return f'ValueA[{props}]'
     
     def __repr__(self) -> str:
         return self.__str__()
     
     def __eq__(self, other: object) -> Any:
-        if not isinstance(other, ImagesScale):
+        if not isinstance(other, ValueA):
             return NotImplemented
-        return self.pixel_a == other.pixel_a \
-            and self.particle_radius_a == other.particle_radius_a
+        return self.v == other.v
 
 
 class TomoVirMethod:
@@ -5524,8 +5342,6 @@ class TomoVirMethod:
     (no description yet)
     """
     
-    TopazEval: TomoVirMethod
-    TopazTrain: TomoVirMethod
     PYPEval: TomoVirMethod
     PYPTrain: TomoVirMethod
     Manual: TomoVirMethod
@@ -5548,11 +5364,7 @@ class TomoVirMethod:
         Reads this enum value from JSON
         """
         
-        if name == 'TopazEval':
-            return TomoVirMethod.TopazEval
-        elif name == 'TopazTrain':
-            return TomoVirMethod.TopazTrain
-        elif name == 'PYPEval':
+        if name == 'PYPEval':
             return TomoVirMethod.PYPEval
         elif name == 'PYPTrain':
             return TomoVirMethod.PYPTrain
@@ -5572,10 +5384,10 @@ class TomoVirMethod:
         return self.__str__()
     
     def __len__(self) -> int:
-        return 7
+        return 5
     
     def __iter__(self) -> Iterator[TomoVirMethod]:
-        return [TomoVirMethod.TopazEval, TomoVirMethod.TopazTrain, TomoVirMethod.PYPEval, TomoVirMethod.PYPTrain, TomoVirMethod.Manual, TomoVirMethod.Auto, TomoVirMethod.NoneVal].__iter__()
+        return [TomoVirMethod.PYPEval, TomoVirMethod.PYPTrain, TomoVirMethod.Manual, TomoVirMethod.Auto, TomoVirMethod.NoneVal].__iter__()
     
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, TomoVirMethod):
@@ -5585,13 +5397,149 @@ class TomoVirMethod:
     def __hash__(self) -> int:
         return hash(self.name)
 
-TomoVirMethod.TopazEval = TomoVirMethod('TopazEval')
-TomoVirMethod.TopazTrain = TomoVirMethod('TopazTrain')
 TomoVirMethod.PYPEval = TomoVirMethod('PYPEval')
 TomoVirMethod.PYPTrain = TomoVirMethod('PYPTrain')
 TomoVirMethod.Manual = TomoVirMethod('Manual')
 TomoVirMethod.Auto = TomoVirMethod('Auto')
 TomoVirMethod.NoneVal = TomoVirMethod('None')
+
+
+class TomoVirDetectMethod:
+    """
+    (no description yet)
+    """
+    
+    Manual: TomoVirDetectMethod
+    Auto: TomoVirDetectMethod
+    NoneVal: TomoVirDetectMethod
+    
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
+    def to_json(self) -> str:
+        """
+        Converts this enum value into JSON
+        """
+        
+        return self.name
+    
+    @classmethod
+    def from_json(cls, name: str) -> TomoVirDetectMethod:
+        """
+        Reads this enum value from JSON
+        """
+        
+        if name == 'Manual':
+            return TomoVirDetectMethod.Manual
+        elif name == 'Auto':
+            return TomoVirDetectMethod.Auto
+        elif name == 'None':
+            return TomoVirDetectMethod.NoneVal
+        else:
+            return cls(name)
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __len__(self) -> int:
+        return 3
+    
+    def __iter__(self) -> Iterator[TomoVirDetectMethod]:
+        return [TomoVirDetectMethod.Manual, TomoVirDetectMethod.Auto, TomoVirDetectMethod.NoneVal].__iter__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomoVirDetectMethod):
+            return NotImplemented
+        return self.name == other.name
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+TomoVirDetectMethod.Manual = TomoVirDetectMethod('Manual')
+TomoVirDetectMethod.Auto = TomoVirDetectMethod('Auto')
+TomoVirDetectMethod.NoneVal = TomoVirDetectMethod('None')
+
+
+class TomoSpkMethod:
+    """
+    (no description yet)
+    """
+    
+    TopazEval: TomoSpkMethod
+    TopazTrain: TomoSpkMethod
+    PYPEval: TomoSpkMethod
+    PYPTrain: TomoSpkMethod
+    Manual: TomoSpkMethod
+    Import: TomoSpkMethod
+    Auto: TomoSpkMethod
+    NoneVal: TomoSpkMethod
+    
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
+    def to_json(self) -> str:
+        """
+        Converts this enum value into JSON
+        """
+        
+        return self.name
+    
+    @classmethod
+    def from_json(cls, name: str) -> TomoSpkMethod:
+        """
+        Reads this enum value from JSON
+        """
+        
+        if name == 'TopazEval':
+            return TomoSpkMethod.TopazEval
+        elif name == 'TopazTrain':
+            return TomoSpkMethod.TopazTrain
+        elif name == 'PYPEval':
+            return TomoSpkMethod.PYPEval
+        elif name == 'PYPTrain':
+            return TomoSpkMethod.PYPTrain
+        elif name == 'Manual':
+            return TomoSpkMethod.Manual
+        elif name == 'Import':
+            return TomoSpkMethod.Import
+        elif name == 'Auto':
+            return TomoSpkMethod.Auto
+        elif name == 'None':
+            return TomoSpkMethod.NoneVal
+        else:
+            return cls(name)
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __len__(self) -> int:
+        return 8
+    
+    def __iter__(self) -> Iterator[TomoSpkMethod]:
+        return [TomoSpkMethod.TopazEval, TomoSpkMethod.TopazTrain, TomoSpkMethod.PYPEval, TomoSpkMethod.PYPTrain, TomoSpkMethod.Manual, TomoSpkMethod.Import, TomoSpkMethod.Auto, TomoSpkMethod.NoneVal].__iter__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomoSpkMethod):
+            return NotImplemented
+        return self.name == other.name
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+TomoSpkMethod.TopazEval = TomoSpkMethod('TopazEval')
+TomoSpkMethod.TopazTrain = TomoSpkMethod('TopazTrain')
+TomoSpkMethod.PYPEval = TomoSpkMethod('PYPEval')
+TomoSpkMethod.PYPTrain = TomoSpkMethod('PYPTrain')
+TomoSpkMethod.Manual = TomoSpkMethod('Manual')
+TomoSpkMethod.Import = TomoSpkMethod('Import')
+TomoSpkMethod.Auto = TomoSpkMethod('Auto')
+TomoSpkMethod.NoneVal = TomoSpkMethod('None')
 
 
 class AppPermissionData:
@@ -5983,20 +5931,16 @@ class PypStats:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.PypStats'
     
-    def __init__(self, scope_voltage: Optional[float], scope_pixel: Optional[float], scope_dose_rate: Optional[float], particle_radius: Optional[float]) -> None:
+    def __init__(self, scope_voltage: Optional[float], scope_pixel: Optional[ValueA], scope_dose_rate: Optional[float]) -> None:
         self.scope_voltage: Optional[float] = scope_voltage
         """
         (no description yet)
         """
-        self.scope_pixel: Optional[float] = scope_pixel
+        self.scope_pixel: Optional[ValueA] = scope_pixel
         """
         (no description yet)
         """
         self.scope_dose_rate: Optional[float] = scope_dose_rate
-        """
-        (no description yet)
-        """
-        self.particle_radius: Optional[float] = particle_radius
         """
         (no description yet)
         """
@@ -6008,9 +5952,8 @@ class PypStats:
         
         return {
             'scopeVoltage': self.scope_voltage if self.scope_voltage is not None else None,
-            'scopePixel': self.scope_pixel if self.scope_pixel is not None else None,
+            'scopePixel': self.scope_pixel.to_json() if self.scope_pixel is not None else None,
             'scopeDoseRate': self.scope_dose_rate if self.scope_dose_rate is not None else None,
-            'particleRadius': self.particle_radius if self.particle_radius is not None else None,
         }
     
     @classmethod
@@ -6021,9 +5964,8 @@ class PypStats:
         
         return cls(
             optional_map(json.get('scopeVoltage', None), lambda it: cast(float, it)),
-            optional_map(json.get('scopePixel', None), lambda it: cast(float, it)),
+            optional_map(json.get('scopePixel', None), lambda it: ValueA.from_json(it)),
             optional_map(json.get('scopeDoseRate', None), lambda it: cast(float, it)),
-            optional_map(json.get('particleRadius', None), lambda it: cast(float, it)),
         )
     
     def serialize(self) -> str:
@@ -6038,7 +5980,6 @@ class PypStats:
             f'scope_voltage={self.scope_voltage}',
             f'scope_pixel={self.scope_pixel}',
             f'scope_dose_rate={self.scope_dose_rate}',
-            f'particle_radius={self.particle_radius}',
         ])
         return f'PypStats[{props}]'
     
@@ -6050,8 +5991,7 @@ class PypStats:
             return NotImplemented
         return self.scope_voltage == other.scope_voltage \
             and self.scope_pixel == other.scope_pixel \
-            and self.scope_dose_rate == other.scope_dose_rate \
-            and self.particle_radius == other.particle_radius
+            and self.scope_dose_rate == other.scope_dose_rate
 
 
 class ProjectPermission:
@@ -6676,8 +6616,8 @@ class SessionLogData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionLogData'
     
-    def __init__(self, job_id: str, daemon: SessionDaemon, timestamp: int) -> None:
-        self.job_id: str = job_id
+    def __init__(self, cluster_job_id: str, daemon: SessionDaemon, timestamp: int) -> None:
+        self.cluster_job_id: str = cluster_job_id
         """
         (no description yet)
         """
@@ -6696,7 +6636,7 @@ class SessionLogData:
         """
         
         return {
-            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
             'daemon': self.daemon.to_json(),
             'timestamp': self.timestamp,
         }
@@ -6708,7 +6648,7 @@ class SessionLogData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
             none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError('missing JSON key: daemon')),
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
@@ -6722,7 +6662,7 @@ class SessionLogData:
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
             f'daemon={self.daemon}',
             f'timestamp={self.timestamp}',
         ])
@@ -6734,7 +6674,7 @@ class SessionLogData:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, SessionLogData):
             return NotImplemented
-        return self.job_id == other.job_id \
+        return self.cluster_job_id == other.cluster_job_id \
             and self.daemon == other.daemon \
             and self.timestamp == other.timestamp
 
@@ -6746,8 +6686,8 @@ class SessionJobLogData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLogData'
     
-    def __init__(self, job_id: str, name: str, timestamp: int) -> None:
-        self.job_id: str = job_id
+    def __init__(self, cluster_job_id: str, name: str, timestamp: int) -> None:
+        self.cluster_job_id: str = cluster_job_id
         """
         (no description yet)
         """
@@ -6766,7 +6706,7 @@ class SessionJobLogData:
         """
         
         return {
-            'jobId': self.job_id,
+            'clusterJobId': self.cluster_job_id,
             'name': self.name,
             'timestamp': self.timestamp,
         }
@@ -6778,7 +6718,7 @@ class SessionJobLogData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: jobId')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: clusterJobId')),
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError('missing JSON key: name')),
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
         )
@@ -6792,7 +6732,7 @@ class SessionJobLogData:
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'job_id={self.job_id}',
+            f'cluster_job_id={self.cluster_job_id}',
             f'name={self.name}',
             f'timestamp={self.timestamp}',
         ])
@@ -6804,71 +6744,9 @@ class SessionJobLogData:
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, SessionJobLogData):
             return NotImplemented
-        return self.job_id == other.job_id \
+        return self.cluster_job_id == other.cluster_job_id \
             and self.name == other.name \
             and self.timestamp == other.timestamp
-
-
-class SessionJobLog:
-    """
-    (no description yet)
-    """
-    
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLog'
-    
-    def __init__(self, array_id: Optional[int], log: Optional[str]) -> None:
-        self.array_id: Optional[int] = array_id
-        """
-        (no description yet)
-        """
-        self.log: Optional[str] = log
-        """
-        (no description yet)
-        """
-    
-    def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-            'arrayId': self.array_id if self.array_id is not None else None,
-            'log': self.log if self.log is not None else None,
-        }
-    
-    @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionJobLog:
-        """
-        Creates a new class instance from JSON
-        """
-        
-        return cls(
-            optional_map(json.get('arrayId', None), lambda it: cast(int, it)),
-            optional_map(json.get('log', None), lambda it: cast(str, it)),
-        )
-    
-    def serialize(self) -> str:
-        return json.dumps(self.to_json())
-    
-    @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionJobLog:
-        return SessionJobLog.from_json(json.loads(serialized), type_ids)
-    
-    def __str__(self) -> str:
-        props = ', '.join([
-            f'array_id={self.array_id}',
-            f'log={self.log}',
-        ])
-        return f'SessionJobLog[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, SessionJobLog):
-            return NotImplemented
-        return self.array_id == other.array_id \
-            and self.log == other.log
 
 
 class SessionPermission:
@@ -7027,7 +6905,7 @@ class MicrographMetadata:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MicrographMetadata'
     
-    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_particles: int, source_dims: Optional[ImageDims]) -> None:
+    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_auto_particles: int, image_dims: ImageDims) -> None:
         self.id: str = id
         """
         (no description yet)
@@ -7060,11 +6938,11 @@ class MicrographMetadata:
         """
         (no description yet)
         """
-        self.num_particles: int = num_particles
+        self.num_auto_particles: int = num_auto_particles
         """
         (no description yet)
         """
-        self.source_dims: Optional[ImageDims] = source_dims
+        self.image_dims: ImageDims = image_dims
         """
         (no description yet)
         """
@@ -7083,8 +6961,8 @@ class MicrographMetadata:
             'defocus2': self.defocus2,
             'angleAstig': self.angle_astig,
             'averageMotion': self.average_motion,
-            'numParticles': self.num_particles,
-            'sourceDims': self.source_dims.to_json() if self.source_dims is not None else None,
+            'numAutoParticles': self.num_auto_particles,
+            'imageDims': self.image_dims.to_json(),
         }
     
     @classmethod
@@ -7102,8 +6980,8 @@ class MicrographMetadata:
             none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus2')),
             none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: angleAstig')),
             none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: averageMotion')),
-            none_raise(optional_map(json.get('numParticles', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numParticles')),
-            optional_map(json.get('sourceDims', None), lambda it: ImageDims.from_json(it)),
+            none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numAutoParticles')),
+            none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError('missing JSON key: imageDims')),
         )
     
     def serialize(self) -> str:
@@ -7123,8 +7001,8 @@ class MicrographMetadata:
             f'defocus2={self.defocus2}',
             f'angle_astig={self.angle_astig}',
             f'average_motion={self.average_motion}',
-            f'num_particles={self.num_particles}',
-            f'source_dims={self.source_dims}',
+            f'num_auto_particles={self.num_auto_particles}',
+            f'image_dims={self.image_dims}',
         ])
         return f'MicrographMetadata[{props}]'
     
@@ -7142,8 +7020,8 @@ class MicrographMetadata:
             and self.defocus2 == other.defocus2 \
             and self.angle_astig == other.angle_astig \
             and self.average_motion == other.average_motion \
-            and self.num_particles == other.num_particles \
-            and self.source_dims == other.source_dims
+            and self.num_auto_particles == other.num_auto_particles \
+            and self.image_dims == other.image_dims
 
 
 class TwoDClassesData:
@@ -7216,6 +7094,208 @@ class TwoDClassesData:
             and self.created == other.created
 
 
+class TomoDrgnConvergence:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomoDrgnConvergence'
+    
+    def __init__(self, parameters: TomoDrgnConvergenceParameters, iterations: List[TomoDrgnConvergenceIteration]) -> None:
+        self.parameters: TomoDrgnConvergenceParameters = parameters
+        """
+        (no description yet)
+        """
+        self.iterations: List[TomoDrgnConvergenceIteration] = iterations
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'parameters': self.parameters.to_json(),
+            'iterations': [x.to_json() for x in self.iterations],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TomoDrgnConvergence:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('parameters', None), lambda it: TomoDrgnConvergenceParameters.from_json(it)), lambda: KeyError('missing JSON key: parameters')),
+            none_raise(optional_map(json.get('iterations', None), lambda it: [TomoDrgnConvergenceIteration.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: iterations')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TomoDrgnConvergence:
+        return TomoDrgnConvergence.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'parameters={self.parameters}',
+            f'iterations={self.iterations}',
+        ])
+        return f'TomoDrgnConvergence[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomoDrgnConvergence):
+            return NotImplemented
+        return self.parameters == other.parameters \
+            and self.iterations == other.iterations
+
+
+class TomoDrgnConvergenceParameters:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomoDrgnConvergence.Parameters'
+    
+    def __init__(self, num_classes: int, epochs: int, epoch_interval: int, final_maxima: int) -> None:
+        self.num_classes: int = num_classes
+        """
+        (no description yet)
+        """
+        self.epochs: int = epochs
+        """
+        (no description yet)
+        """
+        self.epoch_interval: int = epoch_interval
+        """
+        (no description yet)
+        """
+        self.final_maxima: int = final_maxima
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'numClasses': self.num_classes,
+            'epochs': self.epochs,
+            'epochInterval': self.epoch_interval,
+            'finalMaxima': self.final_maxima,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TomoDrgnConvergenceParameters:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('numClasses', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numClasses')),
+            none_raise(optional_map(json.get('epochs', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: epochs')),
+            none_raise(optional_map(json.get('epochInterval', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: epochInterval')),
+            none_raise(optional_map(json.get('finalMaxima', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: finalMaxima')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TomoDrgnConvergenceParameters:
+        return TomoDrgnConvergenceParameters.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'num_classes={self.num_classes}',
+            f'epochs={self.epochs}',
+            f'epoch_interval={self.epoch_interval}',
+            f'final_maxima={self.final_maxima}',
+        ])
+        return f'TomoDrgnConvergenceParameters[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomoDrgnConvergenceParameters):
+            return NotImplemented
+        return self.num_classes == other.num_classes \
+            and self.epochs == other.epochs \
+            and self.epoch_interval == other.epoch_interval \
+            and self.final_maxima == other.final_maxima
+
+
+class TomoDrgnConvergenceIteration:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomoDrgnConvergence.Iteration'
+    
+    def __init__(self, epoch: int, timestamp: int) -> None:
+        self.epoch: int = epoch
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'epoch': self.epoch,
+            'timestamp': self.timestamp,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TomoDrgnConvergenceIteration:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('epoch', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: epoch')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: timestamp')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TomoDrgnConvergenceIteration:
+        return TomoDrgnConvergenceIteration.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'epoch={self.epoch}',
+            f'timestamp={self.timestamp}',
+        ])
+        return f'TomoDrgnConvergenceIteration[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TomoDrgnConvergenceIteration):
+            return NotImplemented
+        return self.epoch == other.epoch \
+            and self.timestamp == other.timestamp
+
+
 class TiltSeriesData:
     """
     (no description yet)
@@ -7223,7 +7303,7 @@ class TiltSeriesData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TiltSeriesData'
     
-    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_particles: int, source_dims: Optional[ImageDims]) -> None:
+    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_auto_particles: int, num_auto_virions: int, image_dims: ImageDims) -> None:
         self.id: str = id
         """
         (no description yet)
@@ -7256,11 +7336,15 @@ class TiltSeriesData:
         """
         (no description yet)
         """
-        self.num_particles: int = num_particles
+        self.num_auto_particles: int = num_auto_particles
         """
         (no description yet)
         """
-        self.source_dims: Optional[ImageDims] = source_dims
+        self.num_auto_virions: int = num_auto_virions
+        """
+        used only by older combined preprocessing blocks
+        """
+        self.image_dims: ImageDims = image_dims
         """
         (no description yet)
         """
@@ -7279,8 +7363,9 @@ class TiltSeriesData:
             'defocus2': self.defocus2,
             'angleAstig': self.angle_astig,
             'averageMotion': self.average_motion,
-            'numParticles': self.num_particles,
-            'sourceDims': self.source_dims.to_json() if self.source_dims is not None else None,
+            'numAutoParticles': self.num_auto_particles,
+            'numAutoVirions': self.num_auto_virions,
+            'imageDims': self.image_dims.to_json(),
         }
     
     @classmethod
@@ -7298,8 +7383,9 @@ class TiltSeriesData:
             none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: defocus2')),
             none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: angleAstig')),
             none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: averageMotion')),
-            none_raise(optional_map(json.get('numParticles', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numParticles')),
-            optional_map(json.get('sourceDims', None), lambda it: ImageDims.from_json(it)),
+            none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numAutoParticles')),
+            none_raise(optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: numAutoVirions')),
+            none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError('missing JSON key: imageDims')),
         )
     
     def serialize(self) -> str:
@@ -7319,8 +7405,9 @@ class TiltSeriesData:
             f'defocus2={self.defocus2}',
             f'angle_astig={self.angle_astig}',
             f'average_motion={self.average_motion}',
-            f'num_particles={self.num_particles}',
-            f'source_dims={self.source_dims}',
+            f'num_auto_particles={self.num_auto_particles}',
+            f'num_auto_virions={self.num_auto_virions}',
+            f'image_dims={self.image_dims}',
         ])
         return f'TiltSeriesData[{props}]'
     
@@ -7338,8 +7425,9 @@ class TiltSeriesData:
             and self.defocus2 == other.defocus2 \
             and self.angle_astig == other.angle_astig \
             and self.average_motion == other.average_motion \
-            and self.num_particles == other.num_particles \
-            and self.source_dims == other.source_dims
+            and self.num_auto_particles == other.num_auto_particles \
+            and self.num_auto_virions == other.num_auto_virions \
+            and self.image_dims == other.image_dims
 
 
 class DriftXY:
@@ -7505,22 +7593,26 @@ class ImageDims:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImageDims'
     
-    def __init__(self, width: int, height: int, depth: int, binning_factor: int) -> None:
-        self.width: int = width
+    def __init__(self, width: ValueUnbinnedI, height: ValueUnbinnedI, depth: ValueUnbinnedI, binning_factor: int, pixel_a: ValueA) -> None:
+        self.width: ValueUnbinnedI = width
         """
-        image width, in pixels
+        image width, in unbinned pixels (or voxels)
         """
-        self.height: int = height
+        self.height: ValueUnbinnedI = height
         """
-        image height, in pixels
+        image height, in unbinned pixels (or voxels)
         """
-        self.depth: int = depth
+        self.depth: ValueUnbinnedI = depth
         """
-        image depth, in pixels (for tomograms)
+        image depth, in unbinned pixels (or voxels)
         """
         self.binning_factor: int = binning_factor
         """
         the binning factor, same for all dimensions
+        """
+        self.pixel_a: ValueA = pixel_a
+        """
+        the size of one unbinned pixel (or voxel) in a micrograph (or tilt series)
         """
     
     def to_json(self) -> Dict[str,Any]:
@@ -7529,10 +7621,11 @@ class ImageDims:
         """
         
         return {
-            'width': self.width,
-            'height': self.height,
-            'depth': self.depth,
+            'width': self.width.to_json(),
+            'height': self.height.to_json(),
+            'depth': self.depth.to_json(),
             'binningFactor': self.binning_factor,
+            'pixelA': self.pixel_a.to_json(),
         }
     
     @classmethod
@@ -7542,10 +7635,11 @@ class ImageDims:
         """
         
         return cls(
-            none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: width')),
-            none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: height')),
-            none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: depth')),
+            none_raise(optional_map(json.get('width', None), lambda it: ValueUnbinnedI.from_json(it)), lambda: KeyError('missing JSON key: width')),
+            none_raise(optional_map(json.get('height', None), lambda it: ValueUnbinnedI.from_json(it)), lambda: KeyError('missing JSON key: height')),
+            none_raise(optional_map(json.get('depth', None), lambda it: ValueUnbinnedI.from_json(it)), lambda: KeyError('missing JSON key: depth')),
             none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: binningFactor')),
+            none_raise(optional_map(json.get('pixelA', None), lambda it: ValueA.from_json(it)), lambda: KeyError('missing JSON key: pixelA')),
         )
     
     def serialize(self) -> str:
@@ -7561,6 +7655,7 @@ class ImageDims:
             f'height={self.height}',
             f'depth={self.depth}',
             f'binning_factor={self.binning_factor}',
+            f'pixel_a={self.pixel_a}',
         ])
         return f'ImageDims[{props}]'
     
@@ -7573,7 +7668,8 @@ class ImageDims:
         return self.width == other.width \
             and self.height == other.height \
             and self.depth == other.depth \
-            and self.binning_factor == other.binning_factor
+            and self.binning_factor == other.binning_factor \
+            and self.pixel_a == other.pixel_a
 
 
 class JobRunData:
@@ -7919,6 +8015,60 @@ class SessionExportResultSucceededOutputFilter(SessionExportResultSucceededOutpu
         if not isinstance(other, SessionExportResultSucceededOutputFilter):
             return NotImplemented
         return self.path == other.path
+
+
+class ValueUnbinnedI:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ValueUnbinnedI'
+    
+    def __init__(self, v: int) -> None:
+        self.v: int = v
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'v': self.v,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ValueUnbinnedI:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('v', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: v')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ValueUnbinnedI:
+        return ValueUnbinnedI.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'v={self.v}',
+        ])
+        return f'ValueUnbinnedI[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ValueUnbinnedI):
+            return NotImplemented
+        return self.v == other.v
 
 
 class ClusterJobData:
