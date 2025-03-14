@@ -219,7 +219,7 @@ Finally, you can start the main session daemon with :py:meth:`.SessionsService.s
 
 .. code-block:: python3
 
-	from nextpyp.client.gen SessionDaemon
+	from nextpyp.client.gen import SessionDaemon
 
 	client.services.sessions.start(session.session_id, SessionDaemon.Streampyp)
 
