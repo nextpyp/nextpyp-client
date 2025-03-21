@@ -11,11 +11,11 @@ from nextpyp.client.gen import RealTimeC2SListenToProject, RealTimeS2CProjectSta
 
 
 client = Client(
-    url_base='http://192.168.56.5:8080',
+    url_base='your URL here',
     #credentials=None
     credentials=Credentials(
-        userid='jeff',
-        token='3fsn8zZTi5dS0Z58dmn4AEQPT7FHXun6OU2sBLJYzXh'
+        userid='jwm14',
+        token='your token here'
     )
 )
 
@@ -23,7 +23,7 @@ client = Client(
 def request() -> None:
 
     token_data = client.services.apps.request_token(
-        user_id='jeff',
+        user_id='jwm14',
         app_name='Tester',
         app_permission_ids=[
             'project_list', 'project_listen'
@@ -34,7 +34,7 @@ def request() -> None:
 
 def call() -> None:
 
-    projects = client.services.projects.list('jeff')
+    projects = client.services.projects.list('jwm14')
     for project in projects:
        print(f'project = {project}')
 
@@ -43,8 +43,8 @@ async def ws() -> None:
 
     async with client.realtime_services.project as project:
         await project.send_listen_to_project(RealTimeC2SListenToProject(
-            user_id='jeff',
-            project_id='SPA_Test-79TUrqvTRuG'
+            user_id='jwm14',
+            project_id='Test-1Xp7Ke'
         ))
         msg = await project.recv()
         if type(msg) is RealTimeS2CProjectStatus:
@@ -101,10 +101,10 @@ def asyncio_tests_sync() -> None:
 async def main() -> None:
     #request()
     #call()
-    #await ws()
+    await ws()
     #sessions()
-    await asyncio_tests_async()
+    #await asyncio_tests_async()
 
 
-#asyncio.run(main())
-asyncio_tests_sync()
+asyncio.run(main())
+#asyncio_tests_sync()
