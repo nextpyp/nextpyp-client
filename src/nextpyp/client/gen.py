@@ -2841,11 +2841,11 @@ class RealTimeS2CSessionStatus:
             'daemonsRunning': [x for x in self.daemons_running],
             'jobsRunning': [x.to_json() for x in self.jobs_running],
             'tomoVirMethod': self.tomo_vir_method.to_json(),
-            'tomoVirRad': self.tomo_vir_rad.to_json(),
+            'tomoVirRad': self.tomo_vir_rad,
             'tomoVirBinn': self.tomo_vir_binn,
             'tomoVirDetectMethod': self.tomo_vir_detect_method.to_json(),
             'tomoSpkMethod': self.tomo_spk_method.to_json(),
-            'tomoSpkRad': self.tomo_spk_rad.to_json(),
+            'tomoSpkRad': self.tomo_spk_rad,
         }
     
     @classmethod
@@ -2858,11 +2858,11 @@ class RealTimeS2CSessionStatus:
             none_raise(optional_map(json.get('daemonsRunning', None), lambda it: [cast(bool, x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: daemonsRunning')),
             none_raise(optional_map(json.get('jobsRunning', None), lambda it: [RealTimeS2CSessionRunningJob.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError('missing JSON key: jobsRunning')),
             none_raise(optional_map(json.get('tomoVirMethod', None), lambda it: TomoVirMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoVirMethod')),
-            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: ValueA.from_json(it)), lambda: KeyError('missing JSON key: tomoVirRad')),
+            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: tomoVirRad')),
             none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: tomoVirBinn')),
             none_raise(optional_map(json.get('tomoVirDetectMethod', None), lambda it: TomoVirDetectMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoVirDetectMethod')),
             none_raise(optional_map(json.get('tomoSpkMethod', None), lambda it: TomoSpkMethod.from_json(it)), lambda: KeyError('missing JSON key: tomoSpkMethod')),
-            none_raise(optional_map(json.get('tomoSpkRad', None), lambda it: ValueA.from_json(it)), lambda: KeyError('missing JSON key: tomoSpkRad')),
+            none_raise(optional_map(json.get('tomoSpkRad', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: tomoSpkRad')),
         )
     
     def serialize(self) -> str:
@@ -5283,58 +5283,6 @@ class Block:
             and self.group_ids == other.group_ids
 
 
-class ValueA:
-    """
-    (no description yet)
-    """
-    
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ValueA'
-    
-    def __init__(self, v: float) -> None:
-        self.v: float = v
-        """
-        (no description yet)
-        """
-    
-    def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-            'v': self.v,
-        }
-    
-    @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ValueA:
-        """
-        Creates a new class instance from JSON
-        """
-        
-        return cls(
-            none_raise(optional_map(json.get('v', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: v')),
-        )
-    
-    def serialize(self) -> str:
-        return json.dumps(self.to_json())
-    
-    @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ValueA:
-        return ValueA.from_json(json.loads(serialized), type_ids)
-    
-    def __str__(self) -> str:
-        props = ', '.join([
-            f'v={self.v}',
-        ])
-        return f'ValueA[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, ValueA):
-            return NotImplemented
-        return self.v == other.v
 
 
 class TomoVirMethod:
@@ -5952,7 +5900,7 @@ class PypStats:
         
         return {
             'scopeVoltage': self.scope_voltage if self.scope_voltage is not None else None,
-            'scopePixel': self.scope_pixel.to_json() if self.scope_pixel is not None else None,
+            'scopePixel': self.scope_pixel if self.scope_pixel is not None else None,
             'scopeDoseRate': self.scope_dose_rate if self.scope_dose_rate is not None else None,
         }
     
@@ -5964,7 +5912,7 @@ class PypStats:
         
         return cls(
             optional_map(json.get('scopeVoltage', None), lambda it: cast(float, it)),
-            optional_map(json.get('scopePixel', None), lambda it: ValueA.from_json(it)),
+            optional_map(json.get('scopePixel', None), lambda it: cast(float, it)),
             optional_map(json.get('scopeDoseRate', None), lambda it: cast(float, it)),
         )
     
@@ -7621,11 +7569,11 @@ class ImageDims:
         """
         
         return {
-            'width': self.width.to_json(),
-            'height': self.height.to_json(),
-            'depth': self.depth.to_json(),
+            'width': self.width,
+            'height': self.height,
+            'depth': self.depth,
             'binningFactor': self.binning_factor,
-            'pixelA': self.pixel_a.to_json(),
+            'pixelA': self.pixel_a,
         }
     
     @classmethod
@@ -7635,11 +7583,11 @@ class ImageDims:
         """
         
         return cls(
-            none_raise(optional_map(json.get('width', None), lambda it: ValueUnbinnedI.from_json(it)), lambda: KeyError('missing JSON key: width')),
-            none_raise(optional_map(json.get('height', None), lambda it: ValueUnbinnedI.from_json(it)), lambda: KeyError('missing JSON key: height')),
-            none_raise(optional_map(json.get('depth', None), lambda it: ValueUnbinnedI.from_json(it)), lambda: KeyError('missing JSON key: depth')),
+            none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: width')),
+            none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: height')),
+            none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: depth')),
             none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: binningFactor')),
-            none_raise(optional_map(json.get('pixelA', None), lambda it: ValueA.from_json(it)), lambda: KeyError('missing JSON key: pixelA')),
+            none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError('missing JSON key: pixelA')),
         )
     
     def serialize(self) -> str:
@@ -8017,58 +7965,6 @@ class SessionExportResultSucceededOutputFilter(SessionExportResultSucceededOutpu
         return self.path == other.path
 
 
-class ValueUnbinnedI:
-    """
-    (no description yet)
-    """
-    
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ValueUnbinnedI'
-    
-    def __init__(self, v: int) -> None:
-        self.v: int = v
-        """
-        (no description yet)
-        """
-    
-    def to_json(self) -> Dict[str,Any]:
-        """
-        Converts this class instance into JSON
-        """
-        
-        return {
-            'v': self.v,
-        }
-    
-    @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ValueUnbinnedI:
-        """
-        Creates a new class instance from JSON
-        """
-        
-        return cls(
-            none_raise(optional_map(json.get('v', None), lambda it: cast(int, it)), lambda: KeyError('missing JSON key: v')),
-        )
-    
-    def serialize(self) -> str:
-        return json.dumps(self.to_json())
-    
-    @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ValueUnbinnedI:
-        return ValueUnbinnedI.from_json(json.loads(serialized), type_ids)
-    
-    def __str__(self) -> str:
-        props = ', '.join([
-            f'v={self.v}',
-        ])
-        return f'ValueUnbinnedI[{props}]'
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, ValueUnbinnedI):
-            return NotImplemented
-        return self.v == other.v
 
 
 class ClusterJobData:
