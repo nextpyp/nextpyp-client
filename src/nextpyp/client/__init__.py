@@ -156,7 +156,12 @@ class NetworkTransport:
 
         # convert the base url to the websockets protocol
         url_parts = url_base.split(':')
-        url_parts[0] = 'ws'
+        if url_parts[0] == 'http':
+            url_parts[0] = 'ws'
+        elif url_parts[0] == 'https':
+            url_parts[0] = 'wss'
+        else:
+            raise Exception(f"unexpected url_base protocol \"{url_parts[0]}\", try one of ['http','https']")
         self.ws_url_base = ':'.join(url_parts)
 
     def call(self, endpoint: str, params: List[Any]) -> Optional[Any]:
