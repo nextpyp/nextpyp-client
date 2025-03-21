@@ -2930,7 +2930,7 @@ class RealTimeS2CSessionSmallData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('exports', None), lambda it: [SessionExportData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionSmallData.from_json(): can't deserialize, missing field: exports: json={json}')),
+            none_map(optional_map(json.get('exports', None), lambda it: [SessionExportData.from_json(x) for x in cast(List[Any], it)]), lambda: []),
         )
     
     def serialize(self) -> str:
@@ -3006,9 +3006,9 @@ class RealTimeS2CSessionLargeData:
         return cls(
             none_map(optional_map(json.get('autoVirionsCount', None), lambda it: cast(int, it)), lambda: 0),
             none_map(optional_map(json.get('autoParticlesCount', None), lambda it: cast(int, it)), lambda: 0),
-            none_raise(optional_map(json.get('micrographs', None), lambda it: [MicrographMetadata.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionLargeData.from_json(): can't deserialize, missing field: micrographs: json={json}')),
-            none_raise(optional_map(json.get('tiltSerieses', None), lambda it: [TiltSeriesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionLargeData.from_json(): can't deserialize, missing field: tiltSerieses: json={json}')),
-            none_raise(optional_map(json.get('twoDClasses', None), lambda it: [TwoDClassesData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionLargeData.from_json(): can't deserialize, missing field: twoDClasses: json={json}')),
+            none_map(optional_map(json.get('micrographs', None), lambda it: [MicrographMetadata.from_json(x) for x in cast(List[Any], it)]), lambda: []),
+            none_map(optional_map(json.get('tiltSerieses', None), lambda it: [TiltSeriesData.from_json(x) for x in cast(List[Any], it)]), lambda: []),
+            none_map(optional_map(json.get('twoDClasses', None), lambda it: [TwoDClassesData.from_json(x) for x in cast(List[Any], it)]), lambda: []),
         )
     
     def serialize(self) -> str:
