@@ -4,7 +4,6 @@ import pytest
 from nextpyp.client.gen import (
     ClusterJobResultType,
     ImageDims,
-    ImagesScale,
     MicrographMetadata,
     PypStats,
     RealTimeC2SListenToSession,
@@ -41,6 +40,8 @@ from nextpyp.client.gen import (
     SessionExportResultFailed,
     SessionExportResult,
     TiltSeriesData,
+    TomoSpkMethod,
+    TomoVirDetectMethod,
     TomoVirMethod,
     TwoDClassesData
 )
@@ -117,13 +118,12 @@ async def test_recv_status() -> None:
                 "status": "Running"
             }
         ],
-        "imagesScale": {
-            "pixelA": 1.0,
-            "particleRadiusA": 65.0
-        },
         "tomoVirMethod": "None",
         "tomoVirRad": 0.0,
-        "tomoVirBinn": 2
+        "tomoVirBinn": 2,
+        "tomoVirDetectMethod": "None",
+        "tomoSpkMethod": "None",
+        "tomoSpkRead": 4.2
     })
 
     async with client.realtime_services.single_particle_session as srv:
@@ -139,13 +139,12 @@ async def test_recv_status() -> None:
                 status=RunStatus.Running
             )
         ],
-        images_scale=ImagesScale(
-            pixel_a=1.0,
-            particle_radius_a=65.0
-        ),
         tomo_vir_method=TomoVirMethod.NoneVal,
         tomo_vir_rad=0.0,
-        tomo_vir_binn=2
+        tomo_vir_binn=2,
+        tomo_vir_detect_method=TomoVirDetectMethod.NoneVal,
+        tomo_spk_method=TomoSpkMethod.NoneVal,
+        tomo_spk_rad=4.2
     )
 
 
@@ -213,6 +212,8 @@ async def test_recv_large_data() -> None:
     client = transport.client()
     transport.set_next_recv_message({
         "type": "edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionLargeData",
+        "autoVirionsCount": 5,
+        "autoParticlesCount": 42,
         "micrographs": [
             {
                 "id": "20201009_1138_NBtest_A007_G001_H079_D007",
@@ -223,12 +224,13 @@ async def test_recv_large_data() -> None:
                 "defocus2": 21469.396484375,
                 "angleAstig": -68.99641418457031,
                 "averageMotion": 0.966963111549991,
-                "numParticles": 0,
-                "sourceDims": {
+                "numAutoParticles": 0,
+                "imageDims": {
                     "width": 5760,
                     "height": 4092,
                     "depth": 1,
-                    "binningFactor": 2
+                    "binningFactor": 2,
+                    "pixelA": 1.2
                 }
             }
         ],
@@ -242,12 +244,14 @@ async def test_recv_large_data() -> None:
                 "defocus2": 5078.1337890625,
                 "angleAstig": 45.86092758178711,
                 "averageMotion": 188.23980617348099,
-                "numParticles": 0,
-                "sourceDims": {
+                "numAutoParticles": 3,
+                "numAutoVirions": 5,
+                "imageDims": {
                     "width": 1536,
                     "height": 1536,
                     "depth": 10,
-                    "binningFactor": 1
+                    "binningFactor": 1,
+                    "pixelA": 1.2
                 }
             }
         ],
@@ -264,6 +268,8 @@ async def test_recv_large_data() -> None:
         msg = await srv.recv()
 
     assert msg == RealTimeS2CSessionLargeData(
+        auto_virions_count=5,
+        auto_particles_count=42,
         micrographs=[
             MicrographMetadata(
                 id="20201009_1138_NBtest_A007_G001_H079_D007",
@@ -274,12 +280,13 @@ async def test_recv_large_data() -> None:
                 defocus2=21469.396484375,
                 angle_astig=-68.99641418457031,
                 average_motion=0.966963111549991,
-                num_particles=0,
-                source_dims=ImageDims(
+                num_auto_particles=0,
+                image_dims=ImageDims(
                     width=5760,
                     height=4092,
                     depth=1,
-                    binning_factor=2
+                    binning_factor=2,
+                    pixel_a=1.2
                 )
             )
         ],
@@ -293,12 +300,14 @@ async def test_recv_large_data() -> None:
                 defocus2=5078.1337890625,
                 angle_astig=45.86092758178711,
                 average_motion=188.23980617348099,
-                num_particles=0,
-                source_dims=ImageDims(
+                num_auto_particles=3,
+                num_auto_virions=5,
+                image_dims=ImageDims(
                     width=1536,
                     height=1536,
                     depth=10,
-                    binning_factor=1
+                    binning_factor=1,
+                    pixel_a=1.2
                 )
             )
         ],
@@ -322,12 +331,7 @@ async def test_recv_updated_parameters() -> None:
         "pypStats": {
             "scopeVoltage": 1.2,
             "scopePixel": 3.4,
-            "scopeDoseRate": None,
-            "particleRadius": None
-        },
-        "imagesScale": {
-            "pixelA": 5.6,
-            "particleRadiusA": 7.8
+            "scopeDoseRate": None
         }
     })
 
@@ -338,12 +342,7 @@ async def test_recv_updated_parameters() -> None:
         pyp_stats=PypStats(
             scope_voltage=1.2,
             scope_pixel=3.4,
-            scope_dose_rate=None,
-            particle_radius=None
-        ),
-        images_scale=ImagesScale(
-            pixel_a=5.6,
-            particle_radius_a=7.8
+            scope_dose_rate=None
         )
     )
 
@@ -364,12 +363,13 @@ async def test_recv_session_micrograph() -> None:
             "defocus2": 21469.396484375,
             "angleAstig": -68.99641418457031,
             "averageMotion": 0.966963111549991,
-            "numParticles": 0,
-            "sourceDims": {
+            "numAutoParticles": 0,
+            "imageDims": {
                 "width": 5760,
                 "height": 4092,
                 "depth": 1,
-                "binningFactor": 2
+                "binningFactor": 2,
+                "pixelA": 1.2
             }
         }
     })
@@ -387,12 +387,13 @@ async def test_recv_session_micrograph() -> None:
             defocus2=21469.396484375,
             angle_astig=-68.99641418457031,
             average_motion=0.966963111549991,
-            num_particles=0,
-            source_dims=ImageDims(
+            num_auto_particles=0,
+            image_dims=ImageDims(
                 width=5760,
                 height=4092,
                 depth=1,
-                binning_factor=2
+                binning_factor=2,
+                pixel_a=1.2
             )
         )
     )
@@ -421,9 +422,7 @@ async def test_recv_session_tilt_series() -> None:
                 "depth": 10,
                 "binningFactor": 1
             }
-        },
-        "numAutoParticles": 5,
-        "numAutoVirions": None
+        }
     })
 
     async with client.realtime_services.tomography_session as srv:
@@ -439,16 +438,16 @@ async def test_recv_session_tilt_series() -> None:
             defocus2=5078.1337890625,
             angle_astig=45.86092758178711,
             average_motion=188.23980617348099,
-            num_particles=0,
-            source_dims=ImageDims(
+            num_auto_particles=0,
+            num_auto_virions=0,
+            image_dims=ImageDims(
                 width=1536,
                 height=1536,
                 depth=10,
-                binning_factor=1
+                binning_factor=1,
+                pixel_a=1.2
             )
-        ),
-        num_auto_particles=5,
-        num_auto_virions=None
+        )
     )
 
 

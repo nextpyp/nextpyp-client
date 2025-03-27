@@ -11,14 +11,10 @@ from nextpyp.client.gen import (
     PreprocessingPropRange,
     RemoteOption,
     RunningSessions,
-    SessionCommands,
     SessionDaemon,
     SessionExportRequestFilter,
-    SessionJobLog,
     SessionJobLogData,
-    SessionJobLogs,
     SessionJobsLogs,
-    SessionLog,
     SessionLogs,
     SessionPermission,
     SessionSpeeds,
@@ -131,6 +127,7 @@ def test_spa_create() -> None:
     pyp_args.slurm_memory = 2
     args = SingleParticleSessionArgs(
         'My new session',
+        '/path/to/session',
         'groupid',
         pyp_args.write()
     )
@@ -139,6 +136,7 @@ def test_spa_create() -> None:
     assert transport.last_params == [
         {
             'name': 'My new session',
+            'path': '/path/to/session',
             'groupId': 'groupid',
             'values': 'data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n'
         }
@@ -195,6 +193,7 @@ def test_spa_edit() -> None:
     pyp_args.data_path = '/foo/bar'
     args = SingleParticleSessionArgs(
         'My new session',
+        '/path/to/session',
         'groupid',
         pyp_args.write()
     )
@@ -204,6 +203,7 @@ def test_spa_edit() -> None:
         'sid',
         {
             'name': 'My new session',
+            'path': '/path/to/session',
             'groupId': 'groupid',
             'values': 'data_path = \"/foo/bar\"\n'
         }
@@ -366,6 +366,7 @@ def test_tomo_create() -> None:
     pyp_args.slurm_memory = 2
     args = TomographySessionArgs(
         'My new session',
+        '/path/to/session',
         'groupid',
         pyp_args.write()
     )
@@ -374,6 +375,7 @@ def test_tomo_create() -> None:
     assert transport.last_params == [
         {
             'name': 'My new session',
+            'path': '/path/to/session',
             'groupId': 'groupid',
             'values': 'data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n'
         }
@@ -430,6 +432,7 @@ def test_tomo_edit() -> None:
     pyp_args.data_path = '/foo/bar'
     args = TomographySessionArgs(
         'My new session',
+        '/path/to/session',
         'groupid',
         pyp_args.write()
     )
@@ -439,6 +442,7 @@ def test_tomo_edit() -> None:
         'sid',
         {
             'name': 'My new session',
+            'path': '/path/to/session',
             'groupId': 'groupid',
             'values': 'data_path = \"/foo/bar\"\n'
         }
@@ -797,12 +801,12 @@ def test_logs() -> None:
     transport.next_response = {
         "logs": [
             {
-                "jobId": "evKcsy8aLkqvKxCr",
+                "clusterJobId": "evKcsy8aLkqvKxCr",
                 "daemon": "Streampyp",
                 "timestamp": 1705851989949
             },
             {
-                "jobId": "evKfHWH0O8mHydhy",
+                "clusterJobId": "evKfHWH0O8mHydhy",
                 "daemon": "Streampyp",
                 "timestamp": 1705852408097
             }
@@ -819,52 +823,13 @@ def test_logs() -> None:
     assert type(logs) is SessionLogs
     assert len(logs.logs) == 2
 
-    assert logs.logs[0].job_id == 'evKcsy8aLkqvKxCr'
+    assert logs.logs[0].cluster_job_id == 'evKcsy8aLkqvKxCr'
     assert logs.logs[0].daemon == SessionDaemon.Streampyp
     assert logs.logs[0].timestamp == 1705851989949
 
-    assert logs.logs[1].job_id == 'evKfHWH0O8mHydhy'
+    assert logs.logs[1].cluster_job_id == 'evKfHWH0O8mHydhy'
     assert logs.logs[1].daemon == SessionDaemon.Streampyp
     assert logs.logs[1].timestamp == 1705852408097
-
-
-def test_commands() -> None:
-
-    transport = MockTransport()
-    client = transport.client()
-    transport.next_response = {
-        "command": "\"/opt/pyp/bin/run/streampyp\" -scope_pixel 1.0 -scope_voltage 300.0 -data_path \"/media/rawdata/old-pyp-tests/spr/raw/*.tif\" -data_mode spr -gain_reference \"/media/rawdata/old-pyp-tests/spr/raw/K3_gain.mrc\" -stream_session_name \"Test_blank-1zX2d0ulJuwYJv\" -stream_session_group \"Bartesaghi_Lab-eaNh61SZ9DmeeCjD\" -stream_transfer_target \"/home/jeff/streamPYP/shared/sessions/evKcXLQz3JlrDgV6\" -stream_transfer_operation link -slurm_memory 1 -slurm_daemon_memory 1 -slurm_class2d_memory 1"
-    }
-
-    commands = client.services.sessions.commands('sid', 'jid')
-
-    assert transport.last_params == [
-        'sid',
-        'jid'
-    ]
-
-    assert type(commands) is SessionCommands
-    assert commands.command.startswith('"/opt/pyp/bin/run/streampyp"')
-
-
-def test_log() -> None:
-
-    transport = MockTransport()
-    client = transport.client()
-    transport.next_response = {
-        "log": "Matplotlib created a temporary cache directory at /tmp/matplotlib-3h4r4mak because the default path (/home/jeff/.config/matplotlib) is not a writable directory; it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.\n2024-01-21 10:46:33 [\u001b[32mINFO\u001b[0m] \u001b[1mpyp/system/slurm.py\u001b[0m:439 | Submitting 1 job(s) (evKcuO3JU4vK05Pu)\n2024-01-21 10:46:33 [\u001b[32mINFO\u001b[0m] \u001b[1mpyp_stream.py\u001b[0m:648 | Entering loop with timeout = 5 day(s)\n"
-    }
-
-    log = client.services.sessions.log('sid', 'jid')
-
-    assert transport.last_params == [
-        'sid',
-        'jid'
-    ]
-
-    assert type(log) is SessionLog
-    assert log.log is not None
-    assert log.log.startswith('Matplotlib ')
 
 
 def test_speeds() -> None:
@@ -892,12 +857,12 @@ def test_jobs_logs() -> None:
     transport.next_response = {
         "jobs": [
             {
-                "jobId": "evKcwVvPBZ1uzmjZ",
+                "clusterJobId": "evKcwVvPBZ1uzmjZ",
                 "name": "spr_session",
                 "timestamp": 1705852077023
             },
             {
-                "jobId": "evKfKi58wMwBTBgQ",
+                "clusterJobId": "evKfKi58wMwBTBgQ",
                 "name": "spr_session",
                 "timestamp": 1705852585659
             }
@@ -914,56 +879,14 @@ def test_jobs_logs() -> None:
     assert len(logs.jobs) == 2
 
     assert type(logs.jobs[0]) is SessionJobLogData
-    assert logs.jobs[0].job_id == 'evKcwVvPBZ1uzmjZ'
+    assert logs.jobs[0].cluster_job_id == 'evKcwVvPBZ1uzmjZ'
     assert logs.jobs[0].name == 'spr_session'
     assert logs.jobs[0].timestamp == 1705852077023
 
     assert type(logs.jobs[1]) is SessionJobLogData
-    assert logs.jobs[1].job_id == 'evKfKi58wMwBTBgQ'
+    assert logs.jobs[1].cluster_job_id == 'evKfKi58wMwBTBgQ'
     assert logs.jobs[1].name == 'spr_session'
     assert logs.jobs[1].timestamp == 1705852585659
-
-
-def test_job_logs() -> None:
-
-    transport = MockTransport()
-    client = transport.client()
-    transport.next_response = {
-        "representativeCommand": "eval `cat /home/jeff/streamPYP/shared/sessions/evKcXLQz3JlrDgV6/Bartesaghi_Lab-eaNh61SZ9DmeeCjD/Test_blank-1zX2d0ulJuwYJv/swarm/pre_process_daemon_1705852416.990101.swarm | awk -v line=$SLURM_ARRAY_TASK_ID '{if (NR == line) print $0}'`",
-        "logs": [
-            {
-                "arrayId": 1,
-                "log": ""
-            },
-            {
-                "arrayId": 2,
-                "log": "Traceback (most recent call last):\n  File \"/opt/pyp/bin/run/pyp\", line 3385, in <module>\n    pyp_daemon.pyp_daemon_process(args)\n  File \"/opt/pyp/src/pyp/stream/pyp_daemon.py\", line 608, in pyp_daemon_process\n    spr_swarm( session_dir, os.path.join(\"raw\", file) )\n  File \"/opt/pyp/src/pyp/utils/timer.py\", line 78, in wrapper_timer\n    return func(*args, **kwargs)\n  File \"/opt/pyp/src/pyp_main.py\", line 1176, in spr_swarm\n    aligned_average = align.align_movie_super(\n  File \"/opt/pyp/src/pyp/align/core.py\", line 4650, in align_movie_super\n    raise Exception(error)\nException: /bin/sh: line 29: 12873 Killed                  /opt/pyp/external/cistem2/unblur_gain  <<EOF\n../20201009_1138_NBtest_A007_G009_H097_D007.tif\n../20201009_1138_NBtest_A007_G009_H097_D007.avg\n../20201009_1138_NBtest_A007_G009_H097_D007_shifts.txt\n1.0\n1.0\nNO\nyes\n0.0\n40.0\n1500.0\n1\n1\n1\n20\nyes\nno\n../K3_gain.mrc\nno\nno\n0\n1\n0\n1\nno\nno\nno\n1\nEOF\n\n\n"
-            }
-        ]
-    }
-
-    logs = client.services.sessions.job_logs('sid', 'jid')
-
-    assert transport.last_params == [
-        'sid',
-        'jid'
-    ]
-
-    assert type(logs) is SessionJobLogs
-    assert logs.representative_command.startswith('eval `cat ')
-    assert len(logs.logs) == 2
-
-    assert type(logs.logs[0]) is SessionJobLog
-    assert logs.logs[0].array_id is not None
-    assert logs.logs[0].array_id == 1
-    assert logs.logs[0].log is not None
-    assert logs.logs[0].log == ''
-
-    assert type(logs.logs[1]) is SessionJobLog
-    assert logs.logs[1].array_id is not None
-    assert logs.logs[1].array_id == 2
-    assert logs.logs[1].log is not None
-    assert logs.logs[1].log.startswith('Traceback ')
 
 
 def test_get_avg_rot() -> None:
