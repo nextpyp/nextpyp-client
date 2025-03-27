@@ -1196,7 +1196,7 @@ class Group:
         """
         
         return cls(
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Group.from_json(): can't deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Group.from_json(): can\'t deserialize, missing field: name: json={json}')),
             optional_map(json.get('id', None), lambda it: cast(str, it)),
         )
     
@@ -1258,8 +1258,8 @@ class VersionData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('version', None), lambda it: cast(str, it)), lambda: KeyError(f'VersionData.from_json(): can't deserialize, missing field: version: json={json}')),
-            none_raise(optional_map(json.get('apiVersion', None), lambda it: cast(str, it)), lambda: KeyError(f'VersionData.from_json(): can't deserialize, missing field: apiVersion: json={json}')),
+            none_raise(optional_map(json.get('version', None), lambda it: cast(str, it)), lambda: KeyError(f'VersionData.from_json(): can\'t deserialize, missing field: version: json={json}')),
+            none_raise(optional_map(json.get('apiVersion', None), lambda it: cast(str, it)), lambda: KeyError(f'VersionData.from_json(): can\'t deserialize, missing field: apiVersion: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1325,9 +1325,9 @@ class AppTokenRequestData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('requestId', None), lambda it: cast(str, it)), lambda: KeyError(f'AppTokenRequestData.from_json(): can't deserialize, missing field: requestId: json={json}')),
-            none_raise(optional_map(json.get('appName', None), lambda it: cast(str, it)), lambda: KeyError(f'AppTokenRequestData.from_json(): can't deserialize, missing field: appName: json={json}')),
-            none_raise(optional_map(json.get('permissions', None), lambda it: [AppPermissionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'AppTokenRequestData.from_json(): can't deserialize, missing field: permissions: json={json}')),
+            none_raise(optional_map(json.get('requestId', None), lambda it: cast(str, it)), lambda: KeyError(f'AppTokenRequestData.from_json(): can\'t deserialize, missing field: requestId: json={json}')),
+            none_raise(optional_map(json.get('appName', None), lambda it: cast(str, it)), lambda: KeyError(f'AppTokenRequestData.from_json(): can\'t deserialize, missing field: appName: json={json}')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: [AppPermissionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'AppTokenRequestData.from_json(): can\'t deserialize, missing field: permissions: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1395,9 +1395,9 @@ class PreprocessingFilter:
         """
         
         return cls(
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'PreprocessingFilter.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('ranges', None), lambda it: [PreprocessingPropRange.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'PreprocessingFilter.from_json(): can't deserialize, missing field: ranges: json={json}')),
-            none_raise(optional_map(json.get('excludedIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'PreprocessingFilter.from_json(): can't deserialize, missing field: excludedIds: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'PreprocessingFilter.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('ranges', None), lambda it: [PreprocessingPropRange.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'PreprocessingFilter.from_json(): can\'t deserialize, missing field: ranges: json={json}')),
+            none_raise(optional_map(json.get('excludedIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'PreprocessingFilter.from_json(): can\'t deserialize, missing field: excludedIds: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1490,14 +1490,14 @@ class ProjectData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('owner', None), lambda it: UserData.from_json(it)), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: owner: json={json}')),
-            none_raise(optional_map(json.get('permissions', None), lambda it: {ProjectPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: permissions: json={json}')),
-            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('owner', None), lambda it: UserData.from_json(it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: owner: json={json}')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: {ProjectPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: permissions: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
             optional_map(json.get('projectNumber', None), lambda it: cast(int, it)),
-            none_raise(optional_map(json.get('projectName', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: projectName: json={json}')),
-            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: created: json={json}')),
-            none_raise(optional_map(json.get('images', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: images: json={json}')),
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can't deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('projectName', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: projectName: json={json}')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('images', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: images: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: path: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1615,8 +1615,8 @@ class RealTimeC2SListenToProject:
         """
         
         return cls(
-            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToProject.from_json(): can't deserialize, missing field: userId: json={json}')),
-            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToProject.from_json(): can't deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToProject.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToProject.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1672,7 +1672,7 @@ class RealTimeC2SListenToSession:
         """
         
         return cls(
-            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToSession.from_json(): can't deserialize, missing field: sessionId: json={json}')),
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToSession.from_json(): can\'t deserialize, missing field: sessionId: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1888,9 +1888,9 @@ class RealTimeS2CProjectStatus:
         """
         
         return cls(
-            none_raise(optional_map(json.get('recentRuns', None), lambda it: [ProjectRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectStatus.from_json(): can't deserialize, missing field: recentRuns: json={json}')),
-            none_raise(optional_map(json.get('hasOlderRuns', None), lambda it: cast(bool, it)), lambda: KeyError(f'ProjectStatus.from_json(): can't deserialize, missing field: hasOlderRuns: json={json}')),
-            none_raise(optional_map(json.get('blocks', None), lambda it: [Block.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectStatus.from_json(): can't deserialize, missing field: blocks: json={json}')),
+            none_raise(optional_map(json.get('recentRuns', None), lambda it: [ProjectRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectStatus.from_json(): can\'t deserialize, missing field: recentRuns: json={json}')),
+            none_raise(optional_map(json.get('hasOlderRuns', None), lambda it: cast(bool, it)), lambda: KeyError(f'ProjectStatus.from_json(): can\'t deserialize, missing field: hasOlderRuns: json={json}')),
+            none_raise(optional_map(json.get('blocks', None), lambda it: [Block.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectStatus.from_json(): can\'t deserialize, missing field: blocks: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -1958,9 +1958,9 @@ class RealTimeS2CProjectRunInit:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunInit.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunInit.from_json(): can't deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('jobIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectRunInit.from_json(): can't deserialize, missing field: jobIds: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunInit.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunInit.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('jobIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectRunInit.from_json(): can\'t deserialize, missing field: jobIds: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2018,7 +2018,7 @@ class RealTimeS2CProjectRunStart:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunStart.from_json(): can't deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunStart.from_json(): can\'t deserialize, missing field: runId: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2077,8 +2077,8 @@ class RealTimeS2CJobStart:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'JobStart.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobStart.from_json(): can't deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'JobStart.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobStart.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2139,8 +2139,8 @@ class RealTimeS2CJobUpdate:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobUpdate.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError(f'JobUpdate.from_json(): can't deserialize, missing field: jobString: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobUpdate.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError(f'JobUpdate.from_json(): can\'t deserialize, missing field: jobString: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2216,10 +2216,10 @@ class RealTimeS2CJobFinish:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'JobFinish.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobFinish.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError(f'JobFinish.from_json(): can't deserialize, missing field: jobString: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'JobFinish.from_json(): can't deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'JobFinish.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobFinish.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('jobString', None), lambda it: cast(str, it)), lambda: KeyError(f'JobFinish.from_json(): can\'t deserialize, missing field: jobString: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'JobFinish.from_json(): can\'t deserialize, missing field: status: json={json}')),
             optional_map(json.get('errorMessage', None), lambda it: cast(str, it)),
         )
     
@@ -2287,8 +2287,8 @@ class RealTimeS2CProjectRunFinish:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunFinish.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ProjectRunFinish.from_json(): can't deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunFinish.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ProjectRunFinish.from_json(): can\'t deserialize, missing field: status: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2364,9 +2364,9 @@ class RealTimeS2CClusterJobSubmit:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobSubmit.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobSubmit.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobSubmit.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobSubmit.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobSubmit.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobSubmit.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
             optional_map(json.get('clusterJobName', None), lambda it: cast(str, it)),
             optional_map(json.get('arraySize', None), lambda it: cast(int, it)),
         )
@@ -2440,9 +2440,9 @@ class RealTimeS2CClusterJobStart:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobStart.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobStart.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobStart.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobStart.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobStart.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobStart.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2520,11 +2520,11 @@ class RealTimeS2CClusterJobArrayStart:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
-            none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can't deserialize, missing field: arrayIndex: json={json}')),
-            none_raise(optional_map(json.get('numStarted', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can't deserialize, missing field: numStarted: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can\'t deserialize, missing field: arrayIndex: json={json}')),
+            none_raise(optional_map(json.get('numStarted', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayStart.from_json(): can\'t deserialize, missing field: numStarted: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2616,13 +2616,13 @@ class RealTimeS2CClusterJobArrayEnd:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
-            none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: arrayIndex: json={json}')),
-            none_raise(optional_map(json.get('numEnded', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: numEnded: json={json}')),
-            none_raise(optional_map(json.get('numCanceled', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: numCanceled: json={json}')),
-            none_raise(optional_map(json.get('numFailed', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can't deserialize, missing field: numFailed: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('arrayIndex', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: arrayIndex: json={json}')),
+            none_raise(optional_map(json.get('numEnded', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: numEnded: json={json}')),
+            none_raise(optional_map(json.get('numCanceled', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: numCanceled: json={json}')),
+            none_raise(optional_map(json.get('numFailed', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobArrayEnd.from_json(): can\'t deserialize, missing field: numFailed: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2703,10 +2703,10 @@ class RealTimeS2CClusterJobEnd:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
-            none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can't deserialize, missing field: resultType: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError(f'ClusterJobEnd.from_json(): can\'t deserialize, missing field: resultType: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2766,7 +2766,7 @@ class RealTimeS2CUpdatedParameters:
         """
         
         return cls(
-            none_raise(optional_map(json.get('pypStats', None), lambda it: PypStats.from_json(it)), lambda: KeyError(f'UpdatedParameters.from_json(): can't deserialize, missing field: pypStats: json={json}')),
+            none_raise(optional_map(json.get('pypStats', None), lambda it: PypStats.from_json(it)), lambda: KeyError(f'UpdatedParameters.from_json(): can\'t deserialize, missing field: pypStats: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2855,14 +2855,14 @@ class RealTimeS2CSessionStatus:
         """
         
         return cls(
-            none_raise(optional_map(json.get('daemonsRunning', None), lambda it: [cast(bool, x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: daemonsRunning: json={json}')),
-            none_raise(optional_map(json.get('jobsRunning', None), lambda it: [RealTimeS2CSessionRunningJob.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: jobsRunning: json={json}')),
-            none_raise(optional_map(json.get('tomoVirMethod', None), lambda it: TomoVirMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: tomoVirMethod: json={json}')),
-            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: cast(float, it)), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: tomoVirRad: json={json}')),
-            none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: tomoVirBinn: json={json}')),
-            none_raise(optional_map(json.get('tomoVirDetectMethod', None), lambda it: TomoVirDetectMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: tomoVirDetectMethod: json={json}')),
-            none_raise(optional_map(json.get('tomoSpkMethod', None), lambda it: TomoSpkMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: tomoSpkMethod: json={json}')),
-            none_raise(optional_map(json.get('tomoSpkRad', None), lambda it: cast(float, it)), lambda: KeyError(f'SessionStatus.from_json(): can't deserialize, missing field: tomoSpkRad: json={json}')),
+            none_raise(optional_map(json.get('daemonsRunning', None), lambda it: [cast(bool, x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: daemonsRunning: json={json}')),
+            none_raise(optional_map(json.get('jobsRunning', None), lambda it: [RealTimeS2CSessionRunningJob.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: jobsRunning: json={json}')),
+            none_raise(optional_map(json.get('tomoVirMethod', None), lambda it: TomoVirMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirMethod: json={json}')),
+            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: cast(float, it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirRad: json={json}')),
+            none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirBinn: json={json}')),
+            none_raise(optional_map(json.get('tomoVirDetectMethod', None), lambda it: TomoVirDetectMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirDetectMethod: json={json}')),
+            none_raise(optional_map(json.get('tomoSpkMethod', None), lambda it: TomoSpkMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoSpkMethod: json={json}')),
+            none_raise(optional_map(json.get('tomoSpkRad', None), lambda it: cast(float, it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoSpkRad: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3085,10 +3085,10 @@ class RealTimeS2CSessionRunningJob:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can't deserialize, missing field: size: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'SessionRunningJob.from_json(): can't deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: size: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: status: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3153,8 +3153,8 @@ class RealTimeS2CSessionDaemonSubmitted:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionDaemonSubmitted.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionDaemonSubmitted.from_json(): can't deserialize, missing field: daemon: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionDaemonSubmitted.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionDaemonSubmitted.from_json(): can\'t deserialize, missing field: daemon: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3215,8 +3215,8 @@ class RealTimeS2CSessionDaemonStarted:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionDaemonStarted.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionDaemonStarted.from_json(): can't deserialize, missing field: daemon: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionDaemonStarted.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionDaemonStarted.from_json(): can\'t deserialize, missing field: daemon: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3277,8 +3277,8 @@ class RealTimeS2CSessionDaemonFinished:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionDaemonFinished.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionDaemonFinished.from_json(): can't deserialize, missing field: daemon: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionDaemonFinished.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionDaemonFinished.from_json(): can\'t deserialize, missing field: daemon: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3344,9 +3344,9 @@ class RealTimeS2CSessionJobSubmitted:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobSubmitted.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobSubmitted.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobSubmitted.from_json(): can't deserialize, missing field: size: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobSubmitted.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobSubmitted.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobSubmitted.from_json(): can\'t deserialize, missing field: size: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3404,7 +3404,7 @@ class RealTimeS2CSessionJobStarted:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobStarted.from_json(): can't deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobStarted.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3463,8 +3463,8 @@ class RealTimeS2CSessionJobFinished:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobFinished.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError(f'SessionJobFinished.from_json(): can't deserialize, missing field: resultType: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobFinished.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)), lambda: KeyError(f'SessionJobFinished.from_json(): can\'t deserialize, missing field: resultType: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3535,10 +3535,10 @@ class RealTimeS2CSessionFilesystem:
         """
         
         return cls(
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can't deserialize, missing field: path: json={json}')),
-            none_raise(optional_map(json.get('type', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can't deserialize, missing field: type: json={json}')),
-            none_raise(optional_map(json.get('bytes', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can't deserialize, missing field: bytes: json={json}')),
-            none_raise(optional_map(json.get('bytesUsed', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can't deserialize, missing field: bytesUsed: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('type', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can\'t deserialize, missing field: type: json={json}')),
+            none_raise(optional_map(json.get('bytes', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can\'t deserialize, missing field: bytes: json={json}')),
+            none_raise(optional_map(json.get('bytesUsed', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionFilesystem.from_json(): can\'t deserialize, missing field: bytesUsed: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3598,7 +3598,7 @@ class RealTimeS2CSessionFilesystems:
         """
         
         return cls(
-            none_raise(optional_map(json.get('filesystems', None), lambda it: [RealTimeS2CSessionFilesystem.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionFilesystems.from_json(): can't deserialize, missing field: filesystems: json={json}')),
+            none_raise(optional_map(json.get('filesystems', None), lambda it: [RealTimeS2CSessionFilesystem.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionFilesystems.from_json(): can\'t deserialize, missing field: filesystems: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3652,7 +3652,7 @@ class RealTimeS2CSessionTransferInit:
         """
         
         return cls(
-            none_raise(optional_map(json.get('files', None), lambda it: [RealTimeS2CSessionTransferInitFileInfo.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionTransferInit.from_json(): can't deserialize, missing field: files: json={json}')),
+            none_raise(optional_map(json.get('files', None), lambda it: [RealTimeS2CSessionTransferInitFileInfo.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionTransferInit.from_json(): can\'t deserialize, missing field: files: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3716,9 +3716,9 @@ class RealTimeS2CSessionTransferInitFileInfo:
         """
         
         return cls(
-            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'FileInfo.from_json(): can't deserialize, missing field: filename: json={json}')),
-            none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError(f'FileInfo.from_json(): can't deserialize, missing field: bytesTotal: json={json}')),
-            none_raise(optional_map(json.get('bytesTransfered', None), lambda it: cast(int, it)), lambda: KeyError(f'FileInfo.from_json(): can't deserialize, missing field: bytesTransfered: json={json}')),
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'FileInfo.from_json(): can\'t deserialize, missing field: filename: json={json}')),
+            none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError(f'FileInfo.from_json(): can\'t deserialize, missing field: bytesTotal: json={json}')),
+            none_raise(optional_map(json.get('bytesTransfered', None), lambda it: cast(int, it)), lambda: KeyError(f'FileInfo.from_json(): can\'t deserialize, missing field: bytesTransfered: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3776,7 +3776,7 @@ class RealTimeS2CSessionTransferWaiting:
         """
         
         return cls(
-            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferWaiting.from_json(): can't deserialize, missing field: filename: json={json}')),
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferWaiting.from_json(): can\'t deserialize, missing field: filename: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3835,8 +3835,8 @@ class RealTimeS2CSessionTransferStarted:
         """
         
         return cls(
-            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferStarted.from_json(): can't deserialize, missing field: filename: json={json}')),
-            none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionTransferStarted.from_json(): can't deserialize, missing field: bytesTotal: json={json}')),
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferStarted.from_json(): can\'t deserialize, missing field: filename: json={json}')),
+            none_raise(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionTransferStarted.from_json(): can\'t deserialize, missing field: bytesTotal: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3897,8 +3897,8 @@ class RealTimeS2CSessionTransferProgress:
         """
         
         return cls(
-            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferProgress.from_json(): can't deserialize, missing field: filename: json={json}')),
-            none_raise(optional_map(json.get('bytesTransferred', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionTransferProgress.from_json(): can't deserialize, missing field: bytesTransferred: json={json}')),
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferProgress.from_json(): can\'t deserialize, missing field: filename: json={json}')),
+            none_raise(optional_map(json.get('bytesTransferred', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionTransferProgress.from_json(): can\'t deserialize, missing field: bytesTransferred: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -3954,7 +3954,7 @@ class RealTimeS2CSessionTransferFinished:
         """
         
         return cls(
-            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferFinished.from_json(): can't deserialize, missing field: filename: json={json}')),
+            none_raise(optional_map(json.get('filename', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionTransferFinished.from_json(): can\'t deserialize, missing field: filename: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4008,7 +4008,7 @@ class RealTimeS2CSessionMicrograph:
         """
         
         return cls(
-            none_raise(optional_map(json.get('micrograph', None), lambda it: MicrographMetadata.from_json(it)), lambda: KeyError(f'SessionMicrograph.from_json(): can't deserialize, missing field: micrograph: json={json}')),
+            none_raise(optional_map(json.get('micrograph', None), lambda it: MicrographMetadata.from_json(it)), lambda: KeyError(f'SessionMicrograph.from_json(): can\'t deserialize, missing field: micrograph: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4062,7 +4062,7 @@ class RealTimeS2CSessionTiltSeries:
         """
         
         return cls(
-            none_raise(optional_map(json.get('tiltSeries', None), lambda it: TiltSeriesData.from_json(it)), lambda: KeyError(f'SessionTiltSeries.from_json(): can't deserialize, missing field: tiltSeries: json={json}')),
+            none_raise(optional_map(json.get('tiltSeries', None), lambda it: TiltSeriesData.from_json(it)), lambda: KeyError(f'SessionTiltSeries.from_json(): can\'t deserialize, missing field: tiltSeries: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4116,7 +4116,7 @@ class RealTimeS2CSessionTwoDClasses:
         """
         
         return cls(
-            none_raise(optional_map(json.get('twoDClasses', None), lambda it: TwoDClassesData.from_json(it)), lambda: KeyError(f'SessionTwoDClasses.from_json(): can't deserialize, missing field: twoDClasses: json={json}')),
+            none_raise(optional_map(json.get('twoDClasses', None), lambda it: TwoDClassesData.from_json(it)), lambda: KeyError(f'SessionTwoDClasses.from_json(): can\'t deserialize, missing field: twoDClasses: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4170,7 +4170,7 @@ class RealTimeS2CSessionExport:
         """
         
         return cls(
-            none_raise(optional_map(json.get('export', None), lambda it: SessionExportData.from_json(it)), lambda: KeyError(f'SessionExport.from_json(): can't deserialize, missing field: export: json={json}')),
+            none_raise(optional_map(json.get('export', None), lambda it: SessionExportData.from_json(it)), lambda: KeyError(f'SessionExport.from_json(): can\'t deserialize, missing field: export: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4239,10 +4239,10 @@ class SingleParticleSessionArgs:
         """
         
         return cls(
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can't deserialize, missing field: path: json={json}')),
-            none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can't deserialize, missing field: groupId: json={json}')),
-            none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can't deserialize, missing field: values: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can\'t deserialize, missing field: groupId: json={json}')),
+            none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError(f'SingleParticleSessionArgs.from_json(): can\'t deserialize, missing field: values: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4347,16 +4347,16 @@ class SingleParticleSessionData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: userId: json={json}')),
-            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: sessionId: json={json}')),
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: sessionId: json={json}')),
             optional_map(json.get('sessionNumber', None), lambda it: cast(int, it)),
-            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: created: json={json}')),
-            none_raise(optional_map(json.get('permissions', None), lambda it: {SessionPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: permissions: json={json}')),
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: path: json={json}')),
-            none_raise(optional_map(json.get('args', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs'})), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: args: json={json}')),
-            none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay'})), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: display: json={json}')),
-            none_raise(optional_map(json.get('numMicrographs', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: numMicrographs: json={json}')),
-            none_raise(optional_map(json.get('numFrames', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can't deserialize, missing field: numFrames: json={json}')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: {SessionPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: permissions: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('args', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionArgs'})), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: args: json={json}')),
+            none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay'})), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: display: json={json}')),
+            none_raise(optional_map(json.get('numMicrographs', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: numMicrographs: json={json}')),
+            none_raise(optional_map(json.get('numFrames', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: numFrames: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4443,10 +4443,10 @@ class TomographySessionArgs:
         """
         
         return cls(
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can't deserialize, missing field: path: json={json}')),
-            none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can't deserialize, missing field: groupId: json={json}')),
-            none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can't deserialize, missing field: values: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('groupId', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can\'t deserialize, missing field: groupId: json={json}')),
+            none_raise(optional_map(json.get('values', None), lambda it: cast(ArgValuesToml, it)), lambda: KeyError(f'TomographySessionArgs.from_json(): can\'t deserialize, missing field: values: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4551,16 +4551,16 @@ class TomographySessionData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: userId: json={json}')),
-            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: sessionId: json={json}')),
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: sessionId: json={json}')),
             optional_map(json.get('sessionNumber', None), lambda it: cast(int, it)),
-            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: created: json={json}')),
-            none_raise(optional_map(json.get('permissions', None), lambda it: {SessionPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: permissions: json={json}')),
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: path: json={json}')),
-            none_raise(optional_map(json.get('args', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs'})), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: args: json={json}')),
-            none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay'})), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: display: json={json}')),
-            none_raise(optional_map(json.get('numTiltSeries', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: numTiltSeries: json={json}')),
-            none_raise(optional_map(json.get('numTilts', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can't deserialize, missing field: numTilts: json={json}')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('permissions', None), lambda it: {SessionPermission.from_json(x) for x in cast(Set[Any], it)}), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: permissions: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('args', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionArgs'})), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: args: json={json}')),
+            none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay'})), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: display: json={json}')),
+            none_raise(optional_map(json.get('numTiltSeries', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: numTiltSeries: json={json}')),
+            none_raise(optional_map(json.get('numTilts', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: numTilts: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4696,8 +4696,8 @@ class RunningSessions:
         """
         
         return cls(
-            none_raise(optional_map(json.get('singleParticle', None), lambda it: [SingleParticleSessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningSessions.from_json(): can't deserialize, missing field: singleParticle: json={json}')),
-            none_raise(optional_map(json.get('tomography', None), lambda it: [TomographySessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningSessions.from_json(): can't deserialize, missing field: tomography: json={json}')),
+            none_raise(optional_map(json.get('singleParticle', None), lambda it: [SingleParticleSessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningSessions.from_json(): can\'t deserialize, missing field: singleParticle: json={json}')),
+            none_raise(optional_map(json.get('tomography', None), lambda it: [TomographySessionData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningSessions.from_json(): can\'t deserialize, missing field: tomography: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4753,7 +4753,7 @@ class SessionLogs:
         """
         
         return cls(
-            none_raise(optional_map(json.get('logs', None), lambda it: [SessionLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionLogs.from_json(): can't deserialize, missing field: logs: json={json}')),
+            none_raise(optional_map(json.get('logs', None), lambda it: [SessionLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionLogs.from_json(): can\'t deserialize, missing field: logs: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4807,7 +4807,7 @@ class SessionSpeeds:
         """
         
         return cls(
-            none_raise(optional_map(json.get('transfers', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionSpeeds.from_json(): can't deserialize, missing field: transfers: json={json}')),
+            none_raise(optional_map(json.get('transfers', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionSpeeds.from_json(): can\'t deserialize, missing field: transfers: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4861,7 +4861,7 @@ class SessionJobsLogs:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobs', None), lambda it: [SessionJobLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionJobsLogs.from_json(): can't deserialize, missing field: jobs: json={json}')),
+            none_raise(optional_map(json.get('jobs', None), lambda it: [SessionJobLogData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionJobsLogs.from_json(): can\'t deserialize, missing field: jobs: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4946,7 +4946,7 @@ class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
         """
         
         return cls(
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Filter.from_json(): can't deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Filter.from_json(): can\'t deserialize, missing field: name: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5020,11 +5020,11 @@ class AvgRotData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('spatialFreq', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can't deserialize, missing field: spatialFreq: json={json}')),
-            none_raise(optional_map(json.get('avgRot', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can't deserialize, missing field: avgRot: json={json}')),
-            none_raise(optional_map(json.get('ctfFit', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can't deserialize, missing field: ctfFit: json={json}')),
-            none_raise(optional_map(json.get('crossCorrelation', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can't deserialize, missing field: crossCorrelation: json={json}')),
-            none_raise(optional_map(json.get('minRes', None), lambda it: cast(float, it)), lambda: KeyError(f'AvgRotData.from_json(): can't deserialize, missing field: minRes: json={json}')),
+            none_raise(optional_map(json.get('spatialFreq', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can\'t deserialize, missing field: spatialFreq: json={json}')),
+            none_raise(optional_map(json.get('avgRot', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can\'t deserialize, missing field: avgRot: json={json}')),
+            none_raise(optional_map(json.get('ctfFit', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can\'t deserialize, missing field: ctfFit: json={json}')),
+            none_raise(optional_map(json.get('crossCorrelation', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'AvgRotData.from_json(): can\'t deserialize, missing field: crossCorrelation: json={json}')),
+            none_raise(optional_map(json.get('minRes', None), lambda it: cast(float, it)), lambda: KeyError(f'AvgRotData.from_json(): can\'t deserialize, missing field: minRes: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5091,8 +5091,8 @@ class MotionData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('x', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MotionData.from_json(): can't deserialize, missing field: x: json={json}')),
-            none_raise(optional_map(json.get('y', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MotionData.from_json(): can't deserialize, missing field: y: json={json}')),
+            none_raise(optional_map(json.get('x', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MotionData.from_json(): can\'t deserialize, missing field: x: json={json}')),
+            none_raise(optional_map(json.get('y', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MotionData.from_json(): can\'t deserialize, missing field: y: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5168,11 +5168,11 @@ class DriftMetadata:
         """
         
         return cls(
-            none_raise(optional_map(json.get('tilts', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can't deserialize, missing field: tilts: json={json}')),
-            none_raise(optional_map(json.get('drifts', None), lambda it: [[DriftXY.from_json(x) for x in cast(List[Any], x)] for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can't deserialize, missing field: drifts: json={json}')),
-            none_raise(optional_map(json.get('ctfValues', None), lambda it: [CtfTiltValues.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can't deserialize, missing field: ctfValues: json={json}')),
-            none_raise(optional_map(json.get('ctfProfiles', None), lambda it: [AvgRotData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can't deserialize, missing field: ctfProfiles: json={json}')),
-            none_raise(optional_map(json.get('tiltAxisAngle', None), lambda it: cast(float, it)), lambda: KeyError(f'DriftMetadata.from_json(): can't deserialize, missing field: tiltAxisAngle: json={json}')),
+            none_raise(optional_map(json.get('tilts', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can\'t deserialize, missing field: tilts: json={json}')),
+            none_raise(optional_map(json.get('drifts', None), lambda it: [[DriftXY.from_json(x) for x in cast(List[Any], x)] for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can\'t deserialize, missing field: drifts: json={json}')),
+            none_raise(optional_map(json.get('ctfValues', None), lambda it: [CtfTiltValues.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can\'t deserialize, missing field: ctfValues: json={json}')),
+            none_raise(optional_map(json.get('ctfProfiles', None), lambda it: [AvgRotData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'DriftMetadata.from_json(): can\'t deserialize, missing field: ctfProfiles: json={json}')),
+            none_raise(optional_map(json.get('tiltAxisAngle', None), lambda it: cast(float, it)), lambda: KeyError(f'DriftMetadata.from_json(): can\'t deserialize, missing field: tiltAxisAngle: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5249,10 +5249,10 @@ class Block:
         """
         
         return cls(
-            none_raise(optional_map(json.get('blockId', None), lambda it: cast(str, it)), lambda: KeyError(f'Block.from_json(): can't deserialize, missing field: blockId: json={json}')),
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Block.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('description', None), lambda it: cast(str, it)), lambda: KeyError(f'Block.from_json(): can't deserialize, missing field: description: json={json}')),
-            none_raise(optional_map(json.get('groupIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'Block.from_json(): can't deserialize, missing field: groupIds: json={json}')),
+            none_raise(optional_map(json.get('blockId', None), lambda it: cast(str, it)), lambda: KeyError(f'Block.from_json(): can\'t deserialize, missing field: blockId: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Block.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('description', None), lambda it: cast(str, it)), lambda: KeyError(f'Block.from_json(): can\'t deserialize, missing field: description: json={json}')),
+            none_raise(optional_map(json.get('groupIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'Block.from_json(): can\'t deserialize, missing field: groupIds: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5283,6 +5283,7 @@ class Block:
             and self.group_ids == other.group_ids
 
 
+ValueA = float
 
 
 class TomoVirMethod:
@@ -5524,7 +5525,7 @@ class AppPermissionData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('appPermissionId', None), lambda it: cast(str, it)), lambda: KeyError(f'AppPermissionData.from_json(): can't deserialize, missing field: appPermissionId: json={json}')),
+            none_raise(optional_map(json.get('appPermissionId', None), lambda it: cast(str, it)), lambda: KeyError(f'AppPermissionData.from_json(): can\'t deserialize, missing field: appPermissionId: json={json}')),
             optional_map(json.get('description', None), lambda it: cast(str, it)),
         )
     
@@ -5591,9 +5592,9 @@ class PreprocessingPropRange:
         """
         
         return cls(
-            none_raise(optional_map(json.get('propId', None), lambda it: cast(str, it)), lambda: KeyError(f'PreprocessingPropRange.from_json(): can't deserialize, missing field: propId: json={json}')),
-            none_raise(optional_map(json.get('min', None), lambda it: cast(float, it)), lambda: KeyError(f'PreprocessingPropRange.from_json(): can't deserialize, missing field: min: json={json}')),
-            none_raise(optional_map(json.get('max', None), lambda it: cast(float, it)), lambda: KeyError(f'PreprocessingPropRange.from_json(): can't deserialize, missing field: max: json={json}')),
+            none_raise(optional_map(json.get('propId', None), lambda it: cast(str, it)), lambda: KeyError(f'PreprocessingPropRange.from_json(): can\'t deserialize, missing field: propId: json={json}')),
+            none_raise(optional_map(json.get('min', None), lambda it: cast(float, it)), lambda: KeyError(f'PreprocessingPropRange.from_json(): can\'t deserialize, missing field: min: json={json}')),
+            none_raise(optional_map(json.get('max', None), lambda it: cast(float, it)), lambda: KeyError(f'PreprocessingPropRange.from_json(): can\'t deserialize, missing field: max: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5666,10 +5667,10 @@ class ReconstructionData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'ReconstructionData.from_json(): can't deserialize, missing field: id: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ReconstructionData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('classNum', None), lambda it: cast(int, it)), lambda: KeyError(f'ReconstructionData.from_json(): can't deserialize, missing field: classNum: json={json}')),
-            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'ReconstructionData.from_json(): can't deserialize, missing field: iteration: json={json}')),
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'ReconstructionData.from_json(): can\'t deserialize, missing field: id: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ReconstructionData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('classNum', None), lambda it: cast(int, it)), lambda: KeyError(f'ReconstructionData.from_json(): can\'t deserialize, missing field: classNum: json={json}')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'ReconstructionData.from_json(): can\'t deserialize, missing field: iteration: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5749,11 +5750,11 @@ class RefinementData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementData.from_json(): can't deserialize, missing field: id: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementData.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('dataId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementData.from_json(): can't deserialize, missing field: dataId: json={json}')),
-            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementData.from_json(): can't deserialize, missing field: iteration: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementData.from_json(): can\'t deserialize, missing field: id: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementData.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('dataId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementData.from_json(): can\'t deserialize, missing field: dataId: json={json}')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementData.from_json(): can\'t deserialize, missing field: iteration: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -5835,11 +5836,11 @@ class RefinementBundleData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can't deserialize, missing field: id: json={json}')),
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('refinementBundleId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can't deserialize, missing field: refinementBundleId: json={json}')),
-            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can't deserialize, missing field: iteration: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can\'t deserialize, missing field: id: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('refinementBundleId', None), lambda it: cast(str, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can\'t deserialize, missing field: refinementBundleId: json={json}')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can\'t deserialize, missing field: iteration: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'RefinementBundleData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6131,7 +6132,7 @@ class UserData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'UserData.from_json(): can't deserialize, missing field: id: json={json}')),
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'UserData.from_json(): can\'t deserialize, missing field: id: json={json}')),
             optional_map(json.get('name', None), lambda it: cast(str, it)),
         )
     
@@ -6203,10 +6204,10 @@ class ProjectRunData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can't deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ProjectRunData.from_json(): can't deserialize, missing field: status: json={json}')),
-            none_raise(optional_map(json.get('jobs', None), lambda it: [JobRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectRunData.from_json(): can't deserialize, missing field: jobs: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('jobs', None), lambda it: [JobRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: jobs: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6412,11 +6413,11 @@ class StreamLogMsg:
         """
         
         return cls(
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can't deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('level', None), lambda it: cast(int, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can't deserialize, missing field: level: json={json}')),
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can't deserialize, missing field: path: json={json}')),
-            none_raise(optional_map(json.get('line', None), lambda it: cast(int, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can't deserialize, missing field: line: json={json}')),
-            none_raise(optional_map(json.get('msg', None), lambda it: cast(str, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can't deserialize, missing field: msg: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('level', None), lambda it: cast(int, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can\'t deserialize, missing field: level: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('line', None), lambda it: cast(int, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can\'t deserialize, missing field: line: json={json}')),
+            none_raise(optional_map(json.get('msg', None), lambda it: cast(str, it)), lambda: KeyError(f'StreamLogMsg.from_json(): can\'t deserialize, missing field: msg: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6478,7 +6479,7 @@ class SingleParticleSessionDisplay:
         """
         
         return cls(
-            none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionDisplay.from_json(): can't deserialize, missing field: groupName: json={json}')),
+            none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError(f'SingleParticleSessionDisplay.from_json(): can\'t deserialize, missing field: groupName: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6532,7 +6533,7 @@ class TomographySessionDisplay:
         """
         
         return cls(
-            none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionDisplay.from_json(): can't deserialize, missing field: groupName: json={json}')),
+            none_raise(optional_map(json.get('groupName', None), lambda it: cast(str, it)), lambda: KeyError(f'TomographySessionDisplay.from_json(): can\'t deserialize, missing field: groupName: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6596,9 +6597,9 @@ class SessionLogData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionLogData.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
-            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionLogData.from_json(): can't deserialize, missing field: daemon: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionLogData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: daemon: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6666,9 +6667,9 @@ class SessionJobLogData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
-            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can't deserialize, missing field: name: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -6806,10 +6807,10 @@ class SessionExportData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionExportData.from_json(): can't deserialize, missing field: sessionId: json={json}')),
-            none_raise(optional_map(json.get('exportId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionExportData.from_json(): can't deserialize, missing field: exportId: json={json}')),
-            none_raise(optional_map(json.get('request', None), lambda it: cast(Serialized_SessionExportRequest, it)), lambda: KeyError(f'SessionExportData.from_json(): can't deserialize, missing field: request: json={json}')),
-            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionExportData.from_json(): can't deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('sessionId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionExportData.from_json(): can\'t deserialize, missing field: sessionId: json={json}')),
+            none_raise(optional_map(json.get('exportId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionExportData.from_json(): can\'t deserialize, missing field: exportId: json={json}')),
+            none_raise(optional_map(json.get('request', None), lambda it: cast(Serialized_SessionExportRequest, it)), lambda: KeyError(f'SessionExportData.from_json(): can\'t deserialize, missing field: request: json={json}')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionExportData.from_json(): can\'t deserialize, missing field: created: json={json}')),
             optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)),
             optional_map(json.get('result', None), lambda it: cast(Serialized_SessionExportResult, it)),
         )
@@ -6920,16 +6921,16 @@ class MicrographMetadata:
         """
         
         return cls(
-            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: id: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('ccc', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: ccc: json={json}')),
-            none_raise(optional_map(json.get('cccc', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: cccc: json={json}')),
-            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: defocus1: json={json}')),
-            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: defocus2: json={json}')),
-            none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: angleAstig: json={json}')),
-            none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: averageMotion: json={json}')),
-            none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: numAutoParticles: json={json}')),
-            none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError(f'MicrographMetadata.from_json(): can't deserialize, missing field: imageDims: json={json}')),
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: id: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('ccc', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: ccc: json={json}')),
+            none_raise(optional_map(json.get('cccc', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: cccc: json={json}')),
+            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: defocus1: json={json}')),
+            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: defocus2: json={json}')),
+            none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: angleAstig: json={json}')),
+            none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: averageMotion: json={json}')),
+            none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: numAutoParticles: json={json}')),
+            none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: imageDims: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7011,9 +7012,9 @@ class TwoDClassesData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('ownerId', None), lambda it: cast(str, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can't deserialize, missing field: ownerId: json={json}')),
-            none_raise(optional_map(json.get('twoDClassesId', None), lambda it: cast(str, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can't deserialize, missing field: twoDClassesId: json={json}')),
-            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can't deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('ownerId', None), lambda it: cast(str, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: ownerId: json={json}')),
+            none_raise(optional_map(json.get('twoDClassesId', None), lambda it: cast(str, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: twoDClassesId: json={json}')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: created: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7076,8 +7077,8 @@ class TomoDrgnConvergence:
         """
         
         return cls(
-            none_raise(optional_map(json.get('parameters', None), lambda it: TomoDrgnConvergenceParameters.from_json(it)), lambda: KeyError(f'TomoDrgnConvergence.from_json(): can't deserialize, missing field: parameters: json={json}')),
-            none_raise(optional_map(json.get('iterations', None), lambda it: [TomoDrgnConvergenceIteration.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'TomoDrgnConvergence.from_json(): can't deserialize, missing field: iterations: json={json}')),
+            none_raise(optional_map(json.get('parameters', None), lambda it: TomoDrgnConvergenceParameters.from_json(it)), lambda: KeyError(f'TomoDrgnConvergence.from_json(): can\'t deserialize, missing field: parameters: json={json}')),
+            none_raise(optional_map(json.get('iterations', None), lambda it: [TomoDrgnConvergenceIteration.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'TomoDrgnConvergence.from_json(): can\'t deserialize, missing field: iterations: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7148,10 +7149,10 @@ class TomoDrgnConvergenceParameters:
         """
         
         return cls(
-            none_raise(optional_map(json.get('numClasses', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can't deserialize, missing field: numClasses: json={json}')),
-            none_raise(optional_map(json.get('epochs', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can't deserialize, missing field: epochs: json={json}')),
-            none_raise(optional_map(json.get('epochInterval', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can't deserialize, missing field: epochInterval: json={json}')),
-            none_raise(optional_map(json.get('finalMaxima', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can't deserialize, missing field: finalMaxima: json={json}')),
+            none_raise(optional_map(json.get('numClasses', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can\'t deserialize, missing field: numClasses: json={json}')),
+            none_raise(optional_map(json.get('epochs', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can\'t deserialize, missing field: epochs: json={json}')),
+            none_raise(optional_map(json.get('epochInterval', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can\'t deserialize, missing field: epochInterval: json={json}')),
+            none_raise(optional_map(json.get('finalMaxima', None), lambda it: cast(int, it)), lambda: KeyError(f'Parameters.from_json(): can\'t deserialize, missing field: finalMaxima: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7216,8 +7217,8 @@ class TomoDrgnConvergenceIteration:
         """
         
         return cls(
-            none_raise(optional_map(json.get('epoch', None), lambda it: cast(int, it)), lambda: KeyError(f'Iteration.from_json(): can't deserialize, missing field: epoch: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'Iteration.from_json(): can't deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('epoch', None), lambda it: cast(int, it)), lambda: KeyError(f'Iteration.from_json(): can\'t deserialize, missing field: epoch: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'Iteration.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7323,17 +7324,17 @@ class TiltSeriesData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: id: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('ccc', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: ccc: json={json}')),
-            none_raise(optional_map(json.get('cccc', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: cccc: json={json}')),
-            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: defocus1: json={json}')),
-            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: defocus2: json={json}')),
-            none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: angleAstig: json={json}')),
-            none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: averageMotion: json={json}')),
-            none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: numAutoParticles: json={json}')),
-            none_raise(optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: numAutoVirions: json={json}')),
-            none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError(f'TiltSeriesData.from_json(): can't deserialize, missing field: imageDims: json={json}')),
+            none_raise(optional_map(json.get('id', None), lambda it: cast(str, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: id: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('ccc', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: ccc: json={json}')),
+            none_raise(optional_map(json.get('cccc', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: cccc: json={json}')),
+            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: defocus1: json={json}')),
+            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: defocus2: json={json}')),
+            none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: angleAstig: json={json}')),
+            none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: averageMotion: json={json}')),
+            none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: numAutoParticles: json={json}')),
+            none_raise(optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: numAutoVirions: json={json}')),
+            none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: imageDims: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7412,8 +7413,8 @@ class DriftXY:
         """
         
         return cls(
-            none_raise(optional_map(json.get('x', None), lambda it: cast(float, it)), lambda: KeyError(f'DriftXY.from_json(): can't deserialize, missing field: x: json={json}')),
-            none_raise(optional_map(json.get('y', None), lambda it: cast(float, it)), lambda: KeyError(f'DriftXY.from_json(): can't deserialize, missing field: y: json={json}')),
+            none_raise(optional_map(json.get('x', None), lambda it: cast(float, it)), lambda: KeyError(f'DriftXY.from_json(): can\'t deserialize, missing field: x: json={json}')),
+            none_raise(optional_map(json.get('y', None), lambda it: cast(float, it)), lambda: KeyError(f'DriftXY.from_json(): can\'t deserialize, missing field: y: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7494,12 +7495,12 @@ class CtfTiltValues:
         """
         
         return cls(
-            none_raise(optional_map(json.get('index', None), lambda it: cast(int, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can't deserialize, missing field: index: json={json}')),
-            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can't deserialize, missing field: defocus1: json={json}')),
-            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can't deserialize, missing field: defocus2: json={json}')),
-            none_raise(optional_map(json.get('astigmatism', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can't deserialize, missing field: astigmatism: json={json}')),
-            none_raise(optional_map(json.get('cc', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can't deserialize, missing field: cc: json={json}')),
-            none_raise(optional_map(json.get('resolution', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can't deserialize, missing field: resolution: json={json}')),
+            none_raise(optional_map(json.get('index', None), lambda it: cast(int, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can\'t deserialize, missing field: index: json={json}')),
+            none_raise(optional_map(json.get('defocus1', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can\'t deserialize, missing field: defocus1: json={json}')),
+            none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can\'t deserialize, missing field: defocus2: json={json}')),
+            none_raise(optional_map(json.get('astigmatism', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can\'t deserialize, missing field: astigmatism: json={json}')),
+            none_raise(optional_map(json.get('cc', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can\'t deserialize, missing field: cc: json={json}')),
+            none_raise(optional_map(json.get('resolution', None), lambda it: cast(float, it)), lambda: KeyError(f'CtfTiltValues.from_json(): can\'t deserialize, missing field: resolution: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7583,11 +7584,11 @@ class ImageDims:
         """
         
         return cls(
-            none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can't deserialize, missing field: width: json={json}')),
-            none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can't deserialize, missing field: height: json={json}')),
-            none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can't deserialize, missing field: depth: json={json}')),
-            none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can't deserialize, missing field: binningFactor: json={json}')),
-            none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError(f'ImageDims.from_json(): can't deserialize, missing field: pixelA: json={json}')),
+            none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: width: json={json}')),
+            none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: height: json={json}')),
+            none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: depth: json={json}')),
+            none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: binningFactor: json={json}')),
+            none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: pixelA: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7659,9 +7660,9 @@ class JobRunData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobRunData.from_json(): can't deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'JobRunData.from_json(): can't deserialize, missing field: status: json={json}')),
-            none_raise(optional_map(json.get('clusterJobs', None), lambda it: [ClusterJobData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'JobRunData.from_json(): can't deserialize, missing field: clusterJobs: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('clusterJobs', None), lambda it: [ClusterJobData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: clusterJobs: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7800,7 +7801,7 @@ class SessionExportResultFailed(SessionExportResult, metaclass=ABCMeta):
         """
         
         return cls(
-            none_raise(optional_map(json.get('reason', None), lambda it: cast(str, it)), lambda: KeyError(f'Failed.from_json(): can't deserialize, missing field: reason: json={json}')),
+            none_raise(optional_map(json.get('reason', None), lambda it: cast(str, it)), lambda: KeyError(f'Failed.from_json(): can\'t deserialize, missing field: reason: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7855,7 +7856,7 @@ class SessionExportResultSucceeded(SessionExportResult, metaclass=ABCMeta):
         """
         
         return cls(
-            none_raise(optional_map(json.get('output', None), lambda it: SessionExportResultSucceededOutput.from_json(it)), lambda: KeyError(f'Succeeded.from_json(): can't deserialize, missing field: output: json={json}')),
+            none_raise(optional_map(json.get('output', None), lambda it: SessionExportResultSucceededOutput.from_json(it)), lambda: KeyError(f'Succeeded.from_json(): can\'t deserialize, missing field: output: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7940,7 +7941,7 @@ class SessionExportResultSucceededOutputFilter(SessionExportResultSucceededOutpu
         """
         
         return cls(
-            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'Filter.from_json(): can't deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'Filter.from_json(): can\'t deserialize, missing field: path: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7965,6 +7966,7 @@ class SessionExportResultSucceededOutputFilter(SessionExportResultSucceededOutpu
         return self.path == other.path
 
 
+ValueUnbinnedI = int
 
 
 class ClusterJobData:
@@ -8016,10 +8018,10 @@ class ClusterJobData:
         """
         
         return cls(
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobData.from_json(): can't deserialize, missing field: clusterJobId: json={json}')),
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
             optional_map(json.get('webName', None), lambda it: cast(str, it)),
             optional_map(json.get('clusterName', None), lambda it: cast(str, it)),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ClusterJobData.from_json(): can't deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ClusterJobData.from_json(): can\'t deserialize, missing field: status: json={json}')),
             optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
         )
     
@@ -8102,11 +8104,11 @@ class ClusterJobDataArrayInfo:
         """
         
         return cls(
-            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can't deserialize, missing field: size: json={json}')),
-            none_raise(optional_map(json.get('started', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can't deserialize, missing field: started: json={json}')),
-            none_raise(optional_map(json.get('ended', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can't deserialize, missing field: ended: json={json}')),
-            none_raise(optional_map(json.get('canceled', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can't deserialize, missing field: canceled: json={json}')),
-            none_raise(optional_map(json.get('failed', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can't deserialize, missing field: failed: json={json}')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: size: json={json}')),
+            none_raise(optional_map(json.get('started', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: started: json={json}')),
+            none_raise(optional_map(json.get('ended', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: ended: json={json}')),
+            none_raise(optional_map(json.get('canceled', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: canceled: json={json}')),
+            none_raise(optional_map(json.get('failed', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: failed: json={json}')),
         )
     
     def serialize(self) -> str:
