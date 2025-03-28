@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from nextpyp.client import Client
 
 
-API_VERSION = '1.1.0'
+API_VERSION = '2.0.0'
 
 
 T = TypeVar('T')
@@ -2798,36 +2798,12 @@ class RealTimeS2CSessionStatus:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionStatus'
     
-    def __init__(self, daemons_running: List[bool], jobs_running: List[RealTimeS2CSessionRunningJob], tomo_vir_method: TomoVirMethod, tomo_vir_rad: ValueA, tomo_vir_binn: int, tomo_vir_detect_method: TomoVirDetectMethod, tomo_spk_method: TomoSpkMethod, tomo_spk_rad: ValueA) -> None:
+    def __init__(self, daemons_running: List[bool], jobs_running: List[RealTimeS2CSessionRunningJob]) -> None:
         self.daemons_running: List[bool] = daemons_running
         """
         in order of SessionDaemon.values()
         """
         self.jobs_running: List[RealTimeS2CSessionRunningJob] = jobs_running
-        """
-        (no description yet)
-        """
-        self.tomo_vir_method: TomoVirMethod = tomo_vir_method
-        """
-        (no description yet)
-        """
-        self.tomo_vir_rad: ValueA = tomo_vir_rad
-        """
-        (no description yet)
-        """
-        self.tomo_vir_binn: int = tomo_vir_binn
-        """
-        (no description yet)
-        """
-        self.tomo_vir_detect_method: TomoVirDetectMethod = tomo_vir_detect_method
-        """
-        (no description yet)
-        """
-        self.tomo_spk_method: TomoSpkMethod = tomo_spk_method
-        """
-        (no description yet)
-        """
-        self.tomo_spk_rad: ValueA = tomo_spk_rad
         """
         (no description yet)
         """
@@ -2840,12 +2816,6 @@ class RealTimeS2CSessionStatus:
         return {
             'daemonsRunning': [x for x in self.daemons_running],
             'jobsRunning': [x.to_json() for x in self.jobs_running],
-            'tomoVirMethod': self.tomo_vir_method.to_json(),
-            'tomoVirRad': self.tomo_vir_rad,
-            'tomoVirBinn': self.tomo_vir_binn,
-            'tomoVirDetectMethod': self.tomo_vir_detect_method.to_json(),
-            'tomoSpkMethod': self.tomo_spk_method.to_json(),
-            'tomoSpkRad': self.tomo_spk_rad,
         }
     
     @classmethod
@@ -2857,12 +2827,6 @@ class RealTimeS2CSessionStatus:
         return cls(
             none_raise(optional_map(json.get('daemonsRunning', None), lambda it: [cast(bool, x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: daemonsRunning: json={json}')),
             none_raise(optional_map(json.get('jobsRunning', None), lambda it: [RealTimeS2CSessionRunningJob.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: jobsRunning: json={json}')),
-            none_raise(optional_map(json.get('tomoVirMethod', None), lambda it: TomoVirMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirMethod: json={json}')),
-            none_raise(optional_map(json.get('tomoVirRad', None), lambda it: cast(float, it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirRad: json={json}')),
-            none_raise(optional_map(json.get('tomoVirBinn', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirBinn: json={json}')),
-            none_raise(optional_map(json.get('tomoVirDetectMethod', None), lambda it: TomoVirDetectMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoVirDetectMethod: json={json}')),
-            none_raise(optional_map(json.get('tomoSpkMethod', None), lambda it: TomoSpkMethod.from_json(it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoSpkMethod: json={json}')),
-            none_raise(optional_map(json.get('tomoSpkRad', None), lambda it: cast(float, it)), lambda: KeyError(f'SessionStatus.from_json(): can\'t deserialize, missing field: tomoSpkRad: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -2876,12 +2840,6 @@ class RealTimeS2CSessionStatus:
         props = ', '.join([
             f'daemons_running={self.daemons_running}',
             f'jobs_running={self.jobs_running}',
-            f'tomo_vir_method={self.tomo_vir_method}',
-            f'tomo_vir_rad={self.tomo_vir_rad}',
-            f'tomo_vir_binn={self.tomo_vir_binn}',
-            f'tomo_vir_detect_method={self.tomo_vir_detect_method}',
-            f'tomo_spk_method={self.tomo_spk_method}',
-            f'tomo_spk_rad={self.tomo_spk_rad}',
         ])
         return f'RealTimeS2CSessionStatus[{props}]'
     
@@ -2892,13 +2850,7 @@ class RealTimeS2CSessionStatus:
         if not isinstance(other, RealTimeS2CSessionStatus):
             return NotImplemented
         return self.daemons_running == other.daemons_running \
-            and self.jobs_running == other.jobs_running \
-            and self.tomo_vir_method == other.tomo_vir_method \
-            and self.tomo_vir_rad == other.tomo_vir_rad \
-            and self.tomo_vir_binn == other.tomo_vir_binn \
-            and self.tomo_vir_detect_method == other.tomo_vir_detect_method \
-            and self.tomo_spk_method == other.tomo_spk_method \
-            and self.tomo_spk_rad == other.tomo_spk_rad
+            and self.jobs_running == other.jobs_running
 
 
 class RealTimeS2CSessionSmallData:
@@ -5283,214 +5235,6 @@ class Block:
             and self.group_ids == other.group_ids
 
 
-ValueA = float
-
-
-class TomoVirMethod:
-    """
-    (no description yet)
-    """
-    
-    PYPEval: TomoVirMethod
-    PYPTrain: TomoVirMethod
-    Manual: TomoVirMethod
-    Auto: TomoVirMethod
-    NoneVal: TomoVirMethod
-    
-    def __init__(self, name: str) -> None:
-        self.name = name
-    
-    def to_json(self) -> str:
-        """
-        Converts this enum value into JSON
-        """
-        
-        return self.name
-    
-    @classmethod
-    def from_json(cls, name: str) -> TomoVirMethod:
-        """
-        Reads this enum value from JSON
-        """
-        
-        if name == 'PYPEval':
-            return TomoVirMethod.PYPEval
-        elif name == 'PYPTrain':
-            return TomoVirMethod.PYPTrain
-        elif name == 'Manual':
-            return TomoVirMethod.Manual
-        elif name == 'Auto':
-            return TomoVirMethod.Auto
-        elif name == 'None':
-            return TomoVirMethod.NoneVal
-        else:
-            return cls(name)
-    
-    def __str__(self) -> str:
-        return self.name
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __len__(self) -> int:
-        return 5
-    
-    def __iter__(self) -> Iterator[TomoVirMethod]:
-        return [TomoVirMethod.PYPEval, TomoVirMethod.PYPTrain, TomoVirMethod.Manual, TomoVirMethod.Auto, TomoVirMethod.NoneVal].__iter__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, TomoVirMethod):
-            return NotImplemented
-        return self.name == other.name
-    
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-TomoVirMethod.PYPEval = TomoVirMethod('PYPEval')
-TomoVirMethod.PYPTrain = TomoVirMethod('PYPTrain')
-TomoVirMethod.Manual = TomoVirMethod('Manual')
-TomoVirMethod.Auto = TomoVirMethod('Auto')
-TomoVirMethod.NoneVal = TomoVirMethod('None')
-
-
-class TomoVirDetectMethod:
-    """
-    (no description yet)
-    """
-    
-    Manual: TomoVirDetectMethod
-    Auto: TomoVirDetectMethod
-    NoneVal: TomoVirDetectMethod
-    
-    def __init__(self, name: str) -> None:
-        self.name = name
-    
-    def to_json(self) -> str:
-        """
-        Converts this enum value into JSON
-        """
-        
-        return self.name
-    
-    @classmethod
-    def from_json(cls, name: str) -> TomoVirDetectMethod:
-        """
-        Reads this enum value from JSON
-        """
-        
-        if name == 'Manual':
-            return TomoVirDetectMethod.Manual
-        elif name == 'Auto':
-            return TomoVirDetectMethod.Auto
-        elif name == 'None':
-            return TomoVirDetectMethod.NoneVal
-        else:
-            return cls(name)
-    
-    def __str__(self) -> str:
-        return self.name
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __len__(self) -> int:
-        return 3
-    
-    def __iter__(self) -> Iterator[TomoVirDetectMethod]:
-        return [TomoVirDetectMethod.Manual, TomoVirDetectMethod.Auto, TomoVirDetectMethod.NoneVal].__iter__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, TomoVirDetectMethod):
-            return NotImplemented
-        return self.name == other.name
-    
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-TomoVirDetectMethod.Manual = TomoVirDetectMethod('Manual')
-TomoVirDetectMethod.Auto = TomoVirDetectMethod('Auto')
-TomoVirDetectMethod.NoneVal = TomoVirDetectMethod('None')
-
-
-class TomoSpkMethod:
-    """
-    (no description yet)
-    """
-    
-    TopazEval: TomoSpkMethod
-    TopazTrain: TomoSpkMethod
-    PYPEval: TomoSpkMethod
-    PYPTrain: TomoSpkMethod
-    Manual: TomoSpkMethod
-    Import: TomoSpkMethod
-    Auto: TomoSpkMethod
-    NoneVal: TomoSpkMethod
-    
-    def __init__(self, name: str) -> None:
-        self.name = name
-    
-    def to_json(self) -> str:
-        """
-        Converts this enum value into JSON
-        """
-        
-        return self.name
-    
-    @classmethod
-    def from_json(cls, name: str) -> TomoSpkMethod:
-        """
-        Reads this enum value from JSON
-        """
-        
-        if name == 'TopazEval':
-            return TomoSpkMethod.TopazEval
-        elif name == 'TopazTrain':
-            return TomoSpkMethod.TopazTrain
-        elif name == 'PYPEval':
-            return TomoSpkMethod.PYPEval
-        elif name == 'PYPTrain':
-            return TomoSpkMethod.PYPTrain
-        elif name == 'Manual':
-            return TomoSpkMethod.Manual
-        elif name == 'Import':
-            return TomoSpkMethod.Import
-        elif name == 'Auto':
-            return TomoSpkMethod.Auto
-        elif name == 'None':
-            return TomoSpkMethod.NoneVal
-        else:
-            return cls(name)
-    
-    def __str__(self) -> str:
-        return self.name
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-    
-    def __len__(self) -> int:
-        return 8
-    
-    def __iter__(self) -> Iterator[TomoSpkMethod]:
-        return [TomoSpkMethod.TopazEval, TomoSpkMethod.TopazTrain, TomoSpkMethod.PYPEval, TomoSpkMethod.PYPTrain, TomoSpkMethod.Manual, TomoSpkMethod.Import, TomoSpkMethod.Auto, TomoSpkMethod.NoneVal].__iter__()
-    
-    def __eq__(self, other: object) -> Any:
-        if not isinstance(other, TomoSpkMethod):
-            return NotImplemented
-        return self.name == other.name
-    
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-TomoSpkMethod.TopazEval = TomoSpkMethod('TopazEval')
-TomoSpkMethod.TopazTrain = TomoSpkMethod('TopazTrain')
-TomoSpkMethod.PYPEval = TomoSpkMethod('PYPEval')
-TomoSpkMethod.PYPTrain = TomoSpkMethod('PYPTrain')
-TomoSpkMethod.Manual = TomoSpkMethod('Manual')
-TomoSpkMethod.Import = TomoSpkMethod('Import')
-TomoSpkMethod.Auto = TomoSpkMethod('Auto')
-TomoSpkMethod.NoneVal = TomoSpkMethod('None')
-
-
 class AppPermissionData:
     """
     (no description yet)
@@ -7619,6 +7363,9 @@ class ImageDims:
             and self.depth == other.depth \
             and self.binning_factor == other.binning_factor \
             and self.pixel_a == other.pixel_a
+
+
+ValueA = float
 
 
 class JobRunData:
