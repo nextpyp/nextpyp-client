@@ -40,9 +40,6 @@ from nextpyp.client.gen import (
     SessionExportResultFailed,
     SessionExportResult,
     TiltSeriesData,
-    TomoSpkMethod,
-    TomoVirDetectMethod,
-    TomoVirMethod,
     TwoDClassesData
 )
 from nextpyp.client.realtime import RealtimeServiceError
@@ -117,13 +114,7 @@ async def test_recv_status() -> None:
                 "size": 5,
                 "status": "Running"
             }
-        ],
-        "tomoVirMethod": "None",
-        "tomoVirRad": 0.0,
-        "tomoVirBinn": 2,
-        "tomoVirDetectMethod": "None",
-        "tomoSpkMethod": "None",
-        "tomoSpkRead": 4.2
+        ]
     })
 
     async with client.realtime_services.single_particle_session as srv:
@@ -138,13 +129,7 @@ async def test_recv_status() -> None:
                 size=5,
                 status=RunStatus.Running
             )
-        ],
-        tomo_vir_method=TomoVirMethod.NoneVal,
-        tomo_vir_rad=0.0,
-        tomo_vir_binn=2,
-        tomo_vir_detect_method=TomoVirDetectMethod.NoneVal,
-        tomo_spk_method=TomoSpkMethod.NoneVal,
-        tomo_spk_rad=4.2
+        ]
     )
 
 
