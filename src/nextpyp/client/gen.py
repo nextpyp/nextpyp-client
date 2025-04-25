@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from nextpyp.client import Client
 
 
-API_VERSION = '2.0.0'
+API_VERSION = '2.1.0'
 
 
 T = TypeVar('T')
@@ -441,6 +441,18 @@ class SessionsService:
         """
         path = '/kv/sessions/cancelExport'
         self.client._transport.call(path, [export_id])
+
+    def pick_folder(self) -> str:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_create``
+        """
+        path = '/kv/sessions/pickFolder'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
 
 
 class SingleParticleSessionsService:
