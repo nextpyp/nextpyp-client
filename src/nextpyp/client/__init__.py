@@ -78,7 +78,7 @@ class Client:
 
     """
 
-    def __init__(self, url_base: str, credentials: Optional[Credentials]) -> None:
+    def __init__(self, url_base: str, credentials: Optional[Credentials] = None) -> None:
         """
         Create a new client that can connect to the website at the given URL
 
