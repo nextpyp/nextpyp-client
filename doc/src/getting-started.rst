@@ -10,17 +10,16 @@ Installation
 First, install the NextPYP Client python package. There are a few different options for installation:
 
 
-:strikethrough:`Installing from PyPI`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Installing from PyPI
+^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: shell
 
-	pip install next-pyp
+	pip install nextpyp-client
 
-.. warning::
-
-	The package hasn't been uploaded to PyPI yet, so this option won't work for now.
-	See one of the other installation options below.
+The client's version matches the version of the NextPYP API it speaks: client ``2.2.x`` works with any
+NextPYP website whose API version is ``2.2`` or newer, up to the next major version.
+See :ref:`version-compatibility` below to check a website's API version.
 
 
 Installing from precompiled wheel
@@ -101,6 +100,8 @@ the :py:meth:`.AppsService.request_token` function:
 
 	client = Client('https://nextpyp.my.org')
 
+
+.. _version-compatibility:
 
 Version Compatibility
 ^^^^^^^^^^^^^^^^^^^^^

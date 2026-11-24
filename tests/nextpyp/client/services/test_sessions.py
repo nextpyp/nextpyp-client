@@ -8,8 +8,10 @@ from nextpyp.client.gen import (
     Group,
     MotionData,
     PreprocessingFilter,
+    PreprocessingFilterType,
     PreprocessingPropRange,
     RemoteOption,
+    RunStatus,
     RunningSessions,
     SessionDaemon,
     SessionExportRequestFilter,
@@ -43,8 +45,9 @@ def test_spa_list() -> None:
             "args": {
                 "finished": {
                     "name": "Single-particle",
+                    "path": "/home/jeff/streamPYP/shared/sessions/eQMBiHKJK5YsOLdQ",
                     "groupId": "eaNh61SZ9DmeeCjD",
-                    "values": "data_path = \"/media/pyp/tests/spr/raw/*.tif\"\ngain_reference = \"/media/pyp/tests/spr/raw/K3_gain.mrc\"\nscope_pixel = 1\nscope_voltage = 300\ndetect_rad = 75\ndetect_method = \"all\"\nclass2d_min = 10\nslurm_verbose = true\nslurm_memory = 2\nslurm_class2d_memory = 2\n"
+                    "values": "data_path = \"/media/pyp/tests/spr/raw/*.tif\"\ngain_reference = \"/media/pyp/tests/spr/raw/K3_gain.mrc\"\nscope_pixel = 1\nscope_voltage = 300\ndetect_rad = 75\ndetect_method = \"all\"\nclass2d_min = 10\ndata_invert = true\nslurm_memory_per_task = 2\nslurm_class2d_memory_per_task = 2\n"
                 }
             },
             "display": {
@@ -53,7 +56,10 @@ def test_spa_list() -> None:
                 }
             },
             "numMicrographs": 2,
-            "numFrames": 120
+            "numFrames": 120,
+            "images": ["/kv/sessions/eQMBiHKJK5YsOLdQ/data/20201009_1138_NBtest_A007_G001_H079_D007/image"],
+            "slurmLogin": "jeff",
+            "slurmLoginName": "Jeff"
         }
     ]
     sessions = client.services.single_particle_sessions.list()
@@ -70,6 +76,7 @@ def test_spa_list() -> None:
     assert sessions[0].path == "/home/jeff/streamPYP/shared/sessions/eQMBiHKJK5YsOLdQ"
     assert sessions[0].args.finished is not None
     assert sessions[0].args.finished.name == "Single-particle"
+    assert sessions[0].args.finished.path == "/home/jeff/streamPYP/shared/sessions/eQMBiHKJK5YsOLdQ"
     assert sessions[0].args.finished.group_id == "eaNh61SZ9DmeeCjD"
     assert sessions[0].args.finished.values.startswith('data_path = ')
     assert sessions[0].args.next is None
@@ -78,6 +85,9 @@ def test_spa_list() -> None:
     assert sessions[0].display.next is None
     assert sessions[0].num_micrographs == 2
     assert sessions[0].num_frames == 120
+    assert sessions[0].images == ['/kv/sessions/eQMBiHKJK5YsOLdQ/data/20201009_1138_NBtest_A007_G001_H079_D007/image']
+    assert sessions[0].slurm_login == 'jeff'
+    assert sessions[0].slurm_login_name == 'Jeff'
 
     # check the pyp args
     arg_values = PypArgValues.from_toml(block_args(PypBlock.SESSION_SINGLE_PARTICLE), sessions[0].args.finished.values)
@@ -88,9 +98,9 @@ def test_spa_list() -> None:
     assert arg_values.detect_rad == 75.0
     assert arg_values.detect_method == 'all'
     assert arg_values.class2d_min == 10
-    assert arg_values.slurm_verbose is True
-    assert arg_values.slurm_memory == 2
-    assert arg_values.slurm_class2d_memory == 2
+    assert arg_values.data_invert is True
+    assert arg_values.slurm_memory_per_task == 2
+    assert arg_values.slurm_class2d_memory_per_task == 2
 
 
 def test_spa_create() -> None:
@@ -107,8 +117,9 @@ def test_spa_create() -> None:
         "args": {
             "next": {
                 "name": "My new session",
+                "path": "/path/to/session",
                 "groupId": "groupid",
-                "values": "data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n"
+                "values": "data_path = \"/foo/bar\"\nscope_pixel = 1.0\ndata_invert = true\nslurm_memory_per_task = 2\n"
             }
         },
         "display": {
@@ -117,14 +128,17 @@ def test_spa_create() -> None:
             }
         },
         "numMicrographs": 0,
-        "numFrames": 0
+        "numFrames": 0,
+        "images": [],
+        "slurmLogin": None,
+        "slurmLoginName": None
     }
 
     pyp_args = PypArgValues(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
     pyp_args.data_path = '/foo/bar'
     pyp_args.scope_pixel = 1
-    pyp_args.slurm_verbose = True
-    pyp_args.slurm_memory = 2
+    pyp_args.data_invert = True
+    pyp_args.slurm_memory_per_task = 2
     args = SingleParticleSessionArgs(
         'My new session',
         '/path/to/session',
@@ -138,7 +152,7 @@ def test_spa_create() -> None:
             'name': 'My new session',
             'path': '/path/to/session',
             'groupId': 'groupid',
-            'values': 'data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n'
+            'values': 'data_path = \"/foo/bar\"\nscope_pixel = 1.0\ndata_invert = true\nslurm_memory_per_task = 2\n'
         }
     ]
 
@@ -153,13 +167,17 @@ def test_spa_create() -> None:
     assert session.args.finished is None
     assert session.args.next is not None
     assert session.args.next.name == 'My new session'
+    assert session.args.next.path == '/path/to/session'
     assert session.args.next.group_id == 'groupid'
-    assert session.args.next.values == "data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n"
+    assert session.args.next.values == "data_path = \"/foo/bar\"\nscope_pixel = 1.0\ndata_invert = true\nslurm_memory_per_task = 2\n"
     assert session.display.finished is None
     assert session.display.next is not None
     assert session.display.next.group_name == 'Bob'
     assert session.num_micrographs == 0
     assert session.num_frames == 0
+    assert session.images == []
+    assert session.slurm_login is None
+    assert session.slurm_login_name is None
 
 
 def test_spa_edit() -> None:
@@ -176,6 +194,7 @@ def test_spa_edit() -> None:
         "args": {
             "next": {
                 "name": "My new session",
+                "path": "/path/to/session",
                 "groupId": "groupid",
                 "values": "data_path = \"/foo/bar\"\n"
             }
@@ -186,7 +205,10 @@ def test_spa_edit() -> None:
             }
         },
         "numMicrographs": 0,
-        "numFrames": 0
+        "numFrames": 0,
+        "images": [],
+        "slurmLogin": None,
+        "slurmLoginName": None
     }
 
     pyp_args = PypArgValues(block_args(PypBlock.SESSION_SINGLE_PARTICLE))
@@ -228,6 +250,7 @@ def test_spa_get() -> None:
         "args": {
             "next": {
                 "name": "My new session",
+                "path": "/path/to/session",
                 "groupId": "groupid",
                 "values": "data_path = \"/foo/bar\"\n"
             }
@@ -238,7 +261,10 @@ def test_spa_get() -> None:
             }
         },
         "numMicrographs": 0,
-        "numFrames": 0
+        "numFrames": 0,
+        "images": [],
+        "slurmLogin": None,
+        "slurmLoginName": None
     }
 
     session = client.services.single_particle_sessions.get('sid')
@@ -275,11 +301,13 @@ def test_tomo_list() -> None:
             "args": {
                 "finished": {
                     "name": "New Tomography Session",
+                    "path": "/home/jeff/streamPYP/shared/sessions/eEgGsN7MoPWaDzqt",
                     "groupId": "drGkM99qI3bEpLmo",
                     "values": "data_path = \"/media/pyp/tests/tomo/raw/tilt*.mrc\"\nscope_pixel = 1\nscope_voltage = 300\nstream_transfer_fileset = \".order,.rawtlt\"\nmovie_no_frames = true\n"
                 },
                 "next": {
                     "name": "New Tomography Session",
+                    "path": "/home/jeff/streamPYP/shared/sessions/eEgGsN7MoPWaDzqt",
                     "groupId": "eaNh61SZ9DmeeCjD",
                     "values": "data_path = \"/media/pyp/tests/tomo/raw/tilt*.mrc\"\nscope_pixel = 1\nscope_voltage = 300\nstream_transfer_fileset = \".order,.rawtlt\"\nmovie_no_frames = true\n"
                 }
@@ -293,7 +321,10 @@ def test_tomo_list() -> None:
                 }
             },
             "numTiltSeries": 1,
-            "numTilts": 10
+            "numTilts": 10,
+            "images": [],
+            "slurmLogin": "jeff",
+            "slurmLoginName": "Jeff"
         }
     ]
     sessions = client.services.tomography_sessions.list()
@@ -310,10 +341,12 @@ def test_tomo_list() -> None:
     assert sessions[0].path == "/home/jeff/streamPYP/shared/sessions/eEgGsN7MoPWaDzqt"
     assert sessions[0].args.finished is not None
     assert sessions[0].args.finished.name == "New Tomography Session"
+    assert sessions[0].args.finished.path == "/home/jeff/streamPYP/shared/sessions/eEgGsN7MoPWaDzqt"
     assert sessions[0].args.finished.group_id == "drGkM99qI3bEpLmo"
     assert sessions[0].args.finished.values.startswith('data_path = ')
     assert sessions[0].args.next is not None
     assert sessions[0].args.next.name == "New Tomography Session"
+    assert sessions[0].args.next.path == "/home/jeff/streamPYP/shared/sessions/eEgGsN7MoPWaDzqt"
     assert sessions[0].args.next.group_id == "eaNh61SZ9DmeeCjD"
     assert sessions[0].args.next.values.startswith('data_path = ')
     assert sessions[0].display.finished is not None
@@ -322,6 +355,9 @@ def test_tomo_list() -> None:
     assert sessions[0].display.next.group_name == 'Bartesaghi Lab'
     assert sessions[0].num_tilt_series == 1
     assert sessions[0].num_tilts == 10
+    assert sessions[0].images == []
+    assert sessions[0].slurm_login == 'jeff'
+    assert sessions[0].slurm_login_name == 'Jeff'
 
     # check the pyp args
     arg_values = PypArgValues.from_toml(block_args(PypBlock.SESSION_TOMOGRAPHY), sessions[0].args.finished.values)
@@ -346,8 +382,9 @@ def test_tomo_create() -> None:
         "args": {
             "next": {
                 "name": "My new session",
+                "path": "/path/to/session",
                 "groupId": "groupid",
-                "values": "data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n"
+                "values": "data_path = \"/foo/bar\"\nscope_pixel = 1.0\ndata_invert = true\nslurm_memory_per_task = 2\n"
             }
         },
         "display": {
@@ -356,14 +393,17 @@ def test_tomo_create() -> None:
             }
         },
         "numTiltSeries": 0,
-        "numTilts": 0
+        "numTilts": 0,
+        "images": [],
+        "slurmLogin": None,
+        "slurmLoginName": None
     }
 
     pyp_args = PypArgValues(block_args(PypBlock.SESSION_TOMOGRAPHY))
     pyp_args.data_path = '/foo/bar'
     pyp_args.scope_pixel = 1
-    pyp_args.slurm_verbose = True
-    pyp_args.slurm_memory = 2
+    pyp_args.data_invert = True
+    pyp_args.slurm_memory_per_task = 2
     args = TomographySessionArgs(
         'My new session',
         '/path/to/session',
@@ -377,7 +417,7 @@ def test_tomo_create() -> None:
             'name': 'My new session',
             'path': '/path/to/session',
             'groupId': 'groupid',
-            'values': 'data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n'
+            'values': 'data_path = \"/foo/bar\"\nscope_pixel = 1.0\ndata_invert = true\nslurm_memory_per_task = 2\n'
         }
     ]
 
@@ -392,13 +432,17 @@ def test_tomo_create() -> None:
     assert session.args.finished is None
     assert session.args.next is not None
     assert session.args.next.name == 'My new session'
+    assert session.args.next.path == '/path/to/session'
     assert session.args.next.group_id == 'groupid'
-    assert session.args.next.values == "data_path = \"/foo/bar\"\nscope_pixel = 1.0\nslurm_verbose = true\nslurm_memory = 2\n"
+    assert session.args.next.values == "data_path = \"/foo/bar\"\nscope_pixel = 1.0\ndata_invert = true\nslurm_memory_per_task = 2\n"
     assert session.display.finished is None
     assert session.display.next is not None
     assert session.display.next.group_name == 'Bob'
     assert session.num_tilt_series == 0
     assert session.num_tilts == 0
+    assert session.images == []
+    assert session.slurm_login is None
+    assert session.slurm_login_name is None
 
 
 def test_tomo_edit() -> None:
@@ -415,6 +459,7 @@ def test_tomo_edit() -> None:
         "args": {
             "next": {
                 "name": "My new session",
+                "path": "/path/to/session",
                 "groupId": "groupid",
                 "values": "data_path = \"/foo/bar\"\n"
             }
@@ -425,7 +470,10 @@ def test_tomo_edit() -> None:
             }
         },
         "numTiltSeries": 0,
-        "numTilts": 0
+        "numTilts": 0,
+        "images": [],
+        "slurmLogin": None,
+        "slurmLoginName": None
     }
 
     pyp_args = PypArgValues(block_args(PypBlock.SESSION_TOMOGRAPHY))
@@ -467,6 +515,7 @@ def test_tomo_get() -> None:
         "args": {
             "next": {
                 "name": "My new session",
+                "path": "/path/to/session",
                 "groupId": "groupid",
                 "values": "data_path = \"/foo/bar\"\n"
             }
@@ -477,7 +526,10 @@ def test_tomo_get() -> None:
             }
         },
         "numTiltSeries": 0,
-        "numTilts": 0
+        "numTilts": 0,
+        "images": [],
+        "slurmLogin": None,
+        "slurmLoginName": None
     }
 
     session = client.services.tomography_sessions.get('sid')
@@ -761,11 +813,12 @@ def test_clear() -> None:
     transport = MockTransport()
     client = transport.client()
 
-    client.services.sessions.clear('sid', SessionDaemon.Pypd)
+    client.services.sessions.clear('sid', SessionDaemon.Pypd, True)
 
     assert transport.last_params == [
         'sid',
-        'Pypd'
+        'Pypd',
+        True
     ]
 
 
@@ -803,12 +856,18 @@ def test_logs() -> None:
             {
                 "clusterJobId": "evKcsy8aLkqvKxCr",
                 "daemon": "Streampyp",
-                "timestamp": 1705851989949
+                "timestamp": 1705851989949,
+                "status": "Succeeded",
+                "launchedTimestamp": 1705851990012,
+                "finishedTimestamp": 1705852400000
             },
             {
                 "clusterJobId": "evKfHWH0O8mHydhy",
                 "daemon": "Streampyp",
-                "timestamp": 1705852408097
+                "timestamp": 1705852408097,
+                "status": "Running",
+                "launchedTimestamp": 1705852408150,
+                "finishedTimestamp": None
             }
         ]
     }
@@ -826,10 +885,16 @@ def test_logs() -> None:
     assert logs.logs[0].cluster_job_id == 'evKcsy8aLkqvKxCr'
     assert logs.logs[0].daemon == SessionDaemon.Streampyp
     assert logs.logs[0].timestamp == 1705851989949
+    assert logs.logs[0].status == RunStatus.Succeeded
+    assert logs.logs[0].launched_timestamp == 1705851990012
+    assert logs.logs[0].finished_timestamp == 1705852400000
 
     assert logs.logs[1].cluster_job_id == 'evKfHWH0O8mHydhy'
     assert logs.logs[1].daemon == SessionDaemon.Streampyp
     assert logs.logs[1].timestamp == 1705852408097
+    assert logs.logs[1].status == RunStatus.Running
+    assert logs.logs[1].launched_timestamp == 1705852408150
+    assert logs.logs[1].finished_timestamp is None
 
 
 def test_speeds() -> None:
@@ -859,12 +924,24 @@ def test_jobs_logs() -> None:
             {
                 "clusterJobId": "evKcwVvPBZ1uzmjZ",
                 "name": "spr_session",
-                "timestamp": 1705852077023
+                "timestamp": 1705852077023,
+                "size": 1,
+                "status": "Succeeded",
+                "arrayInfo": None,
+                "launchedTimestamp": 1705852077100,
+                "finishedTimestamp": 1705852090000,
+                "submittedTimestamp": 1705852077023
             },
             {
                 "clusterJobId": "evKfKi58wMwBTBgQ",
                 "name": "spr_session",
-                "timestamp": 1705852585659
+                "timestamp": 1705852585659,
+                "size": 4,
+                "status": "Waiting",
+                "arrayInfo": None,
+                "launchedTimestamp": None,
+                "finishedTimestamp": None,
+                "submittedTimestamp": 1705852585659
             }
         ]
     }
@@ -882,11 +959,23 @@ def test_jobs_logs() -> None:
     assert logs.jobs[0].cluster_job_id == 'evKcwVvPBZ1uzmjZ'
     assert logs.jobs[0].name == 'spr_session'
     assert logs.jobs[0].timestamp == 1705852077023
+    assert logs.jobs[0].size == 1
+    assert logs.jobs[0].status == RunStatus.Succeeded
+    assert logs.jobs[0].array_info is None
+    assert logs.jobs[0].launched_timestamp == 1705852077100
+    assert logs.jobs[0].finished_timestamp == 1705852090000
+    assert logs.jobs[0].submitted_timestamp == 1705852077023
 
     assert type(logs.jobs[1]) is SessionJobLogData
     assert logs.jobs[1].cluster_job_id == 'evKfKi58wMwBTBgQ'
     assert logs.jobs[1].name == 'spr_session'
     assert logs.jobs[1].timestamp == 1705852585659
+    assert logs.jobs[1].size == 4
+    assert logs.jobs[1].status == RunStatus.Waiting
+    assert logs.jobs[1].array_info is None
+    assert logs.jobs[1].launched_timestamp is None
+    assert logs.jobs[1].finished_timestamp is None
+    assert logs.jobs[1].submitted_timestamp == 1705852585659
 
 
 def test_get_avg_rot() -> None:
@@ -966,10 +1055,11 @@ def test_list_filters() -> None:
     client = transport.client()
     transport.next_response = ['a', 'b']
 
-    filters = client.services.sessions.list_filters('sid')
+    filters = client.services.sessions.list_filters('sid', PreprocessingFilterType.TABLE)
 
     assert transport.last_params == [
-        'sid'
+        'sid',
+        'TABLE'
     ]
 
     assert type(filters) is list
@@ -997,14 +1087,23 @@ def test_get_filter() -> None:
                 "max": 1.70585258005461E12
             }
         ],
-        "excludedIds": []
+        "excludedIds": [],
+        "selectedClasses": None,
+        "selectedClassesReal": None,
+        "selectedClassesFourier": None,
+        "includedIds": None,
+        "xPropId": None,
+        "yPropId": None,
+        "tableFilterNames": None,
+        "plotFilterNames": None
     }
 
-    filter = client.services.sessions.get_filter('sid', 'fid')
+    filter = client.services.sessions.get_filter('sid', 'fid', PreprocessingFilterType.TABLE)
 
     assert transport.last_params == [
         'sid',
-        'fid'
+        'fid',
+        'TABLE'
     ]
 
     assert type(filter) is PreprocessingFilter
@@ -1023,6 +1122,14 @@ def test_get_filter() -> None:
     assert filter.ranges[1].max == 1.70585258005461E12
 
     assert filter.excluded_ids == []
+    assert filter.selected_classes is None
+    assert filter.selected_classes_real is None
+    assert filter.selected_classes_fourier is None
+    assert filter.included_ids is None
+    assert filter.x_prop_id is None
+    assert filter.y_prop_id is None
+    assert filter.table_filter_names is None
+    assert filter.plot_filter_names is None
 
 
 def test_save_filter() -> None:
@@ -1036,9 +1143,17 @@ def test_save_filter() -> None:
             PreprocessingPropRange('micrograph/cccc', 1.2, 3.4),
             PreprocessingPropRange('micrograph/time', 5, 42)
         ],
-        ['a', 'b']
+        ['a', 'b'],
+        None,
+        [1, 3],
+        None,
+        ['c', 'd'],
+        'micrograph/cccc',
+        'micrograph/time',
+        None,
+        None
     )
-    client.services.sessions.save_filter('sid', filter)
+    client.services.sessions.save_filter('sid', filter, PreprocessingFilterType.PLOT)
 
     assert transport.last_params == [
         'sid',
@@ -1056,8 +1171,17 @@ def test_save_filter() -> None:
                     "max": 42
                 }
             ],
-            "excludedIds": ['a', 'b']
-        }
+            "excludedIds": ['a', 'b'],
+            "selectedClasses": None,
+            "selectedClassesReal": [1, 3],
+            "selectedClassesFourier": None,
+            "includedIds": ['c', 'd'],
+            "xPropId": 'micrograph/cccc',
+            "yPropId": 'micrograph/time',
+            "tableFilterNames": None,
+            "plotFilterNames": None
+        },
+        'PLOT'
     ]
 
 
@@ -1066,11 +1190,12 @@ def test_delete_filter() -> None:
     transport = MockTransport()
     client = transport.client()
 
-    client.services.sessions.delete_filter('sid', 'fid')
+    client.services.sessions.delete_filter('sid', 'fid', PreprocessingFilterType.TABLE)
 
     assert transport.last_params == [
         'sid',
-        'fid'
+        'fid',
+        'TABLE'
     ]
 
 
@@ -1123,12 +1248,12 @@ def test_export() -> None:
     transport = MockTransport()
     client = transport.client()
 
-    request = SessionExportRequestFilter('Filter A')
+    request = SessionExportRequestFilter('Filter A', PreprocessingFilterType.TABLE)
     client.services.sessions.export('a', request.serialize(), '')
 
     assert transport.last_params == [
         "a",
-        "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Filter A\"}",
+        "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Filter A\", \"filterType\": \"TABLE\"}",
         ""
     ]
 

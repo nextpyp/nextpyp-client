@@ -1,5 +1,26 @@
 image: python:3.10
+
+stages:
+  - test
+  - build
+  - publish
+
+# a release is a tag like v2.2.0, matching the version in pyproject.toml
+.release-tag: &release-tag
+  if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
+test:
+  stage: test
+  script:
+    - pip install tox
+    - tox run -e py310
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+    - *release-tag
+
 docs:
+  stage: test
   script:
     - pip install tox
     - tox run -e doc
@@ -11,3 +32,51 @@ docs:
     # only run this CI pipeline on main
     refs:
       - main
+
+build:
+  stage: build
+  rules:
+    - *release-tag
+  script:
+    - pip install build twine toml
+    - VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
+    - |
+      if [ "v$VERSION" != "$CI_COMMIT_TAG" ]; then
+        echo "tag $CI_COMMIT_TAG doesn't match the version in pyproject.toml ($VERSION)"
+        exit 1
+      fi
+    - python -m build
+    - twine check --strict dist/*
+  artifacts:
+    paths:
+      - dist/
+
+# Uploads need a person to press the button in the pipeline: TestPyPI first, check it, then PyPI.
+# TEST_PYPI_TOKEN and PYPI_TOKEN are masked, protected CI/CD variables (project-scoped PyPI API tokens),
+# and v* tags are protected, so only maintainers can run these.
+
+publish-testpypi:
+  stage: publish
+  needs: [build]
+  rules:
+    - <<: *release-tag
+      when: manual
+  variables:
+    TWINE_USERNAME: __token__
+    TWINE_PASSWORD: $TEST_PYPI_TOKEN
+  script:
+    - pip install twine
+    - twine upload --non-interactive --repository-url https://test.pypi.org/legacy/ dist/*
+
+publish-pypi:
+  stage: publish
+  needs: [build]
+  rules:
+    - <<: *release-tag
+      when: manual
+  variables:
+    TWINE_USERNAME: __token__
+    TWINE_PASSWORD: $PYPI_TOKEN
+  script:
+    - pip install twine
+    - twine upload --non-interactive dist/*

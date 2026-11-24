@@ -5,6 +5,7 @@ from nextpyp.client.gen import (
     ClusterJobResultType,
     ImageDims,
     MicrographMetadata,
+    PreprocessingFilterType,
     PypStats,
     RealTimeC2SListenToSession,
     RealTimeC2SSessionSettingsSaved,
@@ -40,6 +41,7 @@ from nextpyp.client.gen import (
     SessionExportResultFailed,
     SessionExportResult,
     TiltSeriesData,
+    TwoDClassData,
     TwoDClassesData
 )
 from nextpyp.client.realtime import RealtimeServiceError
@@ -112,7 +114,11 @@ async def test_recv_status() -> None:
                 "jobId": "jid",
                 "name": "The Job",
                 "size": 5,
-                "status": "Running"
+                "status": "Running",
+                "arrayInfo": None,
+                "launchedTimestamp": 1705851990000,
+                "finishedTimestamp": None,
+                "submittedTimestamp": 1705851989949
             }
         ]
     })
@@ -127,7 +133,11 @@ async def test_recv_status() -> None:
                 job_id='jid',
                 name='The Job',
                 size=5,
-                status=RunStatus.Running
+                status=RunStatus.Running,
+                array_info=None,
+                launched_timestamp=1705851990000,
+                finished_timestamp=None,
+                submitted_timestamp=1705851989949
             )
         ]
     )
@@ -144,7 +154,7 @@ async def test_recv_small_data() -> None:
             {
                 "sessionId": "evKcXLQz3JlrDgV6",
                 "exportId": "exnNcFR3PJe2IeKl",
-                "request": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Cheese\"}",
+                "request": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Cheese\", \"filterType\": \"TABLE\"}",
                 "created": 1707508385501,
                 "clusterJobId": "exnNcFR3PJe2IeKm",
                 "result": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportResult.Failed\", \"reason\": \"The cluster job failed\"}"
@@ -152,7 +162,7 @@ async def test_recv_small_data() -> None:
             {
                 "sessionId": "evKcXLQz3JlrDgV6",
                 "exportId": "exnUOmyr7tXLR90H",
-                "request": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Cheese\"}",
+                "request": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Cheese\", \"filterType\": \"TABLE\"}",
                 "created": 1707509571120,
                 "clusterJobId": "exnUOmyr7tXLR90I",
                 "result":"{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportResult.Failed\", \"reason\": \"The cluster job failed\"}"
@@ -168,7 +178,7 @@ async def test_recv_small_data() -> None:
             SessionExportData(
                 session_id="evKcXLQz3JlrDgV6",
                 export_id="exnNcFR3PJe2IeKl",
-                request=SessionExportRequestFilter('Cheese').serialize(),
+                request=SessionExportRequestFilter('Cheese', PreprocessingFilterType.TABLE).serialize(),
                 created=1707508385501,
                 cluster_job_id='exnNcFR3PJe2IeKm',
                 result=SessionExportResultFailed('The cluster job failed').serialize()
@@ -176,7 +186,7 @@ async def test_recv_small_data() -> None:
             SessionExportData(
                 session_id="evKcXLQz3JlrDgV6",
                 export_id="exnUOmyr7tXLR90H",
-                request=SessionExportRequestFilter('Cheese').serialize(),
+                request=SessionExportRequestFilter('Cheese', PreprocessingFilterType.TABLE).serialize(),
                 created=1707509571120,
                 cluster_job_id='exnUOmyr7tXLR90I',
                 result=SessionExportResultFailed('The cluster job failed').serialize()
@@ -185,7 +195,7 @@ async def test_recv_small_data() -> None:
     )
 
     assert type(msg) is RealTimeS2CSessionSmallData
-    assert SessionExportRequest.deserialize(msg.exports[0].request) == SessionExportRequestFilter('Cheese')
+    assert SessionExportRequest.deserialize(msg.exports[0].request) == SessionExportRequestFilter('Cheese', PreprocessingFilterType.TABLE)
     assert msg.exports[0].result is not None
     assert SessionExportResult.deserialize(msg.exports[0].result) == SessionExportResultFailed('The cluster job failed')
 
@@ -209,13 +219,15 @@ async def test_recv_large_data() -> None:
                 "defocus2": 21469.396484375,
                 "angleAstig": -68.99641418457031,
                 "averageMotion": 0.966963111549991,
+                "maxMotion": 2.0543212890625,
                 "numAutoParticles": 0,
                 "imageDims": {
                     "width": 5760,
                     "height": 4092,
                     "depth": 1,
                     "binningFactor": 2,
-                    "pixelA": 1.2
+                    "pixelA": 1.2,
+                    "binningFactorZ": 1
                 }
             }
         ],
@@ -229,6 +241,7 @@ async def test_recv_large_data() -> None:
                 "defocus2": 5078.1337890625,
                 "angleAstig": 45.86092758178711,
                 "averageMotion": 188.23980617348099,
+                "maxMotion": 412.5,
                 "numAutoParticles": 3,
                 "numAutoVirions": 5,
                 "imageDims": {
@@ -236,17 +249,31 @@ async def test_recv_large_data() -> None:
                     "height": 1536,
                     "depth": 10,
                     "binningFactor": 1,
-                    "pixelA": 1.2
-                }
+                    "pixelA": 1.2,
+                    "binningFactorZ": 1
+                },
+                "dataBin": 2,
+                "missAlignLoss": None
             }
         ],
         "twoDClasses": [
             {
                 "ownerId": "oid",
                 "twoDClassesId": "2Did",
-                "created": 5
+                "created": 5,
+                "classes": [
+                    {
+                        "classNum": 1,
+                        "numParticles": 1234,
+                        "metadata": {"resolution": 8.5},
+                        "classScore": 0.75
+                    }
+                ],
+                "metadataLabels": ["resolution"],
+                "splitIndex": None
             }
-        ]
+        ],
+        "last": False
     })
 
     async with client.realtime_services.single_particle_session as srv:
@@ -265,13 +292,15 @@ async def test_recv_large_data() -> None:
                 defocus2=21469.396484375,
                 angle_astig=-68.99641418457031,
                 average_motion=0.966963111549991,
+                max_motion=2.0543212890625,
                 num_auto_particles=0,
                 image_dims=ImageDims(
                     width=5760,
                     height=4092,
                     depth=1,
                     binning_factor=2,
-                    pixel_a=1.2
+                    pixel_a=1.2,
+                    binning_factor_z=1
                 )
             )
         ],
@@ -285,6 +314,7 @@ async def test_recv_large_data() -> None:
                 defocus2=5078.1337890625,
                 angle_astig=45.86092758178711,
                 average_motion=188.23980617348099,
+                max_motion=412.5,
                 num_auto_particles=3,
                 num_auto_virions=5,
                 image_dims=ImageDims(
@@ -292,17 +322,31 @@ async def test_recv_large_data() -> None:
                     height=1536,
                     depth=10,
                     binning_factor=1,
-                    pixel_a=1.2
-                )
+                    pixel_a=1.2,
+                    binning_factor_z=1
+                ),
+                data_bin=2,
+                miss_align_loss=None
             )
         ],
         two_dclasses=[
             TwoDClassesData(
                 owner_id='oid',
                 two_dclasses_id='2Did',
-                created=5
+                created=5,
+                classes=[
+                    TwoDClassData(
+                        class_num=1,
+                        num_particles=1234,
+                        metadata={'resolution': 8.5},
+                        class_score=0.75
+                    )
+                ],
+                metadata_labels=['resolution'],
+                split_index=None
             )
-        ]
+        ],
+        last=False
     )
 
 
@@ -348,13 +392,15 @@ async def test_recv_session_micrograph() -> None:
             "defocus2": 21469.396484375,
             "angleAstig": -68.99641418457031,
             "averageMotion": 0.966963111549991,
+            "maxMotion": 2.0543212890625,
             "numAutoParticles": 0,
             "imageDims": {
                 "width": 5760,
                 "height": 4092,
                 "depth": 1,
                 "binningFactor": 2,
-                "pixelA": 1.2
+                "pixelA": 1.2,
+                "binningFactorZ": 1
             }
         }
     })
@@ -372,13 +418,15 @@ async def test_recv_session_micrograph() -> None:
             defocus2=21469.396484375,
             angle_astig=-68.99641418457031,
             average_motion=0.966963111549991,
+            max_motion=2.0543212890625,
             num_auto_particles=0,
             image_dims=ImageDims(
                 width=5760,
                 height=4092,
                 depth=1,
                 binning_factor=2,
-                pixel_a=1.2
+                pixel_a=1.2,
+                binning_factor_z=1
             )
         )
     )
@@ -400,13 +448,19 @@ async def test_recv_session_tilt_series() -> None:
             "defocus2": 5078.1337890625,
             "angleAstig": 45.86092758178711,
             "averageMotion": 188.23980617348099,
-            "numParticles": 0,
-            "sourceDims": {
+            "maxMotion": 412.5,
+            "numAutoParticles": 0,
+            "numAutoVirions": 0,
+            "imageDims": {
                 "width": 1536,
                 "height": 1536,
                 "depth": 10,
-                "binningFactor": 1
-            }
+                "binningFactor": 1,
+                "pixelA": 1.2,
+                "binningFactorZ": 1
+            },
+            "dataBin": 1,
+            "missAlignLoss": None
         }
     })
 
@@ -423,6 +477,7 @@ async def test_recv_session_tilt_series() -> None:
             defocus2=5078.1337890625,
             angle_astig=45.86092758178711,
             average_motion=188.23980617348099,
+            max_motion=412.5,
             num_auto_particles=0,
             num_auto_virions=0,
             image_dims=ImageDims(
@@ -430,8 +485,11 @@ async def test_recv_session_tilt_series() -> None:
                 height=1536,
                 depth=10,
                 binning_factor=1,
-                pixel_a=1.2
-            )
+                pixel_a=1.2,
+                binning_factor_z=1
+            ),
+            data_bin=1,
+            miss_align_loss=None
         )
     )
 
@@ -446,7 +504,17 @@ async def test_recv_session_twod_classes() -> None:
         "twoDClasses": {
             "ownerId": "oid",
             "twoDClassesId": "2Did",
-            "created": 5
+            "created": 5,
+            "classes": [
+                {
+                    "classNum": 1,
+                    "numParticles": 1234,
+                    "metadata": {"resolution": 8.5},
+                    "classScore": 0.75
+                }
+            ],
+            "metadataLabels": ["resolution"],
+            "splitIndex": None
         }
     })
 
@@ -457,7 +525,17 @@ async def test_recv_session_twod_classes() -> None:
         two_dclasses=TwoDClassesData(
             owner_id='oid',
             two_dclasses_id='2Did',
-            created=5
+            created=5,
+            classes=[
+                TwoDClassData(
+                    class_num=1,
+                    num_particles=1234,
+                    metadata={'resolution': 8.5},
+                    class_score=0.75
+                )
+            ],
+            metadata_labels=['resolution'],
+            split_index=None
         )
     )
 
@@ -472,7 +550,7 @@ async def test_recv_session_export() -> None:
         "export": {
             "sessionId": "evKcXLQz3JlrDgV6",
             "exportId": "exnUOmyr7tXLR90H",
-            "request": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Cheese\"}",
+            "request": "{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter\", \"name\": \"Cheese\", \"filterType\": \"TABLE\"}",
             "created": 1707509571120,
             "clusterJobId": "exnUOmyr7tXLR90I",
             "result":"{\"type\": \"edu.duke.bartesaghi.micromon.services.SessionExportResult.Failed\", \"reason\": \"The cluster job failed\"}"
@@ -486,7 +564,7 @@ async def test_recv_session_export() -> None:
         export=SessionExportData(
             session_id="evKcXLQz3JlrDgV6",
             export_id="exnUOmyr7tXLR90H",
-            request=SessionExportRequestFilter('Cheese').serialize(),
+            request=SessionExportRequestFilter('Cheese', PreprocessingFilterType.TABLE).serialize(),
             created=1707509571120,
             cluster_job_id='exnUOmyr7tXLR90I',
             result=SessionExportResultFailed('The cluster job failed').serialize()
@@ -494,7 +572,7 @@ async def test_recv_session_export() -> None:
     )
 
     assert type(msg) is RealTimeS2CSessionExport
-    assert SessionExportRequest.deserialize(msg.export.request) == SessionExportRequestFilter('Cheese')
+    assert SessionExportRequest.deserialize(msg.export.request) == SessionExportRequestFilter('Cheese', PreprocessingFilterType.TABLE)
     assert msg.export.result is not None
     assert SessionExportResult.deserialize(msg.export.result) == SessionExportResultFailed('The cluster job failed')
 

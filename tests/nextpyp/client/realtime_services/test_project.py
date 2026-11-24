@@ -63,7 +63,9 @@ async def test_recv_status() -> None:
                                 'webName': 'Check gain reference',
                                 'clusterName': 'pyp_gainref',
                                 'status': 'Failed',
-                                'arrayInfo': None
+                                'arrayInfo': None,
+                                'launchedTimestamp': 1702487772400,
+                                'finishedTimestamp': None
                             }
                         ]
                     }
@@ -83,7 +85,9 @@ async def test_recv_status() -> None:
                                 'webName': 'Check gain reference',
                                 'clusterName': 'pyp_gainref',
                                 'status': 'Failed',
-                                'arrayInfo': None
+                                'arrayInfo': None,
+                                'launchedTimestamp': 1702487772400,
+                                'finishedTimestamp': None
                             }
                         ]
                     }
@@ -124,7 +128,9 @@ async def test_recv_status() -> None:
                                     web_name='Check gain reference',
                                     cluster_name='pyp_gainref',
                                     status=RunStatus.Failed,
-                                    array_info=None
+                                    array_info=None,
+                                    launched_timestamp=1702487772400,
+                                    finished_timestamp=None
                                 )
                             ]
                         )
@@ -144,7 +150,9 @@ async def test_recv_status() -> None:
                                     web_name='Check gain reference',
                                     cluster_name='pyp_gainref',
                                     status=RunStatus.Failed,
-                                    array_info=None
+                                    array_info=None,
+                                    launched_timestamp=1702487772400,
+                                    finished_timestamp=None
                                 )
                             ]
                         )

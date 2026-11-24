@@ -17,7 +17,8 @@ class MockTransport:
         self._next_recv_message: Optional[str] = None
 
     def client(self) -> Client:
-        client = Client('who cares', None)
+        # any http(s) URL works: the transport is replaced below, so nothing connects to it
+        client = Client('http://mock.invalid', None)
         client._transport = cast(NetworkTransport, self)
         return client
 

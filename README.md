@@ -8,6 +8,21 @@ same APIs that NextPYP uses internally. These APIs allow accessing every functio
 to browser clients, including listening to real-time updates from the server.
 
 
+## Install
+
+```shell
+pip install nextpyp-client
+```
+
+Then see [Getting Started](https://nextpyp.app/nextpyp-client) to request an app token and make your first calls.
+
+
+## Versions
+
+The client's version matches the NextPYP API version it speaks: client `2.2.x` works with NextPYP websites
+whose API is `2.2` or newer, up to the next major version. `Client.is_compatible()` checks a website for you.
+
+
 ## Documentation
 
 The newest version of the documentation is available online at:

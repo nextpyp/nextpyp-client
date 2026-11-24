@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from nextpyp.client import Client
 
 
-API_VERSION = '2.1.0'
+API_VERSION = '2.2.0'
 
 
 T = TypeVar('T')
@@ -100,6 +100,24 @@ class Services:
         See: :py:class:`.AppsService`
         """
         
+        self.cluster_jobs: ClusterJobsService = ClusterJobsService(client)
+        """
+        The ClusterJobs service.
+        See: :py:class:`.ClusterJobsService`
+        """
+        
+        self.jobs: JobsService = JobsService(client)
+        """
+        The Jobs service.
+        See: :py:class:`.JobsService`
+        """
+        
+        self.project_jobs: ProjectJobsService = ProjectJobsService(client)
+        """
+        The ProjectJobs service.
+        See: :py:class:`.ProjectJobsService`
+        """
+        
         self.projects: ProjectsService = ProjectsService(client)
         """
         The Projects service.
@@ -164,6 +182,258 @@ class AppsService:
         return AppTokenRequestData.from_json(response)
 
 
+class ClusterJobsService:
+    """
+    Service for reading the logs and status of cluster jobs launched by your projects and sessions
+    """
+    
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def log(self, cluster_job_id: str) -> ClusterJobLog:
+        """
+        The cluster job's launch details and, for a single (non-array) job, its output.
+        
+        
+        :Permission Needed: ``cluster_job_read``
+        """
+        path = '/kv/clusterJobs/log'
+        response = self.client._transport.call(path, [cluster_job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return ClusterJobLog.from_json(response)
+
+    def array_log(self, cluster_job_id: str, array_id: int, series_name: Optional[str]) -> ClusterJobArrayLog:
+        """
+        One array element's output.
+        ``seriesName``, when set, is one tilt series or micrograph inside a bundle. The response is that series' own log file rather than the element's combined output, which is several series long.
+        
+        
+        :Permission Needed: ``cluster_job_read``
+        """
+        path = '/kv/clusterJobs/arrayLog'
+        response = self.client._transport.call(path, [cluster_job_id, array_id, series_name if series_name is not None else None])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return ClusterJobArrayLog.from_json(response)
+
+    def array_element_names(self, cluster_job_id: str) -> ClusterJobArrayElementNames:
+        """
+        The micrograph or tilt-series names each element of an array job works on.
+        
+        
+        :Permission Needed: ``cluster_job_read``
+        """
+        path = '/kv/clusterJobs/arrayElementNames'
+        response = self.client._transport.call(path, [cluster_job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return ClusterJobArrayElementNames.from_json(response)
+
+    def series_names(self, cluster_job_id: str, array_id: int, errors_only: bool) -> ClusterJobSeriesNames:
+        """
+        The files one array element works on.
+        A bundle can hold hundreds of micrographs. This is that one element's names, rather than every element's, so opening its log does not ship the whole grid.
+        ``errorsOnly`` keeps the files whose own log contains an error record. That is what Failed only shows inside a bundle: the element's exit code covers every file it ran.
+        
+        
+        :Permission Needed: ``cluster_job_read``
+        """
+        path = '/kv/clusterJobs/seriesNames'
+        response = self.client._transport.call(path, [cluster_job_id, array_id, errors_only])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return ClusterJobSeriesNames.from_json(response)
+
+    def waiting_reason(self, cluster_job_id: str) -> str:
+        """
+        Why the cluster job is still waiting in the queue, if it is.
+        
+        
+        :Permission Needed: ``cluster_job_read``
+        """
+        path = '/kv/clusterJobs/waitingReason'
+        response = self.client._transport.call(path, [cluster_job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+
+class JobsService:
+    """
+    (no description yet)
+    """
+    
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def get_avg_rot(self, job_id: str, data_id: str) -> List[AvgRotData]:
+        """
+        CTF fit (rotational average and estimates) for one micrograph or tilt-series in a block.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/jobs/avgrot'
+        response = self.client._transport.call(path, [job_id, data_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [AvgRotData.from_json(x) for x in cast(List[Any], response)]
+
+    def get_motion(self, job_id: str, data_id: str) -> List[MotionData]:
+        """
+        Frame motion (drift) for one micrograph or tilt-series in a block.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/jobs/motion'
+        response = self.client._transport.call(path, [job_id, data_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [MotionData.from_json(x) for x in cast(List[Any], response)]
+
+    def get_log(self, job_id: str, data_id: str) -> str:
+        """
+        The processing log for one micrograph or tilt-series in a block.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/jobs/log'
+        response = self.client._transport.call(path, [job_id, data_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+
+class ProjectJobsService:
+    """
+    Block-agnostic access to the blocks (jobs) in a project.
+    Every block type has its own service with its own argument and data types. This service covers all of them with one shape, so apps can discover, add, and edit blocks without knowing each block type ahead of time. Adding and editing go through each block's own service, so they follow the same rules as the website.
+    """
+    
+    def __init__(self, client: Client) -> None:
+        self.client = client
+
+    def block_types(self) -> List[BlockTypeData]:
+        """
+        Every block type that can be added to a project, with the data it consumes and produces.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projectJobs/blockTypes'
+        response = self.client._transport.call(path, [])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [BlockTypeData.from_json(x) for x in cast(List[Any], response)]
+
+    def args_schema(self, block_id: str) -> str:
+        """
+        The parameters a block type accepts, as JSON: groups and args with their types, defaults, and descriptions.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projectJobs/argsSchema'
+        response = self.client._transport.call(path, [block_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+    def list(self, user_id: str, project_id: str) -> List[JobSummary]:
+        """
+        All the blocks in the project.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projectJobs/list'
+        response = self.client._transport.call(path, [user_id, project_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [JobSummary.from_json(x) for x in cast(List[Any], response)]
+
+    def get(self, job_id: str) -> JobSummary:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projectJobs/get'
+        response = self.client._transport.call(path, [job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return JobSummary.from_json(response)
+
+    def new_arg_values(self, user_id: str, project_id: str, in_data: DataRef, block_id: str) -> ArgValuesToml:
+        """
+        Default parameter values for a new block of type ``blockId``, including values inherited from the upstream blocks of ``inData``.
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projectJobs/newArgValues'
+        response = self.client._transport.call(path, [user_id, project_id, in_data.to_json(), block_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(ArgValuesToml, response)
+
+    def add(self, user_id: str, project_id: str, block_id: str, input: Optional[DataRef], values: ArgValuesToml, extra_args: Optional[str]) -> JobSummary:
+        """
+        Add a new block to the project.
+        ``input`` is the upstream output to connect, and is required for every block type except sources (eg raw data import), which take none. ``values`` are the block's parameters as TOML; start from ``newArgValues`` to inherit upstream values. ``extraArgs`` is a JSON object with any block-specific fields besides the parameters, eg ``{"filter": "my-filter"}``; fields left out keep their defaults.
+        
+        
+        :Permission Needed: ``project_write``
+        """
+        path = '/kv/projectJobs/add'
+        response = self.client._transport.call(path, [user_id, project_id, block_id, input.to_json() if input is not None else None, values, extra_args if extra_args is not None else None])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return JobSummary.from_json(response)
+
+    def edit(self, job_id: str, values: ArgValuesToml, extra_args: Optional[str]) -> JobSummary:
+        """
+        Replace the block's pending parameters, which take effect the next time it runs.
+        ``values`` replaces all the parameters, so read the newest values first and change only what you need. ``extraArgs`` is a JSON object with block-specific fields to change; fields left out are kept.
+        
+        
+        :Permission Needed: ``project_write``
+        """
+        path = '/kv/projectJobs/edit'
+        response = self.client._transport.call(path, [job_id, values, extra_args if extra_args is not None else None])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return JobSummary.from_json(response)
+
+    def rename(self, job_id: str, name: str) -> JobSummary:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_write``
+        """
+        path = '/kv/projectJobs/rename'
+        response = self.client._transport.call(path, [job_id, name])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return JobSummary.from_json(response)
+
+    def runs(self, user_id: str, project_id: str) -> List[ProjectRunData]:
+        """
+        All of the project's runs, oldest first, including recent and running ones, with each block's cluster jobs. (``Projects.olderRuns`` leaves out the recent runs, which the website gets over its realtime connection.)
+        
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projectJobs/runs'
+        response = self.client._transport.call(path, [user_id, project_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [ProjectRunData.from_json(x) for x in cast(List[Any], response)]
+
+
 class ProjectsService:
     """
     Service for interacting with user projects
@@ -183,6 +453,127 @@ class ProjectsService:
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return [ProjectData.from_json(x) for x in cast(List[Any], response)]
+
+    def get(self, user_id: str, project_id: str) -> ProjectData:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projects/get'
+        response = self.client._transport.call(path, [user_id, project_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return ProjectData.from_json(response)
+
+    def run(self, user_id: str, project_id: str, job_ids: List[str]) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_control``
+        """
+        path = '/kv/projects/run'
+        self.client._transport.call(path, [user_id, project_id, [x for x in job_ids]])
+
+    def cancel_run(self, user_id: str, project_id: str, run_id: int) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_control``
+        """
+        path = '/kv/projects/cancelRun'
+        self.client._transport.call(path, [user_id, project_id, run_id])
+
+    def cancel_job(self, user_id: str, project_id: str, run_id: int, job_id: str) -> None:
+        """
+        Cancels one block in a run (and any blocks waiting downstream of it), leaving the rest of the run going
+        
+        
+        :Permission Needed: ``project_control``
+        """
+        path = '/kv/projects/cancelJob'
+        self.client._transport.call(path, [user_id, project_id, run_id, job_id])
+
+    def list_running(self, user_id: str) -> List[ProjectData]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projects/listRunning'
+        response = self.client._transport.call(path, [user_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [ProjectData.from_json(x) for x in cast(List[Any], response)]
+
+    def latest_run_id(self, job_id: str) -> int:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projects/latestClusterJob'
+        response = self.client._transport.call(path, [job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(int, response)
+
+    def delete_jobs(self, job_ids: List[str]) -> None:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_delete``
+        """
+        path = '/kv/projects/deleteJobs'
+        self.client._transport.call(path, [[x for x in job_ids]])
+
+    def wipe_job(self, job_id: str, delete_files_and_data: bool) -> WipeJobResult:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_delete``
+        """
+        path = '/kv/projects/wipeJob'
+        response = self.client._transport.call(path, [job_id, delete_files_and_data])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return WipeJobResult.from_json(response)
+
+    def older_runs(self, user_id: str, project_id: str) -> List[ProjectRunData]:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projects/olderRuns'
+        response = self.client._transport.call(path, [user_id, project_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return [ProjectRunData.from_json(x) for x in cast(List[Any], response)]
+
+    def get_project_stats(self, user_id: str, project_id: str) -> ProjectStats:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projects/stats'
+        response = self.client._transport.call(path, [user_id, project_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return ProjectStats.from_json(response)
+
+    def get_job_info(self, job_id: str) -> BlockJobStats:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``project_read``
+        """
+        path = '/kv/projects/jobInfo'
+        response = self.client._transport.call(path, [job_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return BlockJobStats.from_json(response)
 
 
 class SessionsService:
@@ -271,14 +662,14 @@ class SessionsService:
         path = '/kv/sessions/restart'
         self.client._transport.call(path, [session_id, daemon.to_json()])
 
-    def clear(self, session_id: str, daemon: SessionDaemon) -> None:
+    def clear(self, session_id: str, daemon: SessionDaemon, delete_session_files: bool) -> None:
         """
         (no description yet)
         
         :Permission Needed: ``session_control``
         """
         path = '/kv/sessions/clear'
-        self.client._transport.call(path, [session_id, daemon.to_json()])
+        self.client._transport.call(path, [session_id, daemon.to_json(), delete_session_files])
 
     def stop(self, session_id: str, daemon: SessionDaemon) -> None:
         """
@@ -370,47 +761,47 @@ class SessionsService:
             raise Exception(f'response expected from {path}, but none received')
         return cast(str, response)
 
-    def list_filters(self, session_id: str) -> List[str]:
+    def list_filters(self, session_id: str, filter_type: PreprocessingFilterType) -> List[str]:
         """
         (no description yet)
         
         :Permission Needed: ``session_read``
         """
         path = '/kv/sessions/listFilters'
-        response = self.client._transport.call(path, [session_id])
+        response = self.client._transport.call(path, [session_id, filter_type.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return [cast(str, x) for x in cast(List[Any], response)]
 
-    def get_filter(self, session_id: str, name: str) -> PreprocessingFilter:
+    def get_filter(self, session_id: str, name: str, filter_type: PreprocessingFilterType) -> PreprocessingFilter:
         """
         (no description yet)
         
         :Permission Needed: ``session_read``
         """
         path = '/kv/sessions/getFilter'
-        response = self.client._transport.call(path, [session_id, name])
+        response = self.client._transport.call(path, [session_id, name, filter_type.to_json()])
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return PreprocessingFilter.from_json(response)
 
-    def save_filter(self, session_id: str, filter: PreprocessingFilter) -> None:
+    def save_filter(self, session_id: str, filter: PreprocessingFilter, filter_type: PreprocessingFilterType) -> None:
         """
         (no description yet)
         
         :Permission Needed: ``session_write``
         """
         path = '/kv/sessions/saveFilter'
-        self.client._transport.call(path, [session_id, filter.to_json()])
+        self.client._transport.call(path, [session_id, filter.to_json(), filter_type.to_json()])
 
-    def delete_filter(self, session_id: str, name: str) -> None:
+    def delete_filter(self, session_id: str, name: str, filter_type: PreprocessingFilterType) -> None:
         """
         (no description yet)
         
         :Permission Needed: ``session_write``
         """
         path = '/kv/sessions/deleteFilter'
-        self.client._transport.call(path, [session_id, name])
+        self.client._transport.call(path, [session_id, name, filter_type.to_json()])
 
     def filter_options(self, search: Optional[str], initial: Optional[str], state: Optional[str]) -> List[RemoteOption]:
         """
@@ -453,6 +844,52 @@ class SessionsService:
         if response is None:
             raise Exception(f'response expected from {path}, but none received')
         return cast(str, response)
+
+    def suggest_folder_name(self, name: str) -> str:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_create``
+        """
+        path = '/kv/sessions/suggestFolderName'
+        response = self.client._transport.call(path, [name])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return cast(str, response)
+
+    def count_sizes(self, session_id: str) -> SessionSizes:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/countSizes'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionSizes.from_json(response)
+
+    def gain_check_launch(self, session_id: str, values: ArgValuesToml) -> None:
+        """
+        Launch a lightweight cluster job that previews the gain reference on one random movie or tilt-series, using the given (possibly unsaved) session parameters. Works before the session is started.
+        
+        
+        :Permission Needed: ``session_control``
+        """
+        path = '/kv/sessions/gainCheckLaunch'
+        self.client._transport.call(path, [session_id, values])
+
+    def gain_check_status(self, session_id: str) -> SessionGainCheckStatus:
+        """
+        (no description yet)
+        
+        :Permission Needed: ``session_read``
+        """
+        path = '/kv/sessions/gainCheckStatus'
+        response = self.client._transport.call(path, [session_id])
+        if response is None:
+            raise Exception(f'response expected from {path}, but none received')
+        return SessionGainCheckStatus.from_json(response)
 
 
 class SingleParticleSessionsService:
@@ -642,6 +1079,10 @@ class RealtimeServices:
         """
         The Project realtime service, see :py:class:`.ProjectRealtimeServiceConnection`
         """
+        self.running_projects: RealtimeService[RunningProjectsRealtimeServiceConnection] = RealtimeService(client, '/ws/runningProjects', RunningProjectsRealtimeServiceConnection)
+        """
+        The RunningProjects realtime service, see :py:class:`.RunningProjectsRealtimeServiceConnection`
+        """
         self.single_particle_session: RealtimeService[SingleParticleSessionRealtimeServiceConnection] = RealtimeService(client, '/ws/singleParticleSession', SingleParticleSessionRealtimeServiceConnection)
         """
         The SingleParticleSession realtime service, see :py:class:`.SingleParticleSessionRealtimeServiceConnection`
@@ -676,6 +1117,7 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
     * :py:class:`.RealTimeS2CClusterJobArrayStart`
     * :py:class:`.RealTimeS2CClusterJobArrayEnd`
     * :py:class:`.RealTimeS2CClusterJobEnd`
+    * :py:class:`.RealTimeS2CProjectTransferUpdate`
     """
     
     def __init__(self, websocket: WebSocketClientProtocol) -> None:
@@ -690,7 +1132,7 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
         j['type'] = RealTimeC2SListenToProject.TYPE_ID
         await self._send(j)
     
-    async def recv(self) -> Union[RealTimeS2CProjectStatus, RealTimeS2CProjectRunInit, RealTimeS2CProjectRunStart, RealTimeS2CJobStart, RealTimeS2CJobUpdate, RealTimeS2CJobFinish, RealTimeS2CProjectRunFinish, RealTimeS2CClusterJobSubmit, RealTimeS2CClusterJobStart, RealTimeS2CClusterJobArrayStart, RealTimeS2CClusterJobArrayEnd, RealTimeS2CClusterJobEnd]:
+    async def recv(self) -> Union[RealTimeS2CProjectStatus, RealTimeS2CProjectRunInit, RealTimeS2CProjectRunStart, RealTimeS2CJobStart, RealTimeS2CJobUpdate, RealTimeS2CJobFinish, RealTimeS2CProjectRunFinish, RealTimeS2CClusterJobSubmit, RealTimeS2CClusterJobStart, RealTimeS2CClusterJobArrayStart, RealTimeS2CClusterJobArrayEnd, RealTimeS2CClusterJobEnd, RealTimeS2CProjectTransferUpdate]:
         """
         Receives a message from the website. Could be any one of several different messages.
         
@@ -726,6 +1168,8 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
                 print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CClusterJobEnd:
                 print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CProjectTransferUpdate:
+                print(f'received message: {msg}')
             else:
                 raise Exception(f'received unexpected msg: {msg}')
         """
@@ -757,6 +1201,97 @@ class ProjectRealtimeServiceConnection(RealtimeServiceConnection):
                 return RealTimeS2CClusterJobArrayEnd.from_json(msg)
             case RealTimeS2CClusterJobEnd.TYPE_ID:
                 return RealTimeS2CClusterJobEnd.from_json(msg)
+            case RealTimeS2CProjectTransferUpdate.TYPE_ID:
+                return RealTimeS2CProjectTransferUpdate.from_json(msg)
+            case _:
+                raise RealtimeServiceUnexpectedMessage(type)
+
+
+class RunningProjectsRealtimeServiceConnection(RealtimeServiceConnection):
+    """
+    (no description yet)
+    
+    :Permission Needed: ``project_listen``
+    
+    :Client to Server messages:
+    
+    * :py:class:`.RealTimeC2SListenToRunningProjects`
+    
+    :Server to Client messages:
+    
+    * :py:class:`.RealTimeS2CRunningProjectsSnapshot`
+    * :py:class:`.RealTimeS2CRunningProjectAdded`
+    * :py:class:`.RealTimeS2CRunningProjectRunInit`
+    * :py:class:`.RealTimeS2CRunningProjectRunStart`
+    * :py:class:`.RealTimeS2CRunningProjectJobStart`
+    * :py:class:`.RealTimeS2CRunningProjectJobFinish`
+    * :py:class:`.RealTimeS2CRunningProjectRunFinish`
+    * :py:class:`.RealTimeS2CRunningProjectTransfer`
+    """
+    
+    def __init__(self, websocket: WebSocketClientProtocol) -> None:
+        super(RunningProjectsRealtimeServiceConnection, self).__init__(websocket)
+    
+    async def send_listen_to_running_projects(self, msg: RealTimeC2SListenToRunningProjects) -> None:
+        """
+        Sends a RealTimeC2SListenToRunningProjects message
+        """
+        
+        j = msg.to_json()
+        j['type'] = RealTimeC2SListenToRunningProjects.TYPE_ID
+        await self._send(j)
+    
+    async def recv(self) -> Union[RealTimeS2CRunningProjectsSnapshot, RealTimeS2CRunningProjectAdded, RealTimeS2CRunningProjectRunInit, RealTimeS2CRunningProjectRunStart, RealTimeS2CRunningProjectJobStart, RealTimeS2CRunningProjectJobFinish, RealTimeS2CRunningProjectRunFinish, RealTimeS2CRunningProjectTransfer]:
+        """
+        Receives a message from the website. Could be any one of several different messages.
+        
+        Examples
+        --------
+        
+        Receive a message from this realtime service:
+        
+        .. code-block:: python
+        
+            msg = await project.recv()
+            if type(msg) is RealTimeS2CRunningProjectsSnapshot:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectAdded:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectRunInit:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectRunStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectJobStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectJobFinish:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectRunFinish:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CRunningProjectTransfer:
+                print(f'received message: {msg}')
+            else:
+                raise Exception(f'received unexpected msg: {msg}')
+        """
+        
+        msg = await self._recv()
+        type = msg.get('type')
+        match type:
+            case RealTimeS2CRunningProjectsSnapshot.TYPE_ID:
+                return RealTimeS2CRunningProjectsSnapshot.from_json(msg)
+            case RealTimeS2CRunningProjectAdded.TYPE_ID:
+                return RealTimeS2CRunningProjectAdded.from_json(msg)
+            case RealTimeS2CRunningProjectRunInit.TYPE_ID:
+                return RealTimeS2CRunningProjectRunInit.from_json(msg)
+            case RealTimeS2CRunningProjectRunStart.TYPE_ID:
+                return RealTimeS2CRunningProjectRunStart.from_json(msg)
+            case RealTimeS2CRunningProjectJobStart.TYPE_ID:
+                return RealTimeS2CRunningProjectJobStart.from_json(msg)
+            case RealTimeS2CRunningProjectJobFinish.TYPE_ID:
+                return RealTimeS2CRunningProjectJobFinish.from_json(msg)
+            case RealTimeS2CRunningProjectRunFinish.TYPE_ID:
+                return RealTimeS2CRunningProjectRunFinish.from_json(msg)
+            case RealTimeS2CRunningProjectTransfer.TYPE_ID:
+                return RealTimeS2CRunningProjectTransfer.from_json(msg)
             case _:
                 raise RealtimeServiceUnexpectedMessage(type)
 
@@ -792,6 +1327,8 @@ class SingleParticleSessionRealtimeServiceConnection(RealtimeServiceConnection):
     * :py:class:`.RealTimeS2CSessionDaemonFinished`
     * :py:class:`.RealTimeS2CSessionJobSubmitted`
     * :py:class:`.RealTimeS2CSessionJobStarted`
+    * :py:class:`.RealTimeS2CSessionJobArrayStart`
+    * :py:class:`.RealTimeS2CSessionJobArrayEnd`
     * :py:class:`.RealTimeS2CSessionJobFinished`
     """
     
@@ -816,7 +1353,7 @@ class SingleParticleSessionRealtimeServiceConnection(RealtimeServiceConnection):
         j['type'] = RealTimeC2SSessionSettingsSaved.TYPE_ID
         await self._send(j)
     
-    async def recv(self) -> Union[RealTimeS2CSessionStatus, RealTimeS2CSessionSmallData, RealTimeS2CSessionLargeData, RealTimeS2CUpdatedParameters, RealTimeS2CSessionMicrograph, RealTimeS2CSessionTwoDClasses, RealTimeS2CSessionExport, RealTimeS2CSessionFilesystems, RealTimeS2CSessionTransferInit, RealTimeS2CSessionTransferWaiting, RealTimeS2CSessionTransferStarted, RealTimeS2CSessionTransferProgress, RealTimeS2CSessionTransferFinished, RealTimeS2CSessionDaemonSubmitted, RealTimeS2CSessionDaemonStarted, RealTimeS2CSessionDaemonFinished, RealTimeS2CSessionJobSubmitted, RealTimeS2CSessionJobStarted, RealTimeS2CSessionJobFinished]:
+    async def recv(self) -> Union[RealTimeS2CSessionStatus, RealTimeS2CSessionSmallData, RealTimeS2CSessionLargeData, RealTimeS2CUpdatedParameters, RealTimeS2CSessionMicrograph, RealTimeS2CSessionTwoDClasses, RealTimeS2CSessionExport, RealTimeS2CSessionFilesystems, RealTimeS2CSessionTransferInit, RealTimeS2CSessionTransferWaiting, RealTimeS2CSessionTransferStarted, RealTimeS2CSessionTransferProgress, RealTimeS2CSessionTransferFinished, RealTimeS2CSessionDaemonSubmitted, RealTimeS2CSessionDaemonStarted, RealTimeS2CSessionDaemonFinished, RealTimeS2CSessionJobSubmitted, RealTimeS2CSessionJobStarted, RealTimeS2CSessionJobArrayStart, RealTimeS2CSessionJobArrayEnd, RealTimeS2CSessionJobFinished]:
         """
         Receives a message from the website. Could be any one of several different messages.
         
@@ -864,6 +1401,10 @@ class SingleParticleSessionRealtimeServiceConnection(RealtimeServiceConnection):
                 print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CSessionJobStarted:
                 print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobArrayStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobArrayEnd:
+                print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CSessionJobFinished:
                 print(f'received message: {msg}')
             else:
@@ -909,6 +1450,10 @@ class SingleParticleSessionRealtimeServiceConnection(RealtimeServiceConnection):
                 return RealTimeS2CSessionJobSubmitted.from_json(msg)
             case RealTimeS2CSessionJobStarted.TYPE_ID:
                 return RealTimeS2CSessionJobStarted.from_json(msg)
+            case RealTimeS2CSessionJobArrayStart.TYPE_ID:
+                return RealTimeS2CSessionJobArrayStart.from_json(msg)
+            case RealTimeS2CSessionJobArrayEnd.TYPE_ID:
+                return RealTimeS2CSessionJobArrayEnd.from_json(msg)
             case RealTimeS2CSessionJobFinished.TYPE_ID:
                 return RealTimeS2CSessionJobFinished.from_json(msg)
             case _:
@@ -933,6 +1478,7 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
     * :py:class:`.RealTimeS2CSessionLargeData`
     * :py:class:`.RealTimeS2CUpdatedParameters`
     * :py:class:`.RealTimeS2CSessionTiltSeries`
+    * :py:class:`.RealTimeS2CSessionTwoDClasses`
     * :py:class:`.RealTimeS2CSessionExport`
     * :py:class:`.RealTimeS2CSessionFilesystems`
     * :py:class:`.RealTimeS2CSessionTransferInit`
@@ -945,6 +1491,8 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
     * :py:class:`.RealTimeS2CSessionDaemonFinished`
     * :py:class:`.RealTimeS2CSessionJobSubmitted`
     * :py:class:`.RealTimeS2CSessionJobStarted`
+    * :py:class:`.RealTimeS2CSessionJobArrayStart`
+    * :py:class:`.RealTimeS2CSessionJobArrayEnd`
     * :py:class:`.RealTimeS2CSessionJobFinished`
     """
     
@@ -969,7 +1517,7 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
         j['type'] = RealTimeC2SSessionSettingsSaved.TYPE_ID
         await self._send(j)
     
-    async def recv(self) -> Union[RealTimeS2CSessionStatus, RealTimeS2CSessionSmallData, RealTimeS2CSessionLargeData, RealTimeS2CUpdatedParameters, RealTimeS2CSessionTiltSeries, RealTimeS2CSessionExport, RealTimeS2CSessionFilesystems, RealTimeS2CSessionTransferInit, RealTimeS2CSessionTransferWaiting, RealTimeS2CSessionTransferStarted, RealTimeS2CSessionTransferProgress, RealTimeS2CSessionTransferFinished, RealTimeS2CSessionDaemonSubmitted, RealTimeS2CSessionDaemonStarted, RealTimeS2CSessionDaemonFinished, RealTimeS2CSessionJobSubmitted, RealTimeS2CSessionJobStarted, RealTimeS2CSessionJobFinished]:
+    async def recv(self) -> Union[RealTimeS2CSessionStatus, RealTimeS2CSessionSmallData, RealTimeS2CSessionLargeData, RealTimeS2CUpdatedParameters, RealTimeS2CSessionTiltSeries, RealTimeS2CSessionTwoDClasses, RealTimeS2CSessionExport, RealTimeS2CSessionFilesystems, RealTimeS2CSessionTransferInit, RealTimeS2CSessionTransferWaiting, RealTimeS2CSessionTransferStarted, RealTimeS2CSessionTransferProgress, RealTimeS2CSessionTransferFinished, RealTimeS2CSessionDaemonSubmitted, RealTimeS2CSessionDaemonStarted, RealTimeS2CSessionDaemonFinished, RealTimeS2CSessionJobSubmitted, RealTimeS2CSessionJobStarted, RealTimeS2CSessionJobArrayStart, RealTimeS2CSessionJobArrayEnd, RealTimeS2CSessionJobFinished]:
         """
         Receives a message from the website. Could be any one of several different messages.
         
@@ -990,6 +1538,8 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
             elif type(msg) is RealTimeS2CUpdatedParameters:
                 print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CSessionTiltSeries:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionTwoDClasses:
                 print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CSessionExport:
                 print(f'received message: {msg}')
@@ -1015,6 +1565,10 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
                 print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CSessionJobStarted:
                 print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobArrayStart:
+                print(f'received message: {msg}')
+            elif type(msg) is RealTimeS2CSessionJobArrayEnd:
+                print(f'received message: {msg}')
             elif type(msg) is RealTimeS2CSessionJobFinished:
                 print(f'received message: {msg}')
             else:
@@ -1034,6 +1588,8 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
                 return RealTimeS2CUpdatedParameters.from_json(msg)
             case RealTimeS2CSessionTiltSeries.TYPE_ID:
                 return RealTimeS2CSessionTiltSeries.from_json(msg)
+            case RealTimeS2CSessionTwoDClasses.TYPE_ID:
+                return RealTimeS2CSessionTwoDClasses.from_json(msg)
             case RealTimeS2CSessionExport.TYPE_ID:
                 return RealTimeS2CSessionExport.from_json(msg)
             case RealTimeS2CSessionFilesystems.TYPE_ID:
@@ -1058,6 +1614,10 @@ class TomographySessionRealtimeServiceConnection(RealtimeServiceConnection):
                 return RealTimeS2CSessionJobSubmitted.from_json(msg)
             case RealTimeS2CSessionJobStarted.TYPE_ID:
                 return RealTimeS2CSessionJobStarted.from_json(msg)
+            case RealTimeS2CSessionJobArrayStart.TYPE_ID:
+                return RealTimeS2CSessionJobArrayStart.from_json(msg)
+            case RealTimeS2CSessionJobArrayEnd.TYPE_ID:
+                return RealTimeS2CSessionJobArrayEnd.from_json(msg)
             case RealTimeS2CSessionJobFinished.TYPE_ID:
                 return RealTimeS2CSessionJobFinished.from_json(msg)
             case _:
@@ -1368,6 +1928,69 @@ class AppTokenRequestData:
             and self.permissions == other.permissions
 
 
+class PreprocessingFilterType:
+    """
+    Filter set: Table, lasso, named combinations, and PrismPyp are stored and loaded separately.
+    """
+    
+    COMBO: PreprocessingFilterType
+    PLOT: PreprocessingFilterType
+    PRISMPYP: PreprocessingFilterType
+    TABLE: PreprocessingFilterType
+    
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
+    def to_json(self) -> str:
+        """
+        Converts this enum value into JSON
+        """
+        
+        return self.name
+    
+    @classmethod
+    def from_json(cls, name: str) -> PreprocessingFilterType:
+        """
+        Reads this enum value from JSON
+        """
+        
+        if name == 'COMBO':
+            return PreprocessingFilterType.COMBO
+        elif name == 'PLOT':
+            return PreprocessingFilterType.PLOT
+        elif name == 'PRISMPYP':
+            return PreprocessingFilterType.PRISMPYP
+        elif name == 'TABLE':
+            return PreprocessingFilterType.TABLE
+        else:
+            return cls(name)
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __len__(self) -> int:
+        return 4
+    
+    def __iter__(self) -> Iterator[PreprocessingFilterType]:
+        return [PreprocessingFilterType.COMBO, PreprocessingFilterType.PLOT, PreprocessingFilterType.PRISMPYP, PreprocessingFilterType.TABLE].__iter__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, PreprocessingFilterType):
+            return NotImplemented
+        return self.name == other.name
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+PreprocessingFilterType.COMBO = PreprocessingFilterType('COMBO')
+PreprocessingFilterType.PLOT = PreprocessingFilterType('PLOT')
+PreprocessingFilterType.PRISMPYP = PreprocessingFilterType('PRISMPYP')
+PreprocessingFilterType.TABLE = PreprocessingFilterType('TABLE')
+
+
 class PreprocessingFilter:
     """
     (no description yet)
@@ -1375,7 +1998,7 @@ class PreprocessingFilter:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.PreprocessingFilter'
     
-    def __init__(self, name: str, ranges: List[PreprocessingPropRange], excluded_ids: List[str]) -> None:
+    def __init__(self, name: str, ranges: List[PreprocessingPropRange], excluded_ids: List[str], selected_classes: Optional[List[int]], selected_classes_real: Optional[List[int]], selected_classes_fourier: Optional[List[int]], included_ids: Optional[List[str]], x_prop_id: Optional[str], y_prop_id: Optional[str], table_filter_names: Optional[List[str]], plot_filter_names: Optional[List[str]]) -> None:
         self.name: str = name
         """
         (no description yet)
@@ -1388,6 +2011,38 @@ class PreprocessingFilter:
         """
         (no description yet)
         """
+        self.selected_classes: Optional[List[int]] = selected_classes
+        """
+        Legacy: when present, treated as both real and fourier. Prefer selectedClassesReal/Fourier.
+        """
+        self.selected_classes_real: Optional[List[int]] = selected_classes_real
+        """
+        Class-based filter: selected class numbers for real space.
+        """
+        self.selected_classes_fourier: Optional[List[int]] = selected_classes_fourier
+        """
+        Class-based filter: selected class numbers for Fourier space.
+        """
+        self.included_ids: Optional[List[str]] = included_ids
+        """
+        Lasso filter: datum ids inside the selection. Null means no inclusion list.
+        """
+        self.x_prop_id: Optional[str] = x_prop_id
+        """
+        Lasso filter: X axis property id, restored when the filter is loaded.
+        """
+        self.y_prop_id: Optional[str] = y_prop_id
+        """
+        Lasso filter: Y axis property id, restored when the filter is loaded.
+        """
+        self.table_filter_names: Optional[List[str]] = table_filter_names
+        """
+        Combination: saved table filter names. Resolved live and intersected.
+        """
+        self.plot_filter_names: Optional[List[str]] = plot_filter_names
+        """
+        Combination: saved lasso filter names. Resolved live and intersected.
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1398,6 +2053,14 @@ class PreprocessingFilter:
             'name': self.name,
             'ranges': [x.to_json() for x in self.ranges],
             'excludedIds': [x for x in self.excluded_ids],
+            'selectedClasses': [x for x in self.selected_classes] if self.selected_classes is not None else None,
+            'selectedClassesReal': [x for x in self.selected_classes_real] if self.selected_classes_real is not None else None,
+            'selectedClassesFourier': [x for x in self.selected_classes_fourier] if self.selected_classes_fourier is not None else None,
+            'includedIds': [x for x in self.included_ids] if self.included_ids is not None else None,
+            'xPropId': self.x_prop_id if self.x_prop_id is not None else None,
+            'yPropId': self.y_prop_id if self.y_prop_id is not None else None,
+            'tableFilterNames': [x for x in self.table_filter_names] if self.table_filter_names is not None else None,
+            'plotFilterNames': [x for x in self.plot_filter_names] if self.plot_filter_names is not None else None,
         }
     
     @classmethod
@@ -1410,6 +2073,14 @@ class PreprocessingFilter:
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'PreprocessingFilter.from_json(): can\'t deserialize, missing field: name: json={json}')),
             none_raise(optional_map(json.get('ranges', None), lambda it: [PreprocessingPropRange.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'PreprocessingFilter.from_json(): can\'t deserialize, missing field: ranges: json={json}')),
             none_raise(optional_map(json.get('excludedIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'PreprocessingFilter.from_json(): can\'t deserialize, missing field: excludedIds: json={json}')),
+            optional_map(json.get('selectedClasses', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('selectedClassesReal', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('selectedClassesFourier', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('includedIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('xPropId', None), lambda it: cast(str, it)),
+            optional_map(json.get('yPropId', None), lambda it: cast(str, it)),
+            optional_map(json.get('tableFilterNames', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('plotFilterNames', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]),
         )
     
     def serialize(self) -> str:
@@ -1424,6 +2095,14 @@ class PreprocessingFilter:
             f'name={self.name}',
             f'ranges={self.ranges}',
             f'excluded_ids={self.excluded_ids}',
+            f'selected_classes={self.selected_classes}',
+            f'selected_classes_real={self.selected_classes_real}',
+            f'selected_classes_fourier={self.selected_classes_fourier}',
+            f'included_ids={self.included_ids}',
+            f'x_prop_id={self.x_prop_id}',
+            f'y_prop_id={self.y_prop_id}',
+            f'table_filter_names={self.table_filter_names}',
+            f'plot_filter_names={self.plot_filter_names}',
         ])
         return f'PreprocessingFilter[{props}]'
     
@@ -1435,7 +2114,681 @@ class PreprocessingFilter:
             return NotImplemented
         return self.name == other.name \
             and self.ranges == other.ranges \
-            and self.excluded_ids == other.excluded_ids
+            and self.excluded_ids == other.excluded_ids \
+            and self.selected_classes == other.selected_classes \
+            and self.selected_classes_real == other.selected_classes_real \
+            and self.selected_classes_fourier == other.selected_classes_fourier \
+            and self.included_ids == other.included_ids \
+            and self.x_prop_id == other.x_prop_id \
+            and self.y_prop_id == other.y_prop_id \
+            and self.table_filter_names == other.table_filter_names \
+            and self.plot_filter_names == other.plot_filter_names
+
+
+class ClusterJobLog:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobLog'
+    
+    def __init__(self, representative_command: str, command_params: Optional[str], submit_failure: Optional[str], template: Optional[str], launch_script: Optional[str], launch_result: Optional[ClusterJobLaunchResultData], result_type: Optional[ClusterJobResultType], exit_code: Optional[int], log: Optional[str], array_size: Optional[int], failed_array_ids: List[int]) -> None:
+        self.representative_command: str = representative_command
+        """
+        (no description yet)
+        """
+        self.command_params: Optional[str] = command_params
+        """
+        (no description yet)
+        """
+        self.submit_failure: Optional[str] = submit_failure
+        """
+        (no description yet)
+        """
+        self.template: Optional[str] = template
+        """
+        (no description yet)
+        """
+        self.launch_script: Optional[str] = launch_script
+        """
+        (no description yet)
+        """
+        self.launch_result: Optional[ClusterJobLaunchResultData] = launch_result
+        """
+        (no description yet)
+        """
+        self.result_type: Optional[ClusterJobResultType] = result_type
+        """
+        (no description yet)
+        """
+        self.exit_code: Optional[int] = exit_code
+        """
+        (no description yet)
+        """
+        self.log: Optional[str] = log
+        """
+        (no description yet)
+        """
+        self.array_size: Optional[int] = array_size
+        """
+        (no description yet)
+        """
+        self.failed_array_ids: List[int] = failed_array_ids
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'representativeCommand': self.representative_command,
+            'commandParams': self.command_params if self.command_params is not None else None,
+            'submitFailure': self.submit_failure if self.submit_failure is not None else None,
+            'template': self.template if self.template is not None else None,
+            'launchScript': self.launch_script if self.launch_script is not None else None,
+            'launchResult': self.launch_result.to_json() if self.launch_result is not None else None,
+            'resultType': self.result_type.to_json() if self.result_type is not None else None,
+            'exitCode': self.exit_code if self.exit_code is not None else None,
+            'log': self.log if self.log is not None else None,
+            'arraySize': self.array_size if self.array_size is not None else None,
+            'failedArrayIds': [x for x in self.failed_array_ids],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobLog:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('representativeCommand', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobLog.from_json(): can\'t deserialize, missing field: representativeCommand: json={json}')),
+            optional_map(json.get('commandParams', None), lambda it: cast(str, it)),
+            optional_map(json.get('submitFailure', None), lambda it: cast(str, it)),
+            optional_map(json.get('template', None), lambda it: cast(str, it)),
+            optional_map(json.get('launchScript', None), lambda it: cast(str, it)),
+            optional_map(json.get('launchResult', None), lambda it: ClusterJobLaunchResultData.from_json(it)),
+            optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)),
+            optional_map(json.get('exitCode', None), lambda it: cast(int, it)),
+            optional_map(json.get('log', None), lambda it: cast(str, it)),
+            optional_map(json.get('arraySize', None), lambda it: cast(int, it)),
+            none_raise(optional_map(json.get('failedArrayIds', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ClusterJobLog.from_json(): can\'t deserialize, missing field: failedArrayIds: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobLog:
+        return ClusterJobLog.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'representative_command={self.representative_command}',
+            f'command_params={self.command_params}',
+            f'submit_failure={self.submit_failure}',
+            f'template={self.template}',
+            f'launch_script={self.launch_script}',
+            f'launch_result={self.launch_result}',
+            f'result_type={self.result_type}',
+            f'exit_code={self.exit_code}',
+            f'log={self.log}',
+            f'array_size={self.array_size}',
+            f'failed_array_ids={self.failed_array_ids}',
+        ])
+        return f'ClusterJobLog[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobLog):
+            return NotImplemented
+        return self.representative_command == other.representative_command \
+            and self.command_params == other.command_params \
+            and self.submit_failure == other.submit_failure \
+            and self.template == other.template \
+            and self.launch_script == other.launch_script \
+            and self.launch_result == other.launch_result \
+            and self.result_type == other.result_type \
+            and self.exit_code == other.exit_code \
+            and self.log == other.log \
+            and self.array_size == other.array_size \
+            and self.failed_array_ids == other.failed_array_ids
+
+
+class ClusterJobSeriesNames:
+    """
+    The files one array element works on.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobSeriesNames'
+    
+    def __init__(self, names: List[str]) -> None:
+        self.names: List[str] = names
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'names': [x for x in self.names],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobSeriesNames:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('names', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ClusterJobSeriesNames.from_json(): can\'t deserialize, missing field: names: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobSeriesNames:
+        return ClusterJobSeriesNames.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'names={self.names}',
+        ])
+        return f'ClusterJobSeriesNames[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobSeriesNames):
+            return NotImplemented
+        return self.names == other.names
+
+
+class ClusterJobArrayElementNames:
+    """
+    The micrograph or tilt-series each element of an array job works on, for finding an element by name.
+    Fetched only when someone searches, since a big array's worth of names is not worth sending to everyone who opens a log.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobArrayElementNames'
+    
+    def __init__(self, names: List[List[str]]) -> None:
+        self.names: List[List[str]] = names
+        """
+        Element 1's names first, and several for one element when the array was bundled.
+        Empty when this job's elements have no names, eg when they are refinement iterations rather than files, so nothing can be found this way.
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'names': [[x for x in x] for x in self.names],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobArrayElementNames:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('names', None), lambda it: [[cast(str, x) for x in cast(List[Any], x)] for x in cast(List[Any], it)]), lambda: KeyError(f'ClusterJobArrayElementNames.from_json(): can\'t deserialize, missing field: names: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobArrayElementNames:
+        return ClusterJobArrayElementNames.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'names={self.names}',
+        ])
+        return f'ClusterJobArrayElementNames[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobArrayElementNames):
+            return NotImplemented
+        return self.names == other.names
+
+
+class ClusterJobArrayLog:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobArrayLog'
+    
+    def __init__(self, result_type: Optional[ClusterJobResultType], exit_code: Optional[int], log: Optional[str]) -> None:
+        self.result_type: Optional[ClusterJobResultType] = result_type
+        """
+        (no description yet)
+        """
+        self.exit_code: Optional[int] = exit_code
+        """
+        (no description yet)
+        """
+        self.log: Optional[str] = log
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'resultType': self.result_type.to_json() if self.result_type is not None else None,
+            'exitCode': self.exit_code if self.exit_code is not None else None,
+            'log': self.log if self.log is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobArrayLog:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            optional_map(json.get('resultType', None), lambda it: ClusterJobResultType.from_json(it)),
+            optional_map(json.get('exitCode', None), lambda it: cast(int, it)),
+            optional_map(json.get('log', None), lambda it: cast(str, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobArrayLog:
+        return ClusterJobArrayLog.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'result_type={self.result_type}',
+            f'exit_code={self.exit_code}',
+            f'log={self.log}',
+        ])
+        return f'ClusterJobArrayLog[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobArrayLog):
+            return NotImplemented
+        return self.result_type == other.result_type \
+            and self.exit_code == other.exit_code \
+            and self.log == other.log
+
+
+class BlockTypeData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.BlockTypeData'
+    
+    def __init__(self, block_id: str, config_id: str, name: str, is_source: bool, inputs: List[BlockDataType], outputs: List[BlockDataType]) -> None:
+        self.block_id: str = block_id
+        """
+        pass this to the other functions as ``blockId``
+        """
+        self.config_id: str = config_id
+        """
+        the pyp parameter block this type uses
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.is_source: bool = is_source
+        """
+        true for blocks that take no input, eg importing raw data
+        """
+        self.inputs: List[BlockDataType] = inputs
+        """
+        (no description yet)
+        """
+        self.outputs: List[BlockDataType] = outputs
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'blockId': self.block_id,
+            'configId': self.config_id,
+            'name': self.name,
+            'isSource': self.is_source,
+            'inputs': [x.to_json() for x in self.inputs],
+            'outputs': [x.to_json() for x in self.outputs],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> BlockTypeData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('blockId', None), lambda it: cast(str, it)), lambda: KeyError(f'BlockTypeData.from_json(): can\'t deserialize, missing field: blockId: json={json}')),
+            none_raise(optional_map(json.get('configId', None), lambda it: cast(str, it)), lambda: KeyError(f'BlockTypeData.from_json(): can\'t deserialize, missing field: configId: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'BlockTypeData.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('isSource', None), lambda it: cast(bool, it)), lambda: KeyError(f'BlockTypeData.from_json(): can\'t deserialize, missing field: isSource: json={json}')),
+            none_raise(optional_map(json.get('inputs', None), lambda it: [BlockDataType.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'BlockTypeData.from_json(): can\'t deserialize, missing field: inputs: json={json}')),
+            none_raise(optional_map(json.get('outputs', None), lambda it: [BlockDataType.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'BlockTypeData.from_json(): can\'t deserialize, missing field: outputs: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> BlockTypeData:
+        return BlockTypeData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'block_id={self.block_id}',
+            f'config_id={self.config_id}',
+            f'name={self.name}',
+            f'is_source={self.is_source}',
+            f'inputs={self.inputs}',
+            f'outputs={self.outputs}',
+        ])
+        return f'BlockTypeData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, BlockTypeData):
+            return NotImplemented
+        return self.block_id == other.block_id \
+            and self.config_id == other.config_id \
+            and self.name == other.name \
+            and self.is_source == other.is_source \
+            and self.inputs == other.inputs \
+            and self.outputs == other.outputs
+
+
+class JobSummary:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobSummary'
+    
+    def __init__(self, job_id: str, job_number: Optional[int], name: str, block_id: str, path: str, stale: bool, changed: bool, inputs: List[JobInput], finished_values: Optional[ArgValuesToml], newest_values: Optional[ArgValuesToml], extra_args: Optional[str]) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.job_number: Optional[int] = job_number
+        """
+        (no description yet)
+        """
+        self.name: str = name
+        """
+        (no description yet)
+        """
+        self.block_id: str = block_id
+        """
+        (no description yet)
+        """
+        self.path: str = path
+        """
+        (no description yet)
+        """
+        self.stale: bool = stale
+        """
+        true when running the block would change its outputs
+        """
+        self.changed: bool = changed
+        """
+        true when the block has pending parameters that haven't run yet
+        """
+        self.inputs: List[JobInput] = inputs
+        """
+        (no description yet)
+        """
+        self.finished_values: Optional[ArgValuesToml] = finished_values
+        """
+        parameters of the last run, as TOML
+        """
+        self.newest_values: Optional[ArgValuesToml] = newest_values
+        """
+        parameters for the next run if changed, otherwise the last run's, as TOML
+        """
+        self.extra_args: Optional[str] = extra_args
+        """
+        block-specific fields besides the parameters, as a JSON object, eg filters
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'jobNumber': self.job_number if self.job_number is not None else None,
+            'name': self.name,
+            'blockId': self.block_id,
+            'path': self.path,
+            'stale': self.stale,
+            'changed': self.changed,
+            'inputs': [x.to_json() for x in self.inputs],
+            'finishedValues': self.finished_values if self.finished_values is not None else None,
+            'newestValues': self.newest_values if self.newest_values is not None else None,
+            'extraArgs': self.extra_args if self.extra_args is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> JobSummary:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            optional_map(json.get('jobNumber', None), lambda it: cast(int, it)),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('blockId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: blockId: json={json}')),
+            none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_raise(optional_map(json.get('stale', None), lambda it: cast(bool, it)), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: stale: json={json}')),
+            none_raise(optional_map(json.get('changed', None), lambda it: cast(bool, it)), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: changed: json={json}')),
+            none_raise(optional_map(json.get('inputs', None), lambda it: [JobInput.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'JobSummary.from_json(): can\'t deserialize, missing field: inputs: json={json}')),
+            optional_map(json.get('finishedValues', None), lambda it: cast(ArgValuesToml, it)),
+            optional_map(json.get('newestValues', None), lambda it: cast(ArgValuesToml, it)),
+            optional_map(json.get('extraArgs', None), lambda it: cast(str, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> JobSummary:
+        return JobSummary.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'job_number={self.job_number}',
+            f'name={self.name}',
+            f'block_id={self.block_id}',
+            f'path={self.path}',
+            f'stale={self.stale}',
+            f'changed={self.changed}',
+            f'inputs={self.inputs}',
+            f'finished_values={self.finished_values}',
+            f'newest_values={self.newest_values}',
+            f'extra_args={self.extra_args}',
+        ])
+        return f'JobSummary[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, JobSummary):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.job_number == other.job_number \
+            and self.name == other.name \
+            and self.block_id == other.block_id \
+            and self.path == other.path \
+            and self.stale == other.stale \
+            and self.changed == other.changed \
+            and self.inputs == other.inputs \
+            and self.finished_values == other.finished_values \
+            and self.newest_values == other.newest_values \
+            and self.extra_args == other.extra_args
+
+
+class DataRef:
+    """
+    Points to one output of a block, eg to connect it to the input of a new block.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.DataRef'
+    
+    def __init__(self, job_id: str, data_id: str) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.data_id: str = data_id
+        """
+        the id of the output in that block, from ``BlockTypeData.outputs``
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'dataId': self.data_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> DataRef:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'DataRef.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('dataId', None), lambda it: cast(str, it)), lambda: KeyError(f'DataRef.from_json(): can\'t deserialize, missing field: dataId: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> DataRef:
+        return DataRef.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'data_id={self.data_id}',
+        ])
+        return f'DataRef[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, DataRef):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.data_id == other.data_id
+
+
+class WipeJobResult:
+    """
+    Result of wiping a job: updated job payload plus optional pending filesystem cleanup. ``wipeTrashName`` is the sidelined ``.wipe-<jobId>-<timestamp>`` folder still being deleted.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.WipeJobResult'
+    
+    def __init__(self, job: str, wipe_trash_name: Optional[str]) -> None:
+        self.job: str = job
+        """
+        JobData, serialized
+        """
+        self.wipe_trash_name: Optional[str] = wipe_trash_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'job': self.job,
+            'wipeTrashName': self.wipe_trash_name if self.wipe_trash_name is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> WipeJobResult:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('job', None), lambda it: cast(str, it)), lambda: KeyError(f'WipeJobResult.from_json(): can\'t deserialize, missing field: job: json={json}')),
+            optional_map(json.get('wipeTrashName', None), lambda it: cast(str, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> WipeJobResult:
+        return WipeJobResult.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job={self.job}',
+            f'wipe_trash_name={self.wipe_trash_name}',
+        ])
+        return f'WipeJobResult[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, WipeJobResult):
+            return NotImplemented
+        return self.job == other.job \
+            and self.wipe_trash_name == other.wipe_trash_name
 
 
 class ProjectData:
@@ -1445,7 +2798,7 @@ class ProjectData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectData'
     
-    def __init__(self, owner: UserData, permissions: Set[ProjectPermission], project_id: str, project_number: Optional[int], project_name: str, created: int, images: List[str], path: str) -> None:
+    def __init__(self, owner: UserData, permissions: Set[ProjectPermission], project_id: str, project_number: Optional[int], project_name: str, created: int, images: List[str], path: str, importing: bool, slurm_login: Optional[str], slurm_login_name: Optional[str]) -> None:
         self.owner: UserData = owner
         """
         (no description yet)
@@ -1478,6 +2831,18 @@ class ProjectData:
         """
         (no description yet)
         """
+        self.importing: bool = importing
+        """
+        True while a bundle is being imported into this project.
+        """
+        self.slurm_login: Optional[str] = slurm_login
+        """
+        Stored login id. Null means new jobs follow the server default.
+        """
+        self.slurm_login_name: Optional[str] = slurm_login_name
+        """
+        Display name of the login new jobs will use.
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -1493,6 +2858,9 @@ class ProjectData:
             'created': self.created,
             'images': [x for x in self.images],
             'path': self.path,
+            'importing': self.importing,
+            'slurmLogin': self.slurm_login if self.slurm_login is not None else None,
+            'slurmLoginName': self.slurm_login_name if self.slurm_login_name is not None else None,
         }
     
     @classmethod
@@ -1510,6 +2878,9 @@ class ProjectData:
             none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: created: json={json}')),
             none_raise(optional_map(json.get('images', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: images: json={json}')),
             none_raise(optional_map(json.get('path', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectData.from_json(): can\'t deserialize, missing field: path: json={json}')),
+            none_map(optional_map(json.get('importing', None), lambda it: cast(bool, it)), lambda: False),
+            optional_map(json.get('slurmLogin', None), lambda it: cast(str, it)),
+            optional_map(json.get('slurmLoginName', None), lambda it: cast(str, it)),
         )
     
     def serialize(self) -> str:
@@ -1529,6 +2900,9 @@ class ProjectData:
             f'created={self.created}',
             f'images={self.images}',
             f'path={self.path}',
+            f'importing={self.importing}',
+            f'slurm_login={self.slurm_login}',
+            f'slurm_login_name={self.slurm_login_name}',
         ])
         return f'ProjectData[{props}]'
     
@@ -1545,7 +2919,134 @@ class ProjectData:
             and self.project_name == other.project_name \
             and self.created == other.created \
             and self.images == other.images \
-            and self.path == other.path
+            and self.path == other.path \
+            and self.importing == other.importing \
+            and self.slurm_login == other.slurm_login \
+            and self.slurm_login_name == other.slurm_login_name
+
+
+class ProjectStats:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectStats'
+    
+    def __init__(self, block_count: int, last_run_timestamp_ms: Optional[int]) -> None:
+        self.block_count: int = block_count
+        """
+        (no description yet)
+        """
+        self.last_run_timestamp_ms: Optional[int] = last_run_timestamp_ms
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'blockCount': self.block_count,
+            'lastRunTimestampMs': self.last_run_timestamp_ms if self.last_run_timestamp_ms is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectStats:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('blockCount', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectStats.from_json(): can\'t deserialize, missing field: blockCount: json={json}')),
+            optional_map(json.get('lastRunTimestampMs', None), lambda it: cast(int, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectStats:
+        return ProjectStats.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'block_count={self.block_count}',
+            f'last_run_timestamp_ms={self.last_run_timestamp_ms}',
+        ])
+        return f'ProjectStats[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ProjectStats):
+            return NotImplemented
+        return self.block_count == other.block_count \
+            and self.last_run_timestamp_ms == other.last_run_timestamp_ms
+
+
+class BlockJobStats:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.BlockJobStats'
+    
+    def __init__(self, created_ms: Optional[int], size_bytes: Optional[int]) -> None:
+        self.created_ms: Optional[int] = created_ms
+        """
+        (no description yet)
+        """
+        self.size_bytes: Optional[int] = size_bytes
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'createdMs': self.created_ms if self.created_ms is not None else None,
+            'sizeBytes': self.size_bytes if self.size_bytes is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> BlockJobStats:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            optional_map(json.get('createdMs', None), lambda it: cast(int, it)),
+            optional_map(json.get('sizeBytes', None), lambda it: cast(int, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> BlockJobStats:
+        return BlockJobStats.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'created_ms={self.created_ms}',
+            f'size_bytes={self.size_bytes}',
+        ])
+        return f'BlockJobStats[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, BlockJobStats):
+            return NotImplemented
+        return self.created_ms == other.created_ms \
+            and self.size_bytes == other.size_bytes
 
 
 class RealTimeC2S:
@@ -1653,6 +3154,60 @@ class RealTimeC2SListenToProject:
             return NotImplemented
         return self.user_id == other.user_id \
             and self.project_id == other.project_id
+
+
+class RealTimeC2SListenToRunningProjects:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeC2S.ListenToRunningProjects'
+    
+    def __init__(self, user_id: str) -> None:
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'userId': self.user_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SListenToRunningProjects:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'ListenToRunningProjects.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeC2SListenToRunningProjects:
+        return RealTimeC2SListenToRunningProjects.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+        ])
+        return f'RealTimeC2SListenToRunningProjects[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeC2SListenToRunningProjects):
+            return NotImplemented
+        return self.user_id == other.user_id
 
 
 class RealTimeC2SListenToSession:
@@ -2327,6 +3882,644 @@ class RealTimeS2CProjectRunFinish:
             and self.status == other.status
 
 
+class RealTimeS2CRunningProjectsSnapshot:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectsSnapshot'
+    
+    def __init__(self, projects: List[RunningProjectSnapshot], transfers: List[ProjectTransferData]) -> None:
+        self.projects: List[RunningProjectSnapshot] = projects
+        """
+        (no description yet)
+        """
+        self.transfers: List[ProjectTransferData] = transfers
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'projects': [x.to_json() for x in self.projects],
+            'transfers': [x.to_json() for x in self.transfers],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectsSnapshot:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('projects', None), lambda it: [RunningProjectSnapshot.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningProjectsSnapshot.from_json(): can\'t deserialize, missing field: projects: json={json}')),
+            none_raise(optional_map(json.get('transfers', None), lambda it: [ProjectTransferData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningProjectsSnapshot.from_json(): can\'t deserialize, missing field: transfers: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectsSnapshot:
+        return RealTimeS2CRunningProjectsSnapshot.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'projects={self.projects}',
+            f'transfers={self.transfers}',
+        ])
+        return f'RealTimeS2CRunningProjectsSnapshot[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectsSnapshot):
+            return NotImplemented
+        return self.projects == other.projects \
+            and self.transfers == other.transfers
+
+
+class RealTimeS2CProjectTransferUpdate:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.ProjectTransferUpdate'
+    
+    def __init__(self, transfer: ProjectTransferData) -> None:
+        self.transfer: ProjectTransferData = transfer
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'transfer': self.transfer.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectTransferUpdate:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('transfer', None), lambda it: ProjectTransferData.from_json(it)), lambda: KeyError(f'ProjectTransferUpdate.from_json(): can\'t deserialize, missing field: transfer: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CProjectTransferUpdate:
+        return RealTimeS2CProjectTransferUpdate.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'transfer={self.transfer}',
+        ])
+        return f'RealTimeS2CProjectTransferUpdate[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CProjectTransferUpdate):
+            return NotImplemented
+        return self.transfer == other.transfer
+
+
+class RealTimeS2CRunningProjectTransfer:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectTransfer'
+    
+    def __init__(self, transfer: ProjectTransferData) -> None:
+        self.transfer: ProjectTransferData = transfer
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'transfer': self.transfer.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectTransfer:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('transfer', None), lambda it: ProjectTransferData.from_json(it)), lambda: KeyError(f'RunningProjectTransfer.from_json(): can\'t deserialize, missing field: transfer: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectTransfer:
+        return RealTimeS2CRunningProjectTransfer.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'transfer={self.transfer}',
+        ])
+        return f'RealTimeS2CRunningProjectTransfer[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectTransfer):
+            return NotImplemented
+        return self.transfer == other.transfer
+
+
+class RealTimeS2CRunningProjectAdded:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectAdded'
+    
+    def __init__(self, snapshot: RunningProjectSnapshot) -> None:
+        self.snapshot: RunningProjectSnapshot = snapshot
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'snapshot': self.snapshot.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectAdded:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('snapshot', None), lambda it: RunningProjectSnapshot.from_json(it)), lambda: KeyError(f'RunningProjectAdded.from_json(): can\'t deserialize, missing field: snapshot: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectAdded:
+        return RealTimeS2CRunningProjectAdded.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'snapshot={self.snapshot}',
+        ])
+        return f'RealTimeS2CRunningProjectAdded[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectAdded):
+            return NotImplemented
+        return self.snapshot == other.snapshot
+
+
+class RealTimeS2CRunningProjectRunInit:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectRunInit'
+    
+    def __init__(self, user_id: str, project_id: str, run_id: int, timestamp: int, job_ids: List[str], job_names: List[RunningJobName]) -> None:
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.job_ids: List[str] = job_ids
+        """
+        (no description yet)
+        """
+        self.job_names: List[RunningJobName] = job_names
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'userId': self.user_id,
+            'projectId': self.project_id,
+            'runId': self.run_id,
+            'timestamp': self.timestamp,
+            'jobIds': [x for x in self.job_ids],
+            'jobNames': [x.to_json() for x in self.job_names],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectRunInit:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectRunInit.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectRunInit.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'RunningProjectRunInit.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'RunningProjectRunInit.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('jobIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningProjectRunInit.from_json(): can\'t deserialize, missing field: jobIds: json={json}')),
+            none_raise(optional_map(json.get('jobNames', None), lambda it: [RunningJobName.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningProjectRunInit.from_json(): can\'t deserialize, missing field: jobNames: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectRunInit:
+        return RealTimeS2CRunningProjectRunInit.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+            f'run_id={self.run_id}',
+            f'timestamp={self.timestamp}',
+            f'job_ids={self.job_ids}',
+            f'job_names={self.job_names}',
+        ])
+        return f'RealTimeS2CRunningProjectRunInit[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectRunInit):
+            return NotImplemented
+        return self.user_id == other.user_id \
+            and self.project_id == other.project_id \
+            and self.run_id == other.run_id \
+            and self.timestamp == other.timestamp \
+            and self.job_ids == other.job_ids \
+            and self.job_names == other.job_names
+
+
+class RealTimeS2CRunningProjectRunStart:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectRunStart'
+    
+    def __init__(self, user_id: str, project_id: str, run_id: int) -> None:
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'userId': self.user_id,
+            'projectId': self.project_id,
+            'runId': self.run_id,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectRunStart:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectRunStart.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectRunStart.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'RunningProjectRunStart.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectRunStart:
+        return RealTimeS2CRunningProjectRunStart.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+            f'run_id={self.run_id}',
+        ])
+        return f'RealTimeS2CRunningProjectRunStart[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectRunStart):
+            return NotImplemented
+        return self.user_id == other.user_id \
+            and self.project_id == other.project_id \
+            and self.run_id == other.run_id
+
+
+class RealTimeS2CRunningProjectJobStart:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectJobStart'
+    
+    def __init__(self, user_id: str, project_id: str, run_id: int, job_id: str, job_name: Optional[str]) -> None:
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.job_name: Optional[str] = job_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'userId': self.user_id,
+            'projectId': self.project_id,
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'jobName': self.job_name if self.job_name is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectJobStart:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectJobStart.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectJobStart.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'RunningProjectJobStart.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectJobStart.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            optional_map(json.get('jobName', None), lambda it: cast(str, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectJobStart:
+        return RealTimeS2CRunningProjectJobStart.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'job_name={self.job_name}',
+        ])
+        return f'RealTimeS2CRunningProjectJobStart[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectJobStart):
+            return NotImplemented
+        return self.user_id == other.user_id \
+            and self.project_id == other.project_id \
+            and self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.job_name == other.job_name
+
+
+class RealTimeS2CRunningProjectJobFinish:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectJobFinish'
+    
+    def __init__(self, user_id: str, project_id: str, run_id: int, job_id: str, status: RunStatus) -> None:
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'userId': self.user_id,
+            'projectId': self.project_id,
+            'runId': self.run_id,
+            'jobId': self.job_id,
+            'status': self.status.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectJobFinish:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectJobFinish.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectJobFinish.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'RunningProjectJobFinish.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectJobFinish.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'RunningProjectJobFinish.from_json(): can\'t deserialize, missing field: status: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectJobFinish:
+        return RealTimeS2CRunningProjectJobFinish.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+            f'run_id={self.run_id}',
+            f'job_id={self.job_id}',
+            f'status={self.status}',
+        ])
+        return f'RealTimeS2CRunningProjectJobFinish[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectJobFinish):
+            return NotImplemented
+        return self.user_id == other.user_id \
+            and self.project_id == other.project_id \
+            and self.run_id == other.run_id \
+            and self.job_id == other.job_id \
+            and self.status == other.status
+
+
+class RealTimeS2CRunningProjectRunFinish:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.RunningProjectRunFinish'
+    
+    def __init__(self, user_id: str, project_id: str, run_id: int, status: RunStatus) -> None:
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'userId': self.user_id,
+            'projectId': self.project_id,
+            'runId': self.run_id,
+            'status': self.status.to_json(),
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectRunFinish:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectRunFinish.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningProjectRunFinish.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'RunningProjectRunFinish.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'RunningProjectRunFinish.from_json(): can\'t deserialize, missing field: status: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CRunningProjectRunFinish:
+        return RealTimeS2CRunningProjectRunFinish.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+            f'run_id={self.run_id}',
+            f'status={self.status}',
+        ])
+        return f'RealTimeS2CRunningProjectRunFinish[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CRunningProjectRunFinish):
+            return NotImplemented
+        return self.user_id == other.user_id \
+            and self.project_id == other.project_id \
+            and self.run_id == other.run_id \
+            and self.status == other.status
+
+
 class RealTimeS2CClusterJobSubmit:
     """
     (no description yet)
@@ -2926,7 +5119,7 @@ class RealTimeS2CSessionLargeData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionLargeData'
     
-    def __init__(self, auto_virions_count: int, auto_particles_count: int, micrographs: List[MicrographMetadata], tilt_serieses: List[TiltSeriesData], two_dclasses: List[TwoDClassesData]) -> None:
+    def __init__(self, auto_virions_count: int, auto_particles_count: int, micrographs: List[MicrographMetadata], tilt_serieses: List[TiltSeriesData], two_dclasses: List[TwoDClassesData], last: bool) -> None:
         self.auto_virions_count: int = auto_virions_count
         """
         (no description yet)
@@ -2947,6 +5140,10 @@ class RealTimeS2CSessionLargeData:
         """
         (no description yet)
         """
+        self.last: bool = last
+        """
+        Catalogs are sent in successive ``SessionLargeData`` messages so a live session does not encode tens of thousands of items in one websocket frame. Read until this is true before treating the handshake as complete.
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -2959,6 +5156,7 @@ class RealTimeS2CSessionLargeData:
             'micrographs': [x.to_json() for x in self.micrographs],
             'tiltSerieses': [x.to_json() for x in self.tilt_serieses],
             'twoDClasses': [x.to_json() for x in self.two_dclasses],
+            'last': self.last,
         }
     
     @classmethod
@@ -2973,6 +5171,7 @@ class RealTimeS2CSessionLargeData:
             none_map(optional_map(json.get('micrographs', None), lambda it: [MicrographMetadata.from_json(x) for x in cast(List[Any], it)]), lambda: []),
             none_map(optional_map(json.get('tiltSerieses', None), lambda it: [TiltSeriesData.from_json(x) for x in cast(List[Any], it)]), lambda: []),
             none_map(optional_map(json.get('twoDClasses', None), lambda it: [TwoDClassesData.from_json(x) for x in cast(List[Any], it)]), lambda: []),
+            none_map(optional_map(json.get('last', None), lambda it: cast(bool, it)), lambda: True),
         )
     
     def serialize(self) -> str:
@@ -2989,6 +5188,7 @@ class RealTimeS2CSessionLargeData:
             f'micrographs={self.micrographs}',
             f'tilt_serieses={self.tilt_serieses}',
             f'two_dclasses={self.two_dclasses}',
+            f'last={self.last}',
         ])
         return f'RealTimeS2CSessionLargeData[{props}]'
     
@@ -3002,7 +5202,8 @@ class RealTimeS2CSessionLargeData:
             and self.auto_particles_count == other.auto_particles_count \
             and self.micrographs == other.micrographs \
             and self.tilt_serieses == other.tilt_serieses \
-            and self.two_dclasses == other.two_dclasses
+            and self.two_dclasses == other.two_dclasses \
+            and self.last == other.last
 
 
 class RealTimeS2CSessionRunningJob:
@@ -3012,7 +5213,7 @@ class RealTimeS2CSessionRunningJob:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionRunningJob'
     
-    def __init__(self, job_id: str, name: str, size: int, status: RunStatus) -> None:
+    def __init__(self, job_id: str, name: str, size: int, status: RunStatus, array_info: Optional[ClusterJobDataArrayInfo], launched_timestamp: Optional[int], finished_timestamp: Optional[int], submitted_timestamp: Optional[int]) -> None:
         self.job_id: str = job_id
         """
         (no description yet)
@@ -3029,6 +5230,22 @@ class RealTimeS2CSessionRunningJob:
         """
         (no description yet)
         """
+        self.array_info: Optional[ClusterJobDataArrayInfo] = array_info
+        """
+        (no description yet)
+        """
+        self.launched_timestamp: Optional[int] = launched_timestamp
+        """
+        (no description yet)
+        """
+        self.finished_timestamp: Optional[int] = finished_timestamp
+        """
+        (no description yet)
+        """
+        self.submitted_timestamp: Optional[int] = submitted_timestamp
+        """
+        (no description yet)
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -3040,6 +5257,10 @@ class RealTimeS2CSessionRunningJob:
             'name': self.name,
             'size': self.size,
             'status': self.status.to_json(),
+            'arrayInfo': self.array_info.to_json() if self.array_info is not None else None,
+            'launchedTimestamp': self.launched_timestamp if self.launched_timestamp is not None else None,
+            'finishedTimestamp': self.finished_timestamp if self.finished_timestamp is not None else None,
+            'submittedTimestamp': self.submitted_timestamp if self.submitted_timestamp is not None else None,
         }
     
     @classmethod
@@ -3053,6 +5274,10 @@ class RealTimeS2CSessionRunningJob:
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: name: json={json}')),
             none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: size: json={json}')),
             none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'SessionRunningJob.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
+            optional_map(json.get('launchedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('finishedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('submittedTimestamp', None), lambda it: cast(int, it)),
         )
     
     def serialize(self) -> str:
@@ -3068,6 +5293,10 @@ class RealTimeS2CSessionRunningJob:
             f'name={self.name}',
             f'size={self.size}',
             f'status={self.status}',
+            f'array_info={self.array_info}',
+            f'launched_timestamp={self.launched_timestamp}',
+            f'finished_timestamp={self.finished_timestamp}',
+            f'submitted_timestamp={self.submitted_timestamp}',
         ])
         return f'RealTimeS2CSessionRunningJob[{props}]'
     
@@ -3080,7 +5309,11 @@ class RealTimeS2CSessionRunningJob:
         return self.job_id == other.job_id \
             and self.name == other.name \
             and self.size == other.size \
-            and self.status == other.status
+            and self.status == other.status \
+            and self.array_info == other.array_info \
+            and self.launched_timestamp == other.launched_timestamp \
+            and self.finished_timestamp == other.finished_timestamp \
+            and self.submitted_timestamp == other.submitted_timestamp
 
 
 class RealTimeS2CSessionDaemonSubmitted:
@@ -3391,6 +5624,146 @@ class RealTimeS2CSessionJobStarted:
         if not isinstance(other, RealTimeS2CSessionJobStarted):
             return NotImplemented
         return self.job_id == other.job_id
+
+
+class RealTimeS2CSessionJobArrayStart:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionJobArrayStart'
+    
+    def __init__(self, job_id: str, num_started: int) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.num_started: int = num_started
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'numStarted': self.num_started,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobArrayStart:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobArrayStart.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('numStarted', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobArrayStart.from_json(): can\'t deserialize, missing field: numStarted: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobArrayStart:
+        return RealTimeS2CSessionJobArrayStart.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'num_started={self.num_started}',
+        ])
+        return f'RealTimeS2CSessionJobArrayStart[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionJobArrayStart):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.num_started == other.num_started
+
+
+class RealTimeS2CSessionJobArrayEnd:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RealTimeS2C.SessionJobArrayEnd'
+    
+    def __init__(self, job_id: str, num_ended: int, num_canceled: int, num_failed: int) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.num_ended: int = num_ended
+        """
+        (no description yet)
+        """
+        self.num_canceled: int = num_canceled
+        """
+        (no description yet)
+        """
+        self.num_failed: int = num_failed
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'numEnded': self.num_ended,
+            'numCanceled': self.num_canceled,
+            'numFailed': self.num_failed,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobArrayEnd:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobArrayEnd.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('numEnded', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobArrayEnd.from_json(): can\'t deserialize, missing field: numEnded: json={json}')),
+            none_raise(optional_map(json.get('numCanceled', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobArrayEnd.from_json(): can\'t deserialize, missing field: numCanceled: json={json}')),
+            none_raise(optional_map(json.get('numFailed', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobArrayEnd.from_json(): can\'t deserialize, missing field: numFailed: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RealTimeS2CSessionJobArrayEnd:
+        return RealTimeS2CSessionJobArrayEnd.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'num_ended={self.num_ended}',
+            f'num_canceled={self.num_canceled}',
+            f'num_failed={self.num_failed}',
+        ])
+        return f'RealTimeS2CSessionJobArrayEnd[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RealTimeS2CSessionJobArrayEnd):
+            return NotImplemented
+        return self.job_id == other.job_id \
+            and self.num_ended == other.num_ended \
+            and self.num_canceled == other.num_canceled \
+            and self.num_failed == other.num_failed
 
 
 class RealTimeS2CSessionJobFinished:
@@ -4159,6 +6532,84 @@ class RealTimeS2CSessionExport:
         return self.export == other.export
 
 
+class ProjectRunData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectRunData'
+    
+    def __init__(self, run_id: int, timestamp: int, status: RunStatus, jobs: List[JobRunData]) -> None:
+        self.run_id: int = run_id
+        """
+        (no description yet)
+        """
+        self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.jobs: List[JobRunData] = jobs
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'runId': self.run_id,
+            'timestamp': self.timestamp,
+            'status': self.status.to_json(),
+            'jobs': [x.to_json() for x in self.jobs],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectRunData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: runId: json={json}')),
+            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('jobs', None), lambda it: [JobRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: jobs: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectRunData:
+        return ProjectRunData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'run_id={self.run_id}',
+            f'timestamp={self.timestamp}',
+            f'status={self.status}',
+            f'jobs={self.jobs}',
+        ])
+        return f'ProjectRunData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ProjectRunData):
+            return NotImplemented
+        return self.run_id == other.run_id \
+            and self.timestamp == other.timestamp \
+            and self.status == other.status \
+            and self.jobs == other.jobs
+
+
 class SingleParticleSessionArgs:
     """
     (no description yet)
@@ -4244,7 +6695,7 @@ class SingleParticleSessionData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SingleParticleSessionData'
     
-    def __init__(self, user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[SingleParticleSessionArgs], display: JobArgs[SingleParticleSessionDisplay], num_micrographs: int, num_frames: int) -> None:
+    def __init__(self, user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[SingleParticleSessionArgs], display: JobArgs[SingleParticleSessionDisplay], num_micrographs: int, num_frames: int, images: List[str], slurm_login: Optional[str], slurm_login_name: Optional[str]) -> None:
         self.user_id: str = user_id
         """
         (no description yet)
@@ -4285,6 +6736,18 @@ class SingleParticleSessionData:
         """
         (no description yet)
         """
+        self.images: List[str] = images
+        """
+        urls of representative images for the session, small size
+        """
+        self.slurm_login: Optional[str] = slurm_login
+        """
+        SLURM login node (cluster) for new session jobs; null follows the server default
+        """
+        self.slurm_login_name: Optional[str] = slurm_login_name
+        """
+        display name of the login the session uses; null when SLURM is not configured
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -4302,6 +6765,9 @@ class SingleParticleSessionData:
             'display': self.display.to_json(),
             'numMicrographs': self.num_micrographs,
             'numFrames': self.num_frames,
+            'images': [x for x in self.images],
+            'slurmLogin': self.slurm_login if self.slurm_login is not None else None,
+            'slurmLoginName': self.slurm_login_name if self.slurm_login_name is not None else None,
         }
     
     @classmethod
@@ -4321,6 +6787,9 @@ class SingleParticleSessionData:
             none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/SingleParticleSessionDisplay'})), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: display: json={json}')),
             none_raise(optional_map(json.get('numMicrographs', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: numMicrographs: json={json}')),
             none_raise(optional_map(json.get('numFrames', None), lambda it: cast(int, it)), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: numFrames: json={json}')),
+            none_raise(optional_map(json.get('images', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'SingleParticleSessionData.from_json(): can\'t deserialize, missing field: images: json={json}')),
+            optional_map(json.get('slurmLogin', None), lambda it: cast(str, it)),
+            optional_map(json.get('slurmLoginName', None), lambda it: cast(str, it)),
         )
     
     def serialize(self) -> str:
@@ -4342,6 +6811,9 @@ class SingleParticleSessionData:
             f'display={self.display}',
             f'num_micrographs={self.num_micrographs}',
             f'num_frames={self.num_frames}',
+            f'images={self.images}',
+            f'slurm_login={self.slurm_login}',
+            f'slurm_login_name={self.slurm_login_name}',
         ])
         return f'SingleParticleSessionData[{props}]'
     
@@ -4360,7 +6832,10 @@ class SingleParticleSessionData:
             and self.args == other.args \
             and self.display == other.display \
             and self.num_micrographs == other.num_micrographs \
-            and self.num_frames == other.num_frames
+            and self.num_frames == other.num_frames \
+            and self.images == other.images \
+            and self.slurm_login == other.slurm_login \
+            and self.slurm_login_name == other.slurm_login_name
 
 
 class TomographySessionArgs:
@@ -4448,7 +6923,7 @@ class TomographySessionData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TomographySessionData'
     
-    def __init__(self, user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[TomographySessionArgs], display: JobArgs[TomographySessionDisplay], num_tilt_series: int, num_tilts: int) -> None:
+    def __init__(self, user_id: str, session_id: str, session_number: Optional[int], created: int, permissions: Set[SessionPermission], path: str, args: JobArgs[TomographySessionArgs], display: JobArgs[TomographySessionDisplay], num_tilt_series: int, num_tilts: int, images: List[str], slurm_login: Optional[str], slurm_login_name: Optional[str]) -> None:
         self.user_id: str = user_id
         """
         (no description yet)
@@ -4489,6 +6964,18 @@ class TomographySessionData:
         """
         (no description yet)
         """
+        self.images: List[str] = images
+        """
+        urls of representative images for the session, small size
+        """
+        self.slurm_login: Optional[str] = slurm_login
+        """
+        SLURM login node (cluster) for new session jobs; null follows the server default
+        """
+        self.slurm_login_name: Optional[str] = slurm_login_name
+        """
+        display name of the login the session uses; null when SLURM is not configured
+        """
     
     def to_json(self) -> Dict[str,Any]:
         """
@@ -4506,6 +6993,9 @@ class TomographySessionData:
             'display': self.display.to_json(),
             'numTiltSeries': self.num_tilt_series,
             'numTilts': self.num_tilts,
+            'images': [x for x in self.images],
+            'slurmLogin': self.slurm_login if self.slurm_login is not None else None,
+            'slurmLoginName': self.slurm_login_name if self.slurm_login_name is not None else None,
         }
     
     @classmethod
@@ -4525,6 +7015,9 @@ class TomographySessionData:
             none_raise(optional_map(json.get('display', None), lambda it: JobArgs.from_json(it, type_ids={'T': 'edu.duke.bartesaghi.micromon.services/TomographySessionDisplay'})), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: display: json={json}')),
             none_raise(optional_map(json.get('numTiltSeries', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: numTiltSeries: json={json}')),
             none_raise(optional_map(json.get('numTilts', None), lambda it: cast(int, it)), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: numTilts: json={json}')),
+            none_raise(optional_map(json.get('images', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'TomographySessionData.from_json(): can\'t deserialize, missing field: images: json={json}')),
+            optional_map(json.get('slurmLogin', None), lambda it: cast(str, it)),
+            optional_map(json.get('slurmLoginName', None), lambda it: cast(str, it)),
         )
     
     def serialize(self) -> str:
@@ -4546,6 +7039,9 @@ class TomographySessionData:
             f'display={self.display}',
             f'num_tilt_series={self.num_tilt_series}',
             f'num_tilts={self.num_tilts}',
+            f'images={self.images}',
+            f'slurm_login={self.slurm_login}',
+            f'slurm_login_name={self.slurm_login_name}',
         ])
         return f'TomographySessionData[{props}]'
     
@@ -4564,7 +7060,10 @@ class TomographySessionData:
             and self.args == other.args \
             and self.display == other.display \
             and self.num_tilt_series == other.num_tilt_series \
-            and self.num_tilts == other.num_tilts
+            and self.num_tilts == other.num_tilts \
+            and self.images == other.images \
+            and self.slurm_login == other.slurm_login \
+            and self.slurm_login_name == other.slurm_login_name
 
 
 class SessionDaemon:
@@ -4887,10 +7386,14 @@ class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter'
     
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, filter_type: PreprocessingFilterType) -> None:
         self.name: str = name
         """
         (no description yet)
+        """
+        self.filter_type: PreprocessingFilterType = filter_type
+        """
+        Table export by default. A combination export writes the intersected id list.
         """
     
     def to_json(self) -> Dict[str,Any]:
@@ -4901,6 +7404,7 @@ class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
         return {
             'type': 'edu.duke.bartesaghi.micromon.services.SessionExportRequest.Filter',
             'name': self.name,
+            'filterType': self.filter_type.to_json(),
         }
     
     @classmethod
@@ -4911,6 +7415,7 @@ class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
         
         return cls(
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'Filter.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('filterType', None), lambda it: PreprocessingFilterType.from_json(it)), lambda: KeyError(f'Filter.from_json(): can\'t deserialize, missing field: filterType: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -4923,6 +7428,7 @@ class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
     def __str__(self) -> str:
         props = ', '.join([
             f'name={self.name}',
+            f'filter_type={self.filter_type}',
         ])
         return f'SessionExportRequestFilter[{props}]'
     
@@ -4932,7 +7438,196 @@ class SessionExportRequestFilter(SessionExportRequest, metaclass=ABCMeta):
     def __eq__(self, other: object) -> Any:
         if not isinstance(other, SessionExportRequestFilter):
             return NotImplemented
-        return self.name == other.name
+        return self.name == other.name \
+            and self.filter_type == other.filter_type
+
+
+class SessionGainCheckStatus:
+    """
+    Status and results of the most recent session gain check job.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionGainCheckStatus'
+    
+    def __init__(self, is_active: bool, run_status: Optional[RunStatus], cluster_job_id: Optional[str], submitted_timestamp: Optional[int], finished_timestamp: Optional[int], has_images: bool, gain_check: Optional[GainCheckData], gain_fliph: bool, gain_flipv: bool, gain_rotation: int, had_gain_reference: bool) -> None:
+        self.is_active: bool = is_active
+        """
+        (no description yet)
+        """
+        self.run_status: Optional[RunStatus] = run_status
+        """
+        null when no gain check was ever run for this session
+        """
+        self.cluster_job_id: Optional[str] = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.submitted_timestamp: Optional[int] = submitted_timestamp
+        """
+        when the most recent gain check was submitted, in epoch ms
+        """
+        self.finished_timestamp: Optional[int] = finished_timestamp
+        """
+        when the most recent gain check ended, in epoch ms
+        """
+        self.has_images: bool = has_images
+        """
+        true when the preview images exist on disk
+        """
+        self.gain_check: Optional[GainCheckData] = gain_check
+        """
+        describes the previewed movie and gain, when a gain reference was configured
+        """
+        self.gain_fliph: bool = gain_fliph
+        """
+        the gain orientation the previews were made with: fliph, flipv, rotation
+        """
+        self.gain_flipv: bool = gain_flipv
+        """
+        (no description yet)
+        """
+        self.gain_rotation: int = gain_rotation
+        """
+        (no description yet)
+        """
+        self.had_gain_reference: bool = had_gain_reference
+        """
+        whether the preview was made with a gain reference configured
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'isActive': self.is_active,
+            'runStatus': self.run_status.to_json() if self.run_status is not None else None,
+            'clusterJobId': self.cluster_job_id if self.cluster_job_id is not None else None,
+            'submittedTimestamp': self.submitted_timestamp if self.submitted_timestamp is not None else None,
+            'finishedTimestamp': self.finished_timestamp if self.finished_timestamp is not None else None,
+            'hasImages': self.has_images,
+            'gainCheck': self.gain_check.to_json() if self.gain_check is not None else None,
+            'gainFliph': self.gain_fliph,
+            'gainFlipv': self.gain_flipv,
+            'gainRotation': self.gain_rotation,
+            'hadGainReference': self.had_gain_reference,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionGainCheckStatus:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('isActive', None), lambda it: cast(bool, it)), lambda: KeyError(f'SessionGainCheckStatus.from_json(): can\'t deserialize, missing field: isActive: json={json}')),
+            optional_map(json.get('runStatus', None), lambda it: RunStatus.from_json(it)),
+            optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)),
+            optional_map(json.get('submittedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('finishedTimestamp', None), lambda it: cast(int, it)),
+            none_map(optional_map(json.get('hasImages', None), lambda it: cast(bool, it)), lambda: False),
+            optional_map(json.get('gainCheck', None), lambda it: GainCheckData.from_json(it)),
+            none_map(optional_map(json.get('gainFliph', None), lambda it: cast(bool, it)), lambda: False),
+            none_map(optional_map(json.get('gainFlipv', None), lambda it: cast(bool, it)), lambda: False),
+            none_map(optional_map(json.get('gainRotation', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('hadGainReference', None), lambda it: cast(bool, it)), lambda: False),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionGainCheckStatus:
+        return SessionGainCheckStatus.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'is_active={self.is_active}',
+            f'run_status={self.run_status}',
+            f'cluster_job_id={self.cluster_job_id}',
+            f'submitted_timestamp={self.submitted_timestamp}',
+            f'finished_timestamp={self.finished_timestamp}',
+            f'has_images={self.has_images}',
+            f'gain_check={self.gain_check}',
+            f'gain_fliph={self.gain_fliph}',
+            f'gain_flipv={self.gain_flipv}',
+            f'gain_rotation={self.gain_rotation}',
+            f'had_gain_reference={self.had_gain_reference}',
+        ])
+        return f'SessionGainCheckStatus[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionGainCheckStatus):
+            return NotImplemented
+        return self.is_active == other.is_active \
+            and self.run_status == other.run_status \
+            and self.cluster_job_id == other.cluster_job_id \
+            and self.submitted_timestamp == other.submitted_timestamp \
+            and self.finished_timestamp == other.finished_timestamp \
+            and self.has_images == other.has_images \
+            and self.gain_check == other.gain_check \
+            and self.gain_fliph == other.gain_fliph \
+            and self.gain_flipv == other.gain_flipv \
+            and self.gain_rotation == other.gain_rotation \
+            and self.had_gain_reference == other.had_gain_reference
+
+
+class SessionSizes:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionSizes'
+    
+    def __init__(self, filesystem_bytes: Optional[int]) -> None:
+        self.filesystem_bytes: Optional[int] = filesystem_bytes
+        """
+        The number of bytes used by the session in files and folders in the filesystem
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'filesystemBytes': self.filesystem_bytes if self.filesystem_bytes is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> SessionSizes:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            optional_map(json.get('filesystemBytes', None), lambda it: cast(int, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> SessionSizes:
+        return SessionSizes.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'filesystem_bytes={self.filesystem_bytes}',
+        ])
+        return f'SessionSizes[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, SessionSizes):
+            return NotImplemented
+        return self.filesystem_bytes == other.filesystem_bytes
 
 
 class AvgRotData:
@@ -5379,6 +8074,76 @@ class PreprocessingPropRange:
             and self.max == other.max
 
 
+class ClusterJobLaunchResultData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobLaunchResultData'
+    
+    def __init__(self, command: Optional[str], out: str, success: bool) -> None:
+        self.command: Optional[str] = command
+        """
+        (no description yet)
+        """
+        self.out: str = out
+        """
+        (no description yet)
+        """
+        self.success: bool = success
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'command': self.command if self.command is not None else None,
+            'out': self.out,
+            'success': self.success,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobLaunchResultData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            optional_map(json.get('command', None), lambda it: cast(str, it)),
+            none_raise(optional_map(json.get('out', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobLaunchResultData.from_json(): can\'t deserialize, missing field: out: json={json}')),
+            none_raise(optional_map(json.get('success', None), lambda it: cast(bool, it)), lambda: KeyError(f'ClusterJobLaunchResultData.from_json(): can\'t deserialize, missing field: success: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobLaunchResultData:
+        return ClusterJobLaunchResultData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'command={self.command}',
+            f'out={self.out}',
+            f'success={self.success}',
+        ])
+        return f'ClusterJobLaunchResultData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobLaunchResultData):
+            return NotImplemented
+        return self.command == other.command \
+            and self.out == other.out \
+            and self.success == other.success
+
+
 class ReconstructionData:
     """
     (no description yet)
@@ -5629,6 +8394,117 @@ class RefinementBundleData:
             and self.timestamp == other.timestamp
 
 
+class GainCheckData:
+    """
+    Names the movie and gain reference behind an import block's preview images. pyp picks the previewed movie at random, and each data path can carry its own gain reference, so without this the view can't say what it's actually showing.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.GainCheckData'
+    
+    def __init__(self, gain_display_low: Optional[float], gain_display_high: Optional[float], movie: Optional[str], movie_dimensions: Optional[List[int]], frames: Optional[int], gain: Optional[str], gain_dimensions: Optional[List[int]], gain_display_range: Optional[List[float]]) -> None:
+        self.gain_display_low: Optional[float] = gain_display_low
+        """
+        (no description yet)
+        """
+        self.gain_display_high: Optional[float] = gain_display_high
+        """
+        (no description yet)
+        """
+        self.movie: Optional[str] = movie
+        """
+        (no description yet)
+        """
+        self.movie_dimensions: Optional[List[int]] = movie_dimensions
+        """
+        (no description yet)
+        """
+        self.frames: Optional[int] = frames
+        """
+        (no description yet)
+        """
+        self.gain: Optional[str] = gain
+        """
+        (no description yet)
+        """
+        self.gain_dimensions: Optional[List[int]] = gain_dimensions
+        """
+        (no description yet)
+        """
+        self.gain_display_range: Optional[List[float]] = gain_display_range
+        """
+        The low and high gain values the preview image was stretched between, as ``[low, high]``.
+        A gain reference is a multiplier clustered tightly around 1, so its preview has to be stretched to show anything at all. Recording the range it was stretched over is what lets a client turn the preview's grey levels back into multipliers and predict the correction.
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'gainDisplayLow': self.gain_display_low if self.gain_display_low is not None else None,
+            'gainDisplayHigh': self.gain_display_high if self.gain_display_high is not None else None,
+            'movie': self.movie if self.movie is not None else None,
+            'movieDimensions': [x for x in self.movie_dimensions] if self.movie_dimensions is not None else None,
+            'frames': self.frames if self.frames is not None else None,
+            'gain': self.gain if self.gain is not None else None,
+            'gainDimensions': [x for x in self.gain_dimensions] if self.gain_dimensions is not None else None,
+            'gainDisplayRange': [x for x in self.gain_display_range] if self.gain_display_range is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> GainCheckData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            optional_map(json.get('gainDisplayLow', None), lambda it: cast(float, it)),
+            optional_map(json.get('gainDisplayHigh', None), lambda it: cast(float, it)),
+            optional_map(json.get('movie', None), lambda it: cast(str, it)),
+            optional_map(json.get('movieDimensions', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('frames', None), lambda it: cast(int, it)),
+            optional_map(json.get('gain', None), lambda it: cast(str, it)),
+            optional_map(json.get('gainDimensions', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]),
+            optional_map(json.get('gainDisplayRange', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> GainCheckData:
+        return GainCheckData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'gain_display_low={self.gain_display_low}',
+            f'gain_display_high={self.gain_display_high}',
+            f'movie={self.movie}',
+            f'movie_dimensions={self.movie_dimensions}',
+            f'frames={self.frames}',
+            f'gain={self.gain}',
+            f'gain_dimensions={self.gain_dimensions}',
+            f'gain_display_range={self.gain_display_range}',
+        ])
+        return f'GainCheckData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, GainCheckData):
+            return NotImplemented
+        return self.gain_display_low == other.gain_display_low \
+            and self.gain_display_high == other.gain_display_high \
+            and self.movie == other.movie \
+            and self.movie_dimensions == other.movie_dimensions \
+            and self.frames == other.frames \
+            and self.gain == other.gain \
+            and self.gain_dimensions == other.gain_dimensions \
+            and self.gain_display_range == other.gain_display_range
+
+
 class PypStats:
     """
     (no description yet)
@@ -5697,6 +8573,138 @@ class PypStats:
         return self.scope_voltage == other.scope_voltage \
             and self.scope_pixel == other.scope_pixel \
             and self.scope_dose_rate == other.scope_dose_rate
+
+
+class BlockDataType:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.BlockDataType'
+    
+    def __init__(self, data_id: str, type: str, type_name: str) -> None:
+        self.data_id: str = data_id
+        """
+        the ``dataId`` in a ``DataRef``
+        """
+        self.type: str = type
+        """
+        blocks connect an output to an input of the same type
+        """
+        self.type_name: str = type_name
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'dataId': self.data_id,
+            'type': self.type,
+            'typeName': self.type_name,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> BlockDataType:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('dataId', None), lambda it: cast(str, it)), lambda: KeyError(f'BlockDataType.from_json(): can\'t deserialize, missing field: dataId: json={json}')),
+            none_raise(optional_map(json.get('type', None), lambda it: cast(str, it)), lambda: KeyError(f'BlockDataType.from_json(): can\'t deserialize, missing field: type: json={json}')),
+            none_raise(optional_map(json.get('typeName', None), lambda it: cast(str, it)), lambda: KeyError(f'BlockDataType.from_json(): can\'t deserialize, missing field: typeName: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> BlockDataType:
+        return BlockDataType.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'data_id={self.data_id}',
+            f'type={self.type}',
+            f'type_name={self.type_name}',
+        ])
+        return f'BlockDataType[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, BlockDataType):
+            return NotImplemented
+        return self.data_id == other.data_id \
+            and self.type == other.type \
+            and self.type_name == other.type_name
+
+
+class JobInput:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobInput'
+    
+    def __init__(self, input_id: str, source: Optional[DataRef]) -> None:
+        self.input_id: str = input_id
+        """
+        (no description yet)
+        """
+        self.source: Optional[DataRef] = source
+        """
+        the upstream block and output connected here, if any
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'inputId': self.input_id,
+            'source': self.source.to_json() if self.source is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> JobInput:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('inputId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobInput.from_json(): can\'t deserialize, missing field: inputId: json={json}')),
+            optional_map(json.get('source', None), lambda it: DataRef.from_json(it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> JobInput:
+        return JobInput.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'input_id={self.input_id}',
+            f'source={self.source}',
+        ])
+        return f'JobInput[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, JobInput):
+            return NotImplemented
+        return self.input_id == other.input_id \
+            and self.source == other.source
 
 
 class ProjectPermission:
@@ -5825,10 +8833,13 @@ class JobArgs(Generic[T]):
             else:
                 raise Exception(f'Failed to deserialize type, unrecognized type id `{type_id}` for type parameter T')
         
-        return cls(
+        obj = cls(
             optional_map(json.get('finished', None), lambda it: reader_polymorphic_T(it)),
             optional_map(json.get('next', None), lambda it: reader_polymorphic_T(it)),
         )
+        if type_ids is not None:
+            obj._generics['T'] = type_ids.get('T')
+        return obj
     
     def serialize(self) -> str:
         return json.dumps(self.to_json())
@@ -5916,27 +8927,19 @@ class UserData:
             and self.name == other.name
 
 
-class ProjectRunData:
+class RunningJobName:
     """
     (no description yet)
     """
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectRunData'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RunningJobName'
     
-    def __init__(self, run_id: int, timestamp: int, status: RunStatus, jobs: List[JobRunData]) -> None:
-        self.run_id: int = run_id
+    def __init__(self, job_id: str, name: str) -> None:
+        self.job_id: str = job_id
         """
         (no description yet)
         """
-        self.timestamp: int = timestamp
-        """
-        (no description yet)
-        """
-        self.status: RunStatus = status
-        """
-        (no description yet)
-        """
-        self.jobs: List[JobRunData] = jobs
+        self.name: str = name
         """
         (no description yet)
         """
@@ -5947,51 +8950,183 @@ class ProjectRunData:
         """
         
         return {
-            'runId': self.run_id,
-            'timestamp': self.timestamp,
-            'status': self.status.to_json(),
-            'jobs': [x.to_json() for x in self.jobs],
+            'jobId': self.job_id,
+            'name': self.name,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectRunData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RunningJobName:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            none_raise(optional_map(json.get('runId', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: runId: json={json}')),
-            none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: status: json={json}')),
-            none_raise(optional_map(json.get('jobs', None), lambda it: [JobRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectRunData.from_json(): can\'t deserialize, missing field: jobs: json={json}')),
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningJobName.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'RunningJobName.from_json(): can\'t deserialize, missing field: name: json={json}')),
         )
     
     def serialize(self) -> str:
         return json.dumps(self.to_json())
     
     @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectRunData:
-        return ProjectRunData.from_json(json.loads(serialized), type_ids)
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RunningJobName:
+        return RunningJobName.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'run_id={self.run_id}',
-            f'timestamp={self.timestamp}',
-            f'status={self.status}',
-            f'jobs={self.jobs}',
+            f'job_id={self.job_id}',
+            f'name={self.name}',
         ])
-        return f'ProjectRunData[{props}]'
+        return f'RunningJobName[{props}]'
     
     def __repr__(self) -> str:
         return self.__str__()
     
     def __eq__(self, other: object) -> Any:
-        if not isinstance(other, ProjectRunData):
+        if not isinstance(other, RunningJobName):
             return NotImplemented
-        return self.run_id == other.run_id \
-            and self.timestamp == other.timestamp \
+        return self.job_id == other.job_id \
+            and self.name == other.name
+
+
+class RunningProjectSnapshot:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.RunningProjectSnapshot'
+    
+    def __init__(self, project: ProjectData, recent_runs: List[ProjectRunData], job_names: List[RunningJobName]) -> None:
+        self.project: ProjectData = project
+        """
+        (no description yet)
+        """
+        self.recent_runs: List[ProjectRunData] = recent_runs
+        """
+        (no description yet)
+        """
+        self.job_names: List[RunningJobName] = job_names
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'project': self.project.to_json(),
+            'recentRuns': [x.to_json() for x in self.recent_runs],
+            'jobNames': [x.to_json() for x in self.job_names],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> RunningProjectSnapshot:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('project', None), lambda it: ProjectData.from_json(it)), lambda: KeyError(f'RunningProjectSnapshot.from_json(): can\'t deserialize, missing field: project: json={json}')),
+            none_raise(optional_map(json.get('recentRuns', None), lambda it: [ProjectRunData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningProjectSnapshot.from_json(): can\'t deserialize, missing field: recentRuns: json={json}')),
+            none_raise(optional_map(json.get('jobNames', None), lambda it: [RunningJobName.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'RunningProjectSnapshot.from_json(): can\'t deserialize, missing field: jobNames: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> RunningProjectSnapshot:
+        return RunningProjectSnapshot.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'project={self.project}',
+            f'recent_runs={self.recent_runs}',
+            f'job_names={self.job_names}',
+        ])
+        return f'RunningProjectSnapshot[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, RunningProjectSnapshot):
+            return NotImplemented
+        return self.project == other.project \
+            and self.recent_runs == other.recent_runs \
+            and self.job_names == other.job_names
+
+
+class JobRunData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobRunData'
+    
+    def __init__(self, job_id: str, status: RunStatus, cluster_jobs: List[ClusterJobData]) -> None:
+        self.job_id: str = job_id
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.cluster_jobs: List[ClusterJobData] = cluster_jobs
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'jobId': self.job_id,
+            'status': self.status.to_json(),
+            'clusterJobs': [x.to_json() for x in self.cluster_jobs],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> JobRunData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('clusterJobs', None), lambda it: [ClusterJobData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: clusterJobs: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> JobRunData:
+        return JobRunData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'job_id={self.job_id}',
+            f'status={self.status}',
+            f'cluster_jobs={self.cluster_jobs}',
+        ])
+        return f'JobRunData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, JobRunData):
+            return NotImplemented
+        return self.job_id == other.job_id \
             and self.status == other.status \
-            and self.jobs == other.jobs
+            and self.cluster_jobs == other.cluster_jobs
 
 
 class ClusterJobResultType:
@@ -6321,7 +9456,7 @@ class SessionLogData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionLogData'
     
-    def __init__(self, cluster_job_id: str, daemon: SessionDaemon, timestamp: int) -> None:
+    def __init__(self, cluster_job_id: str, daemon: SessionDaemon, timestamp: int, status: RunStatus, launched_timestamp: Optional[int], finished_timestamp: Optional[int]) -> None:
         self.cluster_job_id: str = cluster_job_id
         """
         (no description yet)
@@ -6331,6 +9466,18 @@ class SessionLogData:
         (no description yet)
         """
         self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.launched_timestamp: Optional[int] = launched_timestamp
+        """
+        (no description yet)
+        """
+        self.finished_timestamp: Optional[int] = finished_timestamp
         """
         (no description yet)
         """
@@ -6344,6 +9491,9 @@ class SessionLogData:
             'clusterJobId': self.cluster_job_id,
             'daemon': self.daemon.to_json(),
             'timestamp': self.timestamp,
+            'status': self.status.to_json(),
+            'launchedTimestamp': self.launched_timestamp if self.launched_timestamp is not None else None,
+            'finishedTimestamp': self.finished_timestamp if self.finished_timestamp is not None else None,
         }
     
     @classmethod
@@ -6356,6 +9506,9 @@ class SessionLogData:
             none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
             none_raise(optional_map(json.get('daemon', None), lambda it: SessionDaemon.from_json(it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: daemon: json={json}')),
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'SessionLogData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            optional_map(json.get('launchedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('finishedTimestamp', None), lambda it: cast(int, it)),
         )
     
     def serialize(self) -> str:
@@ -6370,6 +9523,9 @@ class SessionLogData:
             f'cluster_job_id={self.cluster_job_id}',
             f'daemon={self.daemon}',
             f'timestamp={self.timestamp}',
+            f'status={self.status}',
+            f'launched_timestamp={self.launched_timestamp}',
+            f'finished_timestamp={self.finished_timestamp}',
         ])
         return f'SessionLogData[{props}]'
     
@@ -6381,7 +9537,10 @@ class SessionLogData:
             return NotImplemented
         return self.cluster_job_id == other.cluster_job_id \
             and self.daemon == other.daemon \
-            and self.timestamp == other.timestamp
+            and self.timestamp == other.timestamp \
+            and self.status == other.status \
+            and self.launched_timestamp == other.launched_timestamp \
+            and self.finished_timestamp == other.finished_timestamp
 
 
 class SessionJobLogData:
@@ -6391,7 +9550,7 @@ class SessionJobLogData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.SessionJobLogData'
     
-    def __init__(self, cluster_job_id: str, name: str, timestamp: int) -> None:
+    def __init__(self, cluster_job_id: str, name: str, timestamp: int, size: int, status: RunStatus, array_info: Optional[ClusterJobDataArrayInfo], launched_timestamp: Optional[int], finished_timestamp: Optional[int], submitted_timestamp: Optional[int]) -> None:
         self.cluster_job_id: str = cluster_job_id
         """
         (no description yet)
@@ -6401,6 +9560,30 @@ class SessionJobLogData:
         (no description yet)
         """
         self.timestamp: int = timestamp
+        """
+        (no description yet)
+        """
+        self.size: int = size
+        """
+        (no description yet)
+        """
+        self.status: RunStatus = status
+        """
+        (no description yet)
+        """
+        self.array_info: Optional[ClusterJobDataArrayInfo] = array_info
+        """
+        (no description yet)
+        """
+        self.launched_timestamp: Optional[int] = launched_timestamp
+        """
+        (no description yet)
+        """
+        self.finished_timestamp: Optional[int] = finished_timestamp
+        """
+        (no description yet)
+        """
+        self.submitted_timestamp: Optional[int] = submitted_timestamp
         """
         (no description yet)
         """
@@ -6414,6 +9597,12 @@ class SessionJobLogData:
             'clusterJobId': self.cluster_job_id,
             'name': self.name,
             'timestamp': self.timestamp,
+            'size': self.size,
+            'status': self.status.to_json(),
+            'arrayInfo': self.array_info.to_json() if self.array_info is not None else None,
+            'launchedTimestamp': self.launched_timestamp if self.launched_timestamp is not None else None,
+            'finishedTimestamp': self.finished_timestamp if self.finished_timestamp is not None else None,
+            'submittedTimestamp': self.submitted_timestamp if self.submitted_timestamp is not None else None,
         }
     
     @classmethod
@@ -6426,6 +9615,12 @@ class SessionJobLogData:
             none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
             none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: name: json={json}')),
             none_raise(optional_map(json.get('timestamp', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: timestamp: json={json}')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: size: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'SessionJobLogData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
+            optional_map(json.get('launchedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('finishedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('submittedTimestamp', None), lambda it: cast(int, it)),
         )
     
     def serialize(self) -> str:
@@ -6440,6 +9635,12 @@ class SessionJobLogData:
             f'cluster_job_id={self.cluster_job_id}',
             f'name={self.name}',
             f'timestamp={self.timestamp}',
+            f'size={self.size}',
+            f'status={self.status}',
+            f'array_info={self.array_info}',
+            f'launched_timestamp={self.launched_timestamp}',
+            f'finished_timestamp={self.finished_timestamp}',
+            f'submitted_timestamp={self.submitted_timestamp}',
         ])
         return f'SessionJobLogData[{props}]'
     
@@ -6451,7 +9652,13 @@ class SessionJobLogData:
             return NotImplemented
         return self.cluster_job_id == other.cluster_job_id \
             and self.name == other.name \
-            and self.timestamp == other.timestamp
+            and self.timestamp == other.timestamp \
+            and self.size == other.size \
+            and self.status == other.status \
+            and self.array_info == other.array_info \
+            and self.launched_timestamp == other.launched_timestamp \
+            and self.finished_timestamp == other.finished_timestamp \
+            and self.submitted_timestamp == other.submitted_timestamp
 
 
 class SessionPermission:
@@ -6610,7 +9817,7 @@ class MicrographMetadata:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MicrographMetadata'
     
-    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_auto_particles: int, image_dims: ImageDims) -> None:
+    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, max_motion: float, num_auto_particles: int, image_dims: ImageDims) -> None:
         self.id: str = id
         """
         (no description yet)
@@ -6643,6 +9850,10 @@ class MicrographMetadata:
         """
         (no description yet)
         """
+        self.max_motion: float = max_motion
+        """
+        (no description yet)
+        """
         self.num_auto_particles: int = num_auto_particles
         """
         (no description yet)
@@ -6666,6 +9877,7 @@ class MicrographMetadata:
             'defocus2': self.defocus2,
             'angleAstig': self.angle_astig,
             'averageMotion': self.average_motion,
+            'maxMotion': self.max_motion,
             'numAutoParticles': self.num_auto_particles,
             'imageDims': self.image_dims.to_json(),
         }
@@ -6685,6 +9897,7 @@ class MicrographMetadata:
             none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: defocus2: json={json}')),
             none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: angleAstig: json={json}')),
             none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: averageMotion: json={json}')),
+            none_raise(optional_map(json.get('maxMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: maxMotion: json={json}')),
             none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: numAutoParticles: json={json}')),
             none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError(f'MicrographMetadata.from_json(): can\'t deserialize, missing field: imageDims: json={json}')),
         )
@@ -6706,6 +9919,7 @@ class MicrographMetadata:
             f'defocus2={self.defocus2}',
             f'angle_astig={self.angle_astig}',
             f'average_motion={self.average_motion}',
+            f'max_motion={self.max_motion}',
             f'num_auto_particles={self.num_auto_particles}',
             f'image_dims={self.image_dims}',
         ])
@@ -6725,6 +9939,7 @@ class MicrographMetadata:
             and self.defocus2 == other.defocus2 \
             and self.angle_astig == other.angle_astig \
             and self.average_motion == other.average_motion \
+            and self.max_motion == other.max_motion \
             and self.num_auto_particles == other.num_auto_particles \
             and self.image_dims == other.image_dims
 
@@ -6736,7 +9951,7 @@ class TwoDClassesData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TwoDClassesData'
     
-    def __init__(self, owner_id: str, two_dclasses_id: str, created: int) -> None:
+    def __init__(self, owner_id: str, two_dclasses_id: str, created: int, classes: List[TwoDClassData], metadata_labels: List[str], split_index: Optional[int]) -> None:
         self.owner_id: str = owner_id
         """
         (no description yet)
@@ -6746,6 +9961,18 @@ class TwoDClassesData:
         (no description yet)
         """
         self.created: int = created
+        """
+        (no description yet)
+        """
+        self.classes: List[TwoDClassData] = classes
+        """
+        (no description yet)
+        """
+        self.metadata_labels: List[str] = metadata_labels
+        """
+        (no description yet)
+        """
+        self.split_index: Optional[int] = split_index
         """
         (no description yet)
         """
@@ -6759,6 +9986,9 @@ class TwoDClassesData:
             'ownerId': self.owner_id,
             'twoDClassesId': self.two_dclasses_id,
             'created': self.created,
+            'classes': [x.to_json() for x in self.classes],
+            'metadataLabels': [x for x in self.metadata_labels],
+            'splitIndex': self.split_index if self.split_index is not None else None,
         }
     
     @classmethod
@@ -6771,6 +10001,9 @@ class TwoDClassesData:
             none_raise(optional_map(json.get('ownerId', None), lambda it: cast(str, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: ownerId: json={json}')),
             none_raise(optional_map(json.get('twoDClassesId', None), lambda it: cast(str, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: twoDClassesId: json={json}')),
             none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('classes', None), lambda it: [TwoDClassData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: classes: json={json}')),
+            none_raise(optional_map(json.get('metadataLabels', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'TwoDClassesData.from_json(): can\'t deserialize, missing field: metadataLabels: json={json}')),
+            optional_map(json.get('splitIndex', None), lambda it: cast(int, it)),
         )
     
     def serialize(self) -> str:
@@ -6785,6 +10018,9 @@ class TwoDClassesData:
             f'owner_id={self.owner_id}',
             f'two_dclasses_id={self.two_dclasses_id}',
             f'created={self.created}',
+            f'classes={self.classes}',
+            f'metadata_labels={self.metadata_labels}',
+            f'split_index={self.split_index}',
         ])
         return f'TwoDClassesData[{props}]'
     
@@ -6796,7 +10032,10 @@ class TwoDClassesData:
             return NotImplemented
         return self.owner_id == other.owner_id \
             and self.two_dclasses_id == other.two_dclasses_id \
-            and self.created == other.created
+            and self.created == other.created \
+            and self.classes == other.classes \
+            and self.metadata_labels == other.metadata_labels \
+            and self.split_index == other.split_index
 
 
 class TomoDrgnConvergence:
@@ -7001,6 +10240,68 @@ class TomoDrgnConvergenceIteration:
             and self.timestamp == other.timestamp
 
 
+class MissAlignTrainingMetrics:
+    """
+    What miss-alignment reports while training, one entry per training iteration. Per-epoch lists all have the same length as ``MissAlignTrainingIteration.epochs``; a null marks a value Lightning did not log for that epoch.
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MissAlignTrainingMetrics'
+    
+    def __init__(self, iterations: List[MissAlignTrainingIteration], total_iterations: Optional[int]) -> None:
+        self.iterations: List[MissAlignTrainingIteration] = iterations
+        """
+        (no description yet)
+        """
+        self.total_iterations: Optional[int] = total_iterations
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'iterations': [x.to_json() for x in self.iterations],
+            'totalIterations': self.total_iterations if self.total_iterations is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MissAlignTrainingMetrics:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('iterations', None), lambda it: [MissAlignTrainingIteration.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingMetrics.from_json(): can\'t deserialize, missing field: iterations: json={json}')),
+            optional_map(json.get('totalIterations', None), lambda it: cast(int, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MissAlignTrainingMetrics:
+        return MissAlignTrainingMetrics.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'iterations={self.iterations}',
+            f'total_iterations={self.total_iterations}',
+        ])
+        return f'MissAlignTrainingMetrics[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, MissAlignTrainingMetrics):
+            return NotImplemented
+        return self.iterations == other.iterations \
+            and self.total_iterations == other.total_iterations
+
+
 class TiltSeriesData:
     """
     (no description yet)
@@ -7008,7 +10309,7 @@ class TiltSeriesData:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TiltSeriesData'
     
-    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, num_auto_particles: int, num_auto_virions: int, image_dims: ImageDims) -> None:
+    def __init__(self, id: str, timestamp: int, ccc: float, cccc: float, defocus1: float, defocus2: float, angle_astig: float, average_motion: float, max_motion: float, num_auto_particles: int, num_auto_virions: int, image_dims: ImageDims, data_bin: int, miss_align_loss: Optional[MissAlignLoss]) -> None:
         self.id: str = id
         """
         (no description yet)
@@ -7041,6 +10342,10 @@ class TiltSeriesData:
         """
         (no description yet)
         """
+        self.max_motion: float = max_motion
+        """
+        (no description yet)
+        """
         self.num_auto_particles: int = num_auto_particles
         """
         (no description yet)
@@ -7052,6 +10357,14 @@ class TiltSeriesData:
         self.image_dims: ImageDims = image_dims
         """
         (no description yet)
+        """
+        self.data_bin: int = data_bin
+        """
+        PYP's ``data.bin`` (extra downsample applied on web export). Only used to scale the values shown by the scale bar and measure tool; never folded into ``imageDims`` itself.
+        """
+        self.miss_align_loss: Optional[MissAlignLoss] = miss_align_loss
+        """
+        MissAlign (infer) only: per-iteration optimization loss; null for every other block.
         """
     
     def to_json(self) -> Dict[str,Any]:
@@ -7068,9 +10381,12 @@ class TiltSeriesData:
             'defocus2': self.defocus2,
             'angleAstig': self.angle_astig,
             'averageMotion': self.average_motion,
+            'maxMotion': self.max_motion,
             'numAutoParticles': self.num_auto_particles,
             'numAutoVirions': self.num_auto_virions,
             'imageDims': self.image_dims.to_json(),
+            'dataBin': self.data_bin,
+            'missAlignLoss': self.miss_align_loss.to_json() if self.miss_align_loss is not None else None,
         }
     
     @classmethod
@@ -7088,9 +10404,12 @@ class TiltSeriesData:
             none_raise(optional_map(json.get('defocus2', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: defocus2: json={json}')),
             none_raise(optional_map(json.get('angleAstig', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: angleAstig: json={json}')),
             none_raise(optional_map(json.get('averageMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: averageMotion: json={json}')),
+            none_raise(optional_map(json.get('maxMotion', None), lambda it: cast(float, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: maxMotion: json={json}')),
             none_raise(optional_map(json.get('numAutoParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: numAutoParticles: json={json}')),
             none_raise(optional_map(json.get('numAutoVirions', None), lambda it: cast(int, it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: numAutoVirions: json={json}')),
             none_raise(optional_map(json.get('imageDims', None), lambda it: ImageDims.from_json(it)), lambda: KeyError(f'TiltSeriesData.from_json(): can\'t deserialize, missing field: imageDims: json={json}')),
+            none_map(optional_map(json.get('dataBin', None), lambda it: cast(int, it)), lambda: 1),
+            optional_map(json.get('missAlignLoss', None), lambda it: MissAlignLoss.from_json(it)),
         )
     
     def serialize(self) -> str:
@@ -7110,9 +10429,12 @@ class TiltSeriesData:
             f'defocus2={self.defocus2}',
             f'angle_astig={self.angle_astig}',
             f'average_motion={self.average_motion}',
+            f'max_motion={self.max_motion}',
             f'num_auto_particles={self.num_auto_particles}',
             f'num_auto_virions={self.num_auto_virions}',
             f'image_dims={self.image_dims}',
+            f'data_bin={self.data_bin}',
+            f'miss_align_loss={self.miss_align_loss}',
         ])
         return f'TiltSeriesData[{props}]'
     
@@ -7130,9 +10452,12 @@ class TiltSeriesData:
             and self.defocus2 == other.defocus2 \
             and self.angle_astig == other.angle_astig \
             and self.average_motion == other.average_motion \
+            and self.max_motion == other.max_motion \
             and self.num_auto_particles == other.num_auto_particles \
             and self.num_auto_virions == other.num_auto_virions \
-            and self.image_dims == other.image_dims
+            and self.image_dims == other.image_dims \
+            and self.data_bin == other.data_bin \
+            and self.miss_align_loss == other.miss_align_loss
 
 
 class DriftXY:
@@ -7291,6 +10616,148 @@ class CtfTiltValues:
             and self.resolution == other.resolution
 
 
+class ProjectTransferData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectTransferData'
+    
+    def __init__(self, transfer_id: str, kind: ProjectTransferKind, user_id: str, project_id: str, status: ProjectTransferStatus, created: int, progress: ProjectTransferProgress, job_ids: List[str], label: str, cluster_job_id: Optional[str], bundle_path: Optional[str], error: Optional[str]) -> None:
+        self.transfer_id: str = transfer_id
+        """
+        (no description yet)
+        """
+        self.kind: ProjectTransferKind = kind
+        """
+        (no description yet)
+        """
+        self.user_id: str = user_id
+        """
+        (no description yet)
+        """
+        self.project_id: str = project_id
+        """
+        (no description yet)
+        """
+        self.status: ProjectTransferStatus = status
+        """
+        (no description yet)
+        """
+        self.created: int = created
+        """
+        (no description yet)
+        """
+        self.progress: ProjectTransferProgress = progress
+        """
+        (no description yet)
+        """
+        self.job_ids: List[str] = job_ids
+        """
+        (no description yet)
+        """
+        self.label: str = label
+        """
+        (no description yet)
+        """
+        self.cluster_job_id: Optional[str] = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.bundle_path: Optional[str] = bundle_path
+        """
+        (no description yet)
+        """
+        self.error: Optional[str] = error
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'transferId': self.transfer_id,
+            'kind': self.kind.to_json(),
+            'userId': self.user_id,
+            'projectId': self.project_id,
+            'status': self.status.to_json(),
+            'created': self.created,
+            'progress': self.progress.to_json(),
+            'jobIds': [x for x in self.job_ids],
+            'label': self.label,
+            'clusterJobId': self.cluster_job_id if self.cluster_job_id is not None else None,
+            'bundlePath': self.bundle_path if self.bundle_path is not None else None,
+            'error': self.error if self.error is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectTransferData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('transferId', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: transferId: json={json}')),
+            none_raise(optional_map(json.get('kind', None), lambda it: ProjectTransferKind.from_json(it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: kind: json={json}')),
+            none_raise(optional_map(json.get('userId', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: userId: json={json}')),
+            none_raise(optional_map(json.get('projectId', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: projectId: json={json}')),
+            none_raise(optional_map(json.get('status', None), lambda it: ProjectTransferStatus.from_json(it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            none_raise(optional_map(json.get('created', None), lambda it: cast(int, it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: created: json={json}')),
+            none_raise(optional_map(json.get('progress', None), lambda it: ProjectTransferProgress.from_json(it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: progress: json={json}')),
+            none_raise(optional_map(json.get('jobIds', None), lambda it: [cast(str, x) for x in cast(List[Any], it)]), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: jobIds: json={json}')),
+            none_raise(optional_map(json.get('label', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectTransferData.from_json(): can\'t deserialize, missing field: label: json={json}')),
+            optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)),
+            optional_map(json.get('bundlePath', None), lambda it: cast(str, it)),
+            optional_map(json.get('error', None), lambda it: cast(str, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectTransferData:
+        return ProjectTransferData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'transfer_id={self.transfer_id}',
+            f'kind={self.kind}',
+            f'user_id={self.user_id}',
+            f'project_id={self.project_id}',
+            f'status={self.status}',
+            f'created={self.created}',
+            f'progress={self.progress}',
+            f'job_ids={self.job_ids}',
+            f'label={self.label}',
+            f'cluster_job_id={self.cluster_job_id}',
+            f'bundle_path={self.bundle_path}',
+            f'error={self.error}',
+        ])
+        return f'ProjectTransferData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ProjectTransferData):
+            return NotImplemented
+        return self.transfer_id == other.transfer_id \
+            and self.kind == other.kind \
+            and self.user_id == other.user_id \
+            and self.project_id == other.project_id \
+            and self.status == other.status \
+            and self.created == other.created \
+            and self.progress == other.progress \
+            and self.job_ids == other.job_ids \
+            and self.label == other.label \
+            and self.cluster_job_id == other.cluster_job_id \
+            and self.bundle_path == other.bundle_path \
+            and self.error == other.error
+
+
 class ImageDims:
     """
     (no description yet)
@@ -7298,7 +10765,7 @@ class ImageDims:
     
     TYPE_ID: str = 'edu.duke.bartesaghi.micromon.pyp.ImageDims'
     
-    def __init__(self, width: ValueUnbinnedI, height: ValueUnbinnedI, depth: ValueUnbinnedI, binning_factor: int, pixel_a: ValueA) -> None:
+    def __init__(self, width: ValueUnbinnedI, height: ValueUnbinnedI, depth: ValueUnbinnedI, binning_factor: float, pixel_a: ValueA, binning_factor_z: int) -> None:
         self.width: ValueUnbinnedI = width
         """
         image width, in unbinned pixels (or voxels)
@@ -7311,13 +10778,17 @@ class ImageDims:
         """
         image depth, in unbinned pixels (or voxels)
         """
-        self.binning_factor: int = binning_factor
+        self.binning_factor: float = binning_factor
         """
         the binning factor, same for all dimensions
         """
         self.pixel_a: ValueA = pixel_a
         """
         the size of one unbinned pixel (or voxel) in a micrograph (or tilt series)
+        """
+        self.binning_factor_z: int = binning_factor_z
+        """
+        additional binning factor in Z
         """
     
     def to_json(self) -> Dict[str,Any]:
@@ -7331,6 +10802,7 @@ class ImageDims:
             'depth': self.depth,
             'binningFactor': self.binning_factor,
             'pixelA': self.pixel_a,
+            'binningFactorZ': self.binning_factor_z,
         }
     
     @classmethod
@@ -7343,8 +10815,9 @@ class ImageDims:
             none_raise(optional_map(json.get('width', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: width: json={json}')),
             none_raise(optional_map(json.get('height', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: height: json={json}')),
             none_raise(optional_map(json.get('depth', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: depth: json={json}')),
-            none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: binningFactor: json={json}')),
+            none_raise(optional_map(json.get('binningFactor', None), lambda it: cast(float, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: binningFactor: json={json}')),
             none_raise(optional_map(json.get('pixelA', None), lambda it: cast(float, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: pixelA: json={json}')),
+            none_raise(optional_map(json.get('binningFactorZ', None), lambda it: cast(int, it)), lambda: KeyError(f'ImageDims.from_json(): can\'t deserialize, missing field: binningFactorZ: json={json}')),
         )
     
     def serialize(self) -> str:
@@ -7361,6 +10834,7 @@ class ImageDims:
             f'depth={self.depth}',
             f'binning_factor={self.binning_factor}',
             f'pixel_a={self.pixel_a}',
+            f'binning_factor_z={self.binning_factor_z}',
         ])
         return f'ImageDims[{props}]'
     
@@ -7374,21 +10848,30 @@ class ImageDims:
             and self.height == other.height \
             and self.depth == other.depth \
             and self.binning_factor == other.binning_factor \
-            and self.pixel_a == other.pixel_a
+            and self.pixel_a == other.pixel_a \
+            and self.binning_factor_z == other.binning_factor_z
 
 
 ValueA = float
 
 
-class JobRunData:
+class ClusterJobData:
     """
     (no description yet)
     """
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.JobRunData'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData'
     
-    def __init__(self, job_id: str, status: RunStatus, cluster_jobs: List[ClusterJobData]) -> None:
-        self.job_id: str = job_id
+    def __init__(self, cluster_job_id: str, web_name: Optional[str], cluster_name: Optional[str], status: RunStatus, array_info: Optional[ClusterJobDataArrayInfo], launched_timestamp: Optional[int], finished_timestamp: Optional[int]) -> None:
+        self.cluster_job_id: str = cluster_job_id
+        """
+        (no description yet)
+        """
+        self.web_name: Optional[str] = web_name
+        """
+        (no description yet)
+        """
+        self.cluster_name: Optional[str] = cluster_name
         """
         (no description yet)
         """
@@ -7396,7 +10879,109 @@ class JobRunData:
         """
         (no description yet)
         """
-        self.cluster_jobs: List[ClusterJobData] = cluster_jobs
+        self.array_info: Optional[ClusterJobDataArrayInfo] = array_info
+        """
+        (no description yet)
+        """
+        self.launched_timestamp: Optional[int] = launched_timestamp
+        """
+        epoch millis when the job started running, or null if it never started
+        """
+        self.finished_timestamp: Optional[int] = finished_timestamp
+        """
+        epoch millis when the job finished, or null if it hasn't finished
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'clusterJobId': self.cluster_job_id,
+            'webName': self.web_name if self.web_name is not None else None,
+            'clusterName': self.cluster_name if self.cluster_name is not None else None,
+            'status': self.status.to_json(),
+            'arrayInfo': self.array_info.to_json() if self.array_info is not None else None,
+            'launchedTimestamp': self.launched_timestamp if self.launched_timestamp is not None else None,
+            'finishedTimestamp': self.finished_timestamp if self.finished_timestamp is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
+            optional_map(json.get('webName', None), lambda it: cast(str, it)),
+            optional_map(json.get('clusterName', None), lambda it: cast(str, it)),
+            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ClusterJobData.from_json(): can\'t deserialize, missing field: status: json={json}')),
+            optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
+            optional_map(json.get('launchedTimestamp', None), lambda it: cast(int, it)),
+            optional_map(json.get('finishedTimestamp', None), lambda it: cast(int, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobData:
+        return ClusterJobData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'cluster_job_id={self.cluster_job_id}',
+            f'web_name={self.web_name}',
+            f'cluster_name={self.cluster_name}',
+            f'status={self.status}',
+            f'array_info={self.array_info}',
+            f'launched_timestamp={self.launched_timestamp}',
+            f'finished_timestamp={self.finished_timestamp}',
+        ])
+        return f'ClusterJobData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ClusterJobData):
+            return NotImplemented
+        return self.cluster_job_id == other.cluster_job_id \
+            and self.web_name == other.web_name \
+            and self.cluster_name == other.cluster_name \
+            and self.status == other.status \
+            and self.array_info == other.array_info \
+            and self.launched_timestamp == other.launched_timestamp \
+            and self.finished_timestamp == other.finished_timestamp
+
+
+class ClusterJobDataArrayInfo:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData.ArrayInfo'
+    
+    def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
+        self.size: int = size
+        """
+        (no description yet)
+        """
+        self.started: int = started
+        """
+        (no description yet)
+        """
+        self.ended: int = ended
+        """
+        (no description yet)
+        """
+        self.canceled: int = canceled
+        """
+        (no description yet)
+        """
+        self.failed: int = failed
         """
         (no description yet)
         """
@@ -7407,47 +10992,55 @@ class JobRunData:
         """
         
         return {
-            'jobId': self.job_id,
-            'status': self.status.to_json(),
-            'clusterJobs': [x.to_json() for x in self.cluster_jobs],
+            'size': self.size,
+            'started': self.started,
+            'ended': self.ended,
+            'canceled': self.canceled,
+            'failed': self.failed,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> JobRunData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobDataArrayInfo:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            none_raise(optional_map(json.get('jobId', None), lambda it: cast(str, it)), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: jobId: json={json}')),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: status: json={json}')),
-            none_raise(optional_map(json.get('clusterJobs', None), lambda it: [ClusterJobData.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'JobRunData.from_json(): can\'t deserialize, missing field: clusterJobs: json={json}')),
+            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: size: json={json}')),
+            none_raise(optional_map(json.get('started', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: started: json={json}')),
+            none_raise(optional_map(json.get('ended', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: ended: json={json}')),
+            none_raise(optional_map(json.get('canceled', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: canceled: json={json}')),
+            none_raise(optional_map(json.get('failed', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: failed: json={json}')),
         )
     
     def serialize(self) -> str:
         return json.dumps(self.to_json())
     
     @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> JobRunData:
-        return JobRunData.from_json(json.loads(serialized), type_ids)
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobDataArrayInfo:
+        return ClusterJobDataArrayInfo.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'job_id={self.job_id}',
-            f'status={self.status}',
-            f'cluster_jobs={self.cluster_jobs}',
+            f'size={self.size}',
+            f'started={self.started}',
+            f'ended={self.ended}',
+            f'canceled={self.canceled}',
+            f'failed={self.failed}',
         ])
-        return f'JobRunData[{props}]'
+        return f'ClusterJobDataArrayInfo[{props}]'
     
     def __repr__(self) -> str:
         return self.__str__()
     
     def __eq__(self, other: object) -> Any:
-        if not isinstance(other, JobRunData):
+        if not isinstance(other, ClusterJobDataArrayInfo):
             return NotImplemented
-        return self.job_id == other.job_id \
-            and self.status == other.status \
-            and self.cluster_jobs == other.cluster_jobs
+        return self.size == other.size \
+            and self.started == other.started \
+            and self.ended == other.ended \
+            and self.canceled == other.canceled \
+            and self.failed == other.failed
 
 
 class SessionExportResult:
@@ -7725,34 +11318,565 @@ class SessionExportResultSucceededOutputFilter(SessionExportResultSucceededOutpu
         return self.path == other.path
 
 
+class TwoDClassData:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.TwoDClassData'
+    
+    def __init__(self, class_num: int, num_particles: int, metadata: Dict[str, float], class_score: Optional[float]) -> None:
+        self.class_num: int = class_num
+        """
+        (no description yet)
+        """
+        self.num_particles: int = num_particles
+        """
+        (no description yet)
+        """
+        self.metadata: Dict[str, float] = metadata
+        """
+        (no description yet)
+        """
+        self.class_score: Optional[float] = class_score
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'classNum': self.class_num,
+            'numParticles': self.num_particles,
+            'metadata': {k:v for k,v in self.metadata.items()},
+            'classScore': self.class_score if self.class_score is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> TwoDClassData:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('classNum', None), lambda it: cast(int, it)), lambda: KeyError(f'TwoDClassData.from_json(): can\'t deserialize, missing field: classNum: json={json}')),
+            none_raise(optional_map(json.get('numParticles', None), lambda it: cast(int, it)), lambda: KeyError(f'TwoDClassData.from_json(): can\'t deserialize, missing field: numParticles: json={json}')),
+            none_raise(optional_map(json.get('metadata', None), lambda it: {cast(str, k):cast(float, v) for k,v in cast(Dict[str,Any], it).items()}), lambda: KeyError(f'TwoDClassData.from_json(): can\'t deserialize, missing field: metadata: json={json}')),
+            optional_map(json.get('classScore', None), lambda it: cast(float, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> TwoDClassData:
+        return TwoDClassData.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'class_num={self.class_num}',
+            f'num_particles={self.num_particles}',
+            f'metadata={self.metadata}',
+            f'class_score={self.class_score}',
+        ])
+        return f'TwoDClassData[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, TwoDClassData):
+            return NotImplemented
+        return self.class_num == other.class_num \
+            and self.num_particles == other.num_particles \
+            and self.metadata == other.metadata \
+            and self.class_score == other.class_score
+
+
+class MissAlignTrainingIteration:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MissAlignTrainingIteration'
+    
+    def __init__(self, iteration: int, label: str, epochs: List[int], steps: List[int], train_loss: List[Optional[float]], triplet_loss: List[Optional[float]], precision_reg: List[Optional[float]], score_aligned: List[Optional[float]], score_misaligned: List[Optional[float]], mean_precision: List[Optional[float]], learning_rate: List[Optional[float]], tilt_series: List[MissAlignTrainingTiltSeries]) -> None:
+        self.iteration: int = iteration
+        """
+        (no description yet)
+        """
+        self.label: str = label
+        """
+        (no description yet)
+        """
+        self.epochs: List[int] = epochs
+        """
+        (no description yet)
+        """
+        self.steps: List[int] = steps
+        """
+        (no description yet)
+        """
+        self.train_loss: List[Optional[float]] = train_loss
+        """
+        total loss = triplet loss + precision regularization
+        """
+        self.triplet_loss: List[Optional[float]] = triplet_loss
+        """
+        (no description yet)
+        """
+        self.precision_reg: List[Optional[float]] = precision_reg
+        """
+        (no description yet)
+        """
+        self.score_aligned: List[Optional[float]] = score_aligned
+        """
+        mean network score for correctly aligned patches (lower is better)
+        """
+        self.score_misaligned: List[Optional[float]] = score_misaligned
+        """
+        mean network score for deliberately misaligned patches
+        """
+        self.mean_precision: List[Optional[float]] = mean_precision
+        """
+        (no description yet)
+        """
+        self.learning_rate: List[Optional[float]] = learning_rate
+        """
+        (no description yet)
+        """
+        self.tilt_series: List[MissAlignTrainingTiltSeries] = tilt_series
+        """
+        alignment run with this iteration's network on the training tilt-series
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'iteration': self.iteration,
+            'label': self.label,
+            'epochs': [x for x in self.epochs],
+            'steps': [x for x in self.steps],
+            'trainLoss': [x if x is not None else None for x in self.train_loss],
+            'tripletLoss': [x if x is not None else None for x in self.triplet_loss],
+            'precisionReg': [x if x is not None else None for x in self.precision_reg],
+            'scoreAligned': [x if x is not None else None for x in self.score_aligned],
+            'scoreMisaligned': [x if x is not None else None for x in self.score_misaligned],
+            'meanPrecision': [x if x is not None else None for x in self.mean_precision],
+            'learningRate': [x if x is not None else None for x in self.learning_rate],
+            'tiltSeries': [x.to_json() for x in self.tilt_series],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MissAlignTrainingIteration:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: iteration: json={json}')),
+            none_raise(optional_map(json.get('label', None), lambda it: cast(str, it)), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: label: json={json}')),
+            none_raise(optional_map(json.get('epochs', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: epochs: json={json}')),
+            none_raise(optional_map(json.get('steps', None), lambda it: [cast(int, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: steps: json={json}')),
+            none_raise(optional_map(json.get('trainLoss', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: trainLoss: json={json}')),
+            none_raise(optional_map(json.get('tripletLoss', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: tripletLoss: json={json}')),
+            none_raise(optional_map(json.get('precisionReg', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: precisionReg: json={json}')),
+            none_raise(optional_map(json.get('scoreAligned', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: scoreAligned: json={json}')),
+            none_raise(optional_map(json.get('scoreMisaligned', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: scoreMisaligned: json={json}')),
+            none_raise(optional_map(json.get('meanPrecision', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: meanPrecision: json={json}')),
+            none_raise(optional_map(json.get('learningRate', None), lambda it: [cast(float, x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: learningRate: json={json}')),
+            none_raise(optional_map(json.get('tiltSeries', None), lambda it: [MissAlignTrainingTiltSeries.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignTrainingIteration.from_json(): can\'t deserialize, missing field: tiltSeries: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MissAlignTrainingIteration:
+        return MissAlignTrainingIteration.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'iteration={self.iteration}',
+            f'label={self.label}',
+            f'epochs={self.epochs}',
+            f'steps={self.steps}',
+            f'train_loss={self.train_loss}',
+            f'triplet_loss={self.triplet_loss}',
+            f'precision_reg={self.precision_reg}',
+            f'score_aligned={self.score_aligned}',
+            f'score_misaligned={self.score_misaligned}',
+            f'mean_precision={self.mean_precision}',
+            f'learning_rate={self.learning_rate}',
+            f'tilt_series={self.tilt_series}',
+        ])
+        return f'MissAlignTrainingIteration[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, MissAlignTrainingIteration):
+            return NotImplemented
+        return self.iteration == other.iteration \
+            and self.label == other.label \
+            and self.epochs == other.epochs \
+            and self.steps == other.steps \
+            and self.train_loss == other.train_loss \
+            and self.triplet_loss == other.triplet_loss \
+            and self.precision_reg == other.precision_reg \
+            and self.score_aligned == other.score_aligned \
+            and self.score_misaligned == other.score_misaligned \
+            and self.mean_precision == other.mean_precision \
+            and self.learning_rate == other.learning_rate \
+            and self.tilt_series == other.tilt_series
+
+
+class MissAlignLoss:
+    """
+    MissAlign's optimization loss for one tilt series, as reported by pyp.
+    Every iteration uses its own model checkpoint and binning, so absolute losses are not comparable across iterations; ``improvement`` sums how much each iteration lowered its own loss (positive = lower loss).
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MissAlignLoss'
+    
+    def __init__(self, improvement: float, final_loss: float, steps: int, iterations: List[MissAlignLossIteration]) -> None:
+        self.improvement: float = improvement
+        """
+        (no description yet)
+        """
+        self.final_loss: float = final_loss
+        """
+        (no description yet)
+        """
+        self.steps: int = steps
+        """
+        (no description yet)
+        """
+        self.iterations: List[MissAlignLossIteration] = iterations
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'improvement': self.improvement,
+            'finalLoss': self.final_loss,
+            'steps': self.steps,
+            'iterations': [x.to_json() for x in self.iterations],
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MissAlignLoss:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('improvement', None), lambda it: cast(float, it)), lambda: KeyError(f'MissAlignLoss.from_json(): can\'t deserialize, missing field: improvement: json={json}')),
+            none_raise(optional_map(json.get('finalLoss', None), lambda it: cast(float, it)), lambda: KeyError(f'MissAlignLoss.from_json(): can\'t deserialize, missing field: finalLoss: json={json}')),
+            none_raise(optional_map(json.get('steps', None), lambda it: cast(int, it)), lambda: KeyError(f'MissAlignLoss.from_json(): can\'t deserialize, missing field: steps: json={json}')),
+            none_raise(optional_map(json.get('iterations', None), lambda it: [MissAlignLossIteration.from_json(x) for x in cast(List[Any], it)]), lambda: KeyError(f'MissAlignLoss.from_json(): can\'t deserialize, missing field: iterations: json={json}')),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MissAlignLoss:
+        return MissAlignLoss.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'improvement={self.improvement}',
+            f'final_loss={self.final_loss}',
+            f'steps={self.steps}',
+            f'iterations={self.iterations}',
+        ])
+        return f'MissAlignLoss[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, MissAlignLoss):
+            return NotImplemented
+        return self.improvement == other.improvement \
+            and self.final_loss == other.final_loss \
+            and self.steps == other.steps \
+            and self.iterations == other.iterations
+
+
+class ProjectTransferKind:
+    """
+    (no description yet)
+    """
+    
+    Clone: ProjectTransferKind
+    Import: ProjectTransferKind
+    Export: ProjectTransferKind
+    
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
+    def to_json(self) -> str:
+        """
+        Converts this enum value into JSON
+        """
+        
+        return self.name
+    
+    @classmethod
+    def from_json(cls, name: str) -> ProjectTransferKind:
+        """
+        Reads this enum value from JSON
+        """
+        
+        if name == 'Clone':
+            return ProjectTransferKind.Clone
+        elif name == 'Import':
+            return ProjectTransferKind.Import
+        elif name == 'Export':
+            return ProjectTransferKind.Export
+        else:
+            return cls(name)
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __len__(self) -> int:
+        return 3
+    
+    def __iter__(self) -> Iterator[ProjectTransferKind]:
+        return [ProjectTransferKind.Clone, ProjectTransferKind.Import, ProjectTransferKind.Export].__iter__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ProjectTransferKind):
+            return NotImplemented
+        return self.name == other.name
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+ProjectTransferKind.Clone = ProjectTransferKind('Clone')
+ProjectTransferKind.Import = ProjectTransferKind('Import')
+ProjectTransferKind.Export = ProjectTransferKind('Export')
+
+
+class ProjectTransferStatus:
+    """
+    (no description yet)
+    """
+    
+    Canceled: ProjectTransferStatus
+    Failed: ProjectTransferStatus
+    Finished: ProjectTransferStatus
+    Running: ProjectTransferStatus
+    Preparing: ProjectTransferStatus
+    
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
+    def to_json(self) -> str:
+        """
+        Converts this enum value into JSON
+        """
+        
+        return self.name
+    
+    @classmethod
+    def from_json(cls, name: str) -> ProjectTransferStatus:
+        """
+        Reads this enum value from JSON
+        """
+        
+        if name == 'Canceled':
+            return ProjectTransferStatus.Canceled
+        elif name == 'Failed':
+            return ProjectTransferStatus.Failed
+        elif name == 'Finished':
+            return ProjectTransferStatus.Finished
+        elif name == 'Running':
+            return ProjectTransferStatus.Running
+        elif name == 'Preparing':
+            return ProjectTransferStatus.Preparing
+        else:
+            return cls(name)
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __len__(self) -> int:
+        return 5
+    
+    def __iter__(self) -> Iterator[ProjectTransferStatus]:
+        return [ProjectTransferStatus.Canceled, ProjectTransferStatus.Failed, ProjectTransferStatus.Finished, ProjectTransferStatus.Running, ProjectTransferStatus.Preparing].__iter__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ProjectTransferStatus):
+            return NotImplemented
+        return self.name == other.name
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+ProjectTransferStatus.Canceled = ProjectTransferStatus('Canceled')
+ProjectTransferStatus.Failed = ProjectTransferStatus('Failed')
+ProjectTransferStatus.Finished = ProjectTransferStatus('Finished')
+ProjectTransferStatus.Running = ProjectTransferStatus('Running')
+ProjectTransferStatus.Preparing = ProjectTransferStatus('Preparing')
+
+
+class ProjectTransferProgress:
+    """
+    (no description yet)
+    """
+    
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ProjectTransferProgress'
+    
+    def __init__(self, phase: str, bytes_done: int, bytes_total: int, files_done: int, files_total: int, docs_done: int, docs_total: int, message: Optional[str]) -> None:
+        self.phase: str = phase
+        """
+        (no description yet)
+        """
+        self.bytes_done: int = bytes_done
+        """
+        (no description yet)
+        """
+        self.bytes_total: int = bytes_total
+        """
+        (no description yet)
+        """
+        self.files_done: int = files_done
+        """
+        (no description yet)
+        """
+        self.files_total: int = files_total
+        """
+        (no description yet)
+        """
+        self.docs_done: int = docs_done
+        """
+        (no description yet)
+        """
+        self.docs_total: int = docs_total
+        """
+        (no description yet)
+        """
+        self.message: Optional[str] = message
+        """
+        (no description yet)
+        """
+    
+    def to_json(self) -> Dict[str,Any]:
+        """
+        Converts this class instance into JSON
+        """
+        
+        return {
+            'phase': self.phase,
+            'bytesDone': self.bytes_done,
+            'bytesTotal': self.bytes_total,
+            'filesDone': self.files_done,
+            'filesTotal': self.files_total,
+            'docsDone': self.docs_done,
+            'docsTotal': self.docs_total,
+            'message': self.message if self.message is not None else None,
+        }
+    
+    @classmethod
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ProjectTransferProgress:
+        """
+        Creates a new class instance from JSON
+        """
+        
+        return cls(
+            none_raise(optional_map(json.get('phase', None), lambda it: cast(str, it)), lambda: KeyError(f'ProjectTransferProgress.from_json(): can\'t deserialize, missing field: phase: json={json}')),
+            none_map(optional_map(json.get('bytesDone', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('bytesTotal', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('filesDone', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('filesTotal', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('docsDone', None), lambda it: cast(int, it)), lambda: 0),
+            none_map(optional_map(json.get('docsTotal', None), lambda it: cast(int, it)), lambda: 0),
+            optional_map(json.get('message', None), lambda it: cast(str, it)),
+        )
+    
+    def serialize(self) -> str:
+        return json.dumps(self.to_json())
+    
+    @classmethod
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ProjectTransferProgress:
+        return ProjectTransferProgress.from_json(json.loads(serialized), type_ids)
+    
+    def __str__(self) -> str:
+        props = ', '.join([
+            f'phase={self.phase}',
+            f'bytes_done={self.bytes_done}',
+            f'bytes_total={self.bytes_total}',
+            f'files_done={self.files_done}',
+            f'files_total={self.files_total}',
+            f'docs_done={self.docs_done}',
+            f'docs_total={self.docs_total}',
+            f'message={self.message}',
+        ])
+        return f'ProjectTransferProgress[{props}]'
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __eq__(self, other: object) -> Any:
+        if not isinstance(other, ProjectTransferProgress):
+            return NotImplemented
+        return self.phase == other.phase \
+            and self.bytes_done == other.bytes_done \
+            and self.bytes_total == other.bytes_total \
+            and self.files_done == other.files_done \
+            and self.files_total == other.files_total \
+            and self.docs_done == other.docs_done \
+            and self.docs_total == other.docs_total \
+            and self.message == other.message
+
+
 ValueUnbinnedI = int
 
 
-class ClusterJobData:
+class MissAlignTrainingTiltSeries:
     """
     (no description yet)
     """
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MissAlignTrainingTiltSeries'
     
-    def __init__(self, cluster_job_id: str, web_name: Optional[str], cluster_name: Optional[str], status: RunStatus, array_info: Optional[ClusterJobDataArrayInfo]) -> None:
-        self.cluster_job_id: str = cluster_job_id
+    def __init__(self, name: str, initial_loss: float, final_loss: float, steps: int) -> None:
+        self.name: str = name
         """
         (no description yet)
         """
-        self.web_name: Optional[str] = web_name
+        self.initial_loss: float = initial_loss
         """
         (no description yet)
         """
-        self.cluster_name: Optional[str] = cluster_name
+        self.final_loss: float = final_loss
         """
         (no description yet)
         """
-        self.status: RunStatus = status
-        """
-        (no description yet)
-        """
-        self.array_info: Optional[ClusterJobDataArrayInfo] = array_info
+        self.steps: int = steps
         """
         (no description yet)
         """
@@ -7763,82 +11887,78 @@ class ClusterJobData:
         """
         
         return {
-            'clusterJobId': self.cluster_job_id,
-            'webName': self.web_name if self.web_name is not None else None,
-            'clusterName': self.cluster_name if self.cluster_name is not None else None,
-            'status': self.status.to_json(),
-            'arrayInfo': self.array_info.to_json() if self.array_info is not None else None,
+            'name': self.name,
+            'initialLoss': self.initial_loss,
+            'finalLoss': self.final_loss,
+            'steps': self.steps,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobData:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MissAlignTrainingTiltSeries:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            none_raise(optional_map(json.get('clusterJobId', None), lambda it: cast(str, it)), lambda: KeyError(f'ClusterJobData.from_json(): can\'t deserialize, missing field: clusterJobId: json={json}')),
-            optional_map(json.get('webName', None), lambda it: cast(str, it)),
-            optional_map(json.get('clusterName', None), lambda it: cast(str, it)),
-            none_raise(optional_map(json.get('status', None), lambda it: RunStatus.from_json(it)), lambda: KeyError(f'ClusterJobData.from_json(): can\'t deserialize, missing field: status: json={json}')),
-            optional_map(json.get('arrayInfo', None), lambda it: ClusterJobDataArrayInfo.from_json(it)),
+            none_raise(optional_map(json.get('name', None), lambda it: cast(str, it)), lambda: KeyError(f'MissAlignTrainingTiltSeries.from_json(): can\'t deserialize, missing field: name: json={json}')),
+            none_raise(optional_map(json.get('initialLoss', None), lambda it: cast(float, it)), lambda: KeyError(f'MissAlignTrainingTiltSeries.from_json(): can\'t deserialize, missing field: initialLoss: json={json}')),
+            none_raise(optional_map(json.get('finalLoss', None), lambda it: cast(float, it)), lambda: KeyError(f'MissAlignTrainingTiltSeries.from_json(): can\'t deserialize, missing field: finalLoss: json={json}')),
+            none_map(optional_map(json.get('steps', None), lambda it: cast(int, it)), lambda: 0),
         )
     
     def serialize(self) -> str:
         return json.dumps(self.to_json())
     
     @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobData:
-        return ClusterJobData.from_json(json.loads(serialized), type_ids)
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MissAlignTrainingTiltSeries:
+        return MissAlignTrainingTiltSeries.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'cluster_job_id={self.cluster_job_id}',
-            f'web_name={self.web_name}',
-            f'cluster_name={self.cluster_name}',
-            f'status={self.status}',
-            f'array_info={self.array_info}',
+            f'name={self.name}',
+            f'initial_loss={self.initial_loss}',
+            f'final_loss={self.final_loss}',
+            f'steps={self.steps}',
         ])
-        return f'ClusterJobData[{props}]'
+        return f'MissAlignTrainingTiltSeries[{props}]'
     
     def __repr__(self) -> str:
         return self.__str__()
     
     def __eq__(self, other: object) -> Any:
-        if not isinstance(other, ClusterJobData):
+        if not isinstance(other, MissAlignTrainingTiltSeries):
             return NotImplemented
-        return self.cluster_job_id == other.cluster_job_id \
-            and self.web_name == other.web_name \
-            and self.cluster_name == other.cluster_name \
-            and self.status == other.status \
-            and self.array_info == other.array_info
+        return self.name == other.name \
+            and self.initial_loss == other.initial_loss \
+            and self.final_loss == other.final_loss \
+            and self.steps == other.steps
 
 
-class ClusterJobDataArrayInfo:
+class MissAlignLossIteration:
     """
     (no description yet)
     """
     
-    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.ClusterJobData.ArrayInfo'
+    TYPE_ID: str = 'edu.duke.bartesaghi.micromon.services.MissAlignLossIteration'
     
-    def __init__(self, size: int, started: int, ended: int, canceled: int, failed: int) -> None:
-        self.size: int = size
+    def __init__(self, iteration: int, label: str, initial_loss: float, final_loss: float, steps: int) -> None:
+        self.iteration: int = iteration
         """
         (no description yet)
         """
-        self.started: int = started
+        self.label: str = label
         """
         (no description yet)
         """
-        self.ended: int = ended
+        self.initial_loss: float = initial_loss
         """
         (no description yet)
         """
-        self.canceled: int = canceled
+        self.final_loss: float = final_loss
         """
         (no description yet)
         """
-        self.failed: int = failed
+        self.steps: int = steps
         """
         (no description yet)
         """
@@ -7849,52 +11969,52 @@ class ClusterJobDataArrayInfo:
         """
         
         return {
-            'size': self.size,
-            'started': self.started,
-            'ended': self.ended,
-            'canceled': self.canceled,
-            'failed': self.failed,
+            'iteration': self.iteration,
+            'label': self.label,
+            'initialLoss': self.initial_loss,
+            'finalLoss': self.final_loss,
+            'steps': self.steps,
         }
     
     @classmethod
-    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> ClusterJobDataArrayInfo:
+    def from_json(cls, json: Dict[str,Any], type_ids: Optional[Dict[str,str]] = None) -> MissAlignLossIteration:
         """
         Creates a new class instance from JSON
         """
         
         return cls(
-            none_raise(optional_map(json.get('size', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: size: json={json}')),
-            none_raise(optional_map(json.get('started', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: started: json={json}')),
-            none_raise(optional_map(json.get('ended', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: ended: json={json}')),
-            none_raise(optional_map(json.get('canceled', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: canceled: json={json}')),
-            none_raise(optional_map(json.get('failed', None), lambda it: cast(int, it)), lambda: KeyError(f'ArrayInfo.from_json(): can\'t deserialize, missing field: failed: json={json}')),
+            none_raise(optional_map(json.get('iteration', None), lambda it: cast(int, it)), lambda: KeyError(f'MissAlignLossIteration.from_json(): can\'t deserialize, missing field: iteration: json={json}')),
+            none_raise(optional_map(json.get('label', None), lambda it: cast(str, it)), lambda: KeyError(f'MissAlignLossIteration.from_json(): can\'t deserialize, missing field: label: json={json}')),
+            none_raise(optional_map(json.get('initialLoss', None), lambda it: cast(float, it)), lambda: KeyError(f'MissAlignLossIteration.from_json(): can\'t deserialize, missing field: initialLoss: json={json}')),
+            none_raise(optional_map(json.get('finalLoss', None), lambda it: cast(float, it)), lambda: KeyError(f'MissAlignLossIteration.from_json(): can\'t deserialize, missing field: finalLoss: json={json}')),
+            none_raise(optional_map(json.get('steps', None), lambda it: cast(int, it)), lambda: KeyError(f'MissAlignLossIteration.from_json(): can\'t deserialize, missing field: steps: json={json}')),
         )
     
     def serialize(self) -> str:
         return json.dumps(self.to_json())
     
     @classmethod
-    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> ClusterJobDataArrayInfo:
-        return ClusterJobDataArrayInfo.from_json(json.loads(serialized), type_ids)
+    def deserialize(cls, serialized: str, type_ids: Optional[Dict[str,str]] = None) -> MissAlignLossIteration:
+        return MissAlignLossIteration.from_json(json.loads(serialized), type_ids)
     
     def __str__(self) -> str:
         props = ', '.join([
-            f'size={self.size}',
-            f'started={self.started}',
-            f'ended={self.ended}',
-            f'canceled={self.canceled}',
-            f'failed={self.failed}',
+            f'iteration={self.iteration}',
+            f'label={self.label}',
+            f'initial_loss={self.initial_loss}',
+            f'final_loss={self.final_loss}',
+            f'steps={self.steps}',
         ])
-        return f'ClusterJobDataArrayInfo[{props}]'
+        return f'MissAlignLossIteration[{props}]'
     
     def __repr__(self) -> str:
         return self.__str__()
     
     def __eq__(self, other: object) -> Any:
-        if not isinstance(other, ClusterJobDataArrayInfo):
+        if not isinstance(other, MissAlignLossIteration):
             return NotImplemented
-        return self.size == other.size \
-            and self.started == other.started \
-            and self.ended == other.ended \
-            and self.canceled == other.canceled \
-            and self.failed == other.failed
+        return self.iteration == other.iteration \
+            and self.label == other.label \
+            and self.initial_loss == other.initial_loss \
+            and self.final_loss == other.final_loss \
+            and self.steps == other.steps

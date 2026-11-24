@@ -20,7 +20,10 @@ project_examples = [
             '/kv/jobs/ecq6mPesXW2Rdgzs/gainCorrectedImage/small',
             'kv/reconstructions/ecq6mPesXW2Rdgzv/1/2/images/map/small'
         ],
-        'path': '/home/jeff/streamPYP/shared/users/jeff/projects/Tomo_Workflow-2GKAzf48o3GYWXCjAd'
+        'path': '/home/jeff/streamPYP/shared/users/jeff/projects/Tomo_Workflow-2GKAzf48o3GYWXCjAd',
+        'importing': False,
+        'slurmLogin': 'jeff',
+        'slurmLoginName': 'Jeff'
     },
     {
         'owner': user_examples[0],
@@ -30,7 +33,10 @@ project_examples = [
         'projectName': 'Lotta Blocks',
         'created': 1689713296127,
         'images': [],
-        'path': '/home/jeff/streamPYP/shared/users/jeff/projects/Lotta_Blocks-UlR8AmaVTaRog1AJ'
+        'path': '/home/jeff/streamPYP/shared/users/jeff/projects/Lotta_Blocks-UlR8AmaVTaRog1AJ',
+        'importing': True,
+        'slurmLogin': None,
+        'slurmLoginName': None
     }
 ]
 
@@ -74,7 +80,10 @@ def test_list_response_two() -> None:
             '/kv/jobs/ecq6mPesXW2Rdgzs/gainCorrectedImage/small',
             'kv/reconstructions/ecq6mPesXW2Rdgzv/1/2/images/map/small'
         ],
-        path='/home/jeff/streamPYP/shared/users/jeff/projects/Tomo_Workflow-2GKAzf48o3GYWXCjAd'
+        path='/home/jeff/streamPYP/shared/users/jeff/projects/Tomo_Workflow-2GKAzf48o3GYWXCjAd',
+        importing=False,
+        slurm_login='jeff',
+        slurm_login_name='Jeff'
     )
     assert projects[1] == ProjectData(
         owner=jeff,
@@ -84,5 +93,8 @@ def test_list_response_two() -> None:
         project_name='Lotta Blocks',
         created=1689713296127,
         images=[],
-        path='/home/jeff/streamPYP/shared/users/jeff/projects/Lotta_Blocks-UlR8AmaVTaRog1AJ'
+        path='/home/jeff/streamPYP/shared/users/jeff/projects/Lotta_Blocks-UlR8AmaVTaRog1AJ',
+        importing=True,
+        slurm_login=None,
+        slurm_login_name=None
     )
