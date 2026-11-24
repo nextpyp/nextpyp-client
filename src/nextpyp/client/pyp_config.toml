@@ -6202,7 +6202,7 @@ _description = "Sub-tomogram detection parameters"
 name = "Detection method"
 description = "Strategy to use for particle detection"
 type = "enum"
-enum = { none="none", auto="size-based", import="import", manual="manual", virions="virions", pytom="template-search (pytom)" }
+enum = { none="none", auto="size-based", import="import", manual="manual", virions="virions", pytom="template-search (pytom)", warp="template-search (WarpTools)" }
 default = "none"
 
 [tabs.tomo_pick.rad]
@@ -6210,7 +6210,7 @@ name = "Particle radius (A)"
 description = "Size to use for particle detection"
 type = "float"
 default = 0
-condition = { arg="method", value=[ "none", "auto", "import", "manual", "pytom" ] }
+condition = { arg="method", value=[ "none", "auto", "import", "manual", "pytom", "warp" ] }
 
 [tabs.tomo_pick.files]
 name = "Import particle coordinates (*.spk)"
@@ -6598,6 +6598,128 @@ description = "This allows tweaking the cutoff without recalculating the scores"
 type = "bool"
 default = true
 condition = { arg="method", value="pytom" }
+
+# WarpTools template matching (ts_template_match)
+
+[tabs.tomo_pick.warp_template]
+name = "Template"
+description = "Reference map with positive (bright) density, e.g. an EMDB map, with the same hand as the particles in nextPYP tomograms (WarpTools inverts the tomogram contrast internally)"
+type = "path"
+path = { type="files" }
+input = { type="initialModel" }
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_reconstruct]
+name = "Recalculate tomograms with WarpTools"
+description = "Reconstruct each tomogram with WarpTools from the nextPYP alignments and CTF (slower: rebuilds the motion-corrected tilt-series). Otherwise the existing nextPYP tomograms are matched"
+type = "bool"
+default = false
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_template_angpix]
+name = "Template pixel size (A)"
+description = "Pixel size of the template (0 = read from the map header)"
+type = "float"
+default = 0
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_template_flip]
+name = "Flip template hand"
+description = "Mirror the template along X to flip its handedness (initial orientations then refer to the mirrored template)"
+type = "bool"
+default = false
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_symmetry]
+name = "Template symmetry"
+description = "Point-group symmetry of the template, e.g. C1, D7, O"
+type = "str"
+default = "C1"
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_subdivisions]
+name = "Angular subdivisions"
+description = "Angular search step: 2 = 15 degrees, 3 = 7.5 degrees, 4 = 3.75 degrees"
+type = "int"
+default = 3
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_tilt_range]
+name = "Tilt range (degrees)"
+description = "Limit the angle between the reference Z axis and the tomogram XY plane to +/- this value (0 = no limit); useful for filaments lying flat"
+type = "float"
+default = 0
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_whiten]
+name = "Spectral whitening"
+description = "Give higher-resolution information more weight; helps when alignments are already good"
+type = "bool"
+default = true
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_lowpass]
+name = "Low-pass filter (fraction of Nyquist)"
+description = "Gaussian low-pass applied to template and tomogram (1.0 = no low-pass)"
+type = "float"
+default = 1.0
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_lowpass_sigma]
+name = "Low-pass fall-off (fraction of Nyquist)"
+description = "Sigma of the Gaussian low-pass filter"
+type = "float"
+default = 0.1
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_peak_distance]
+name = "Minimum peak distance (A)"
+description = "Minimum distance between picks (0 = template diameter, i.e. twice the particle radius)"
+type = "float"
+default = 0
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_npeaks]
+name = "Maximum number of peaks"
+description = "Maximum number of peak positions saved by WarpTools before thresholding"
+type = "int"
+default = 2000
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_max_missing_tilts]
+name = "Maximum missing tilts"
+description = "Dismiss positions not covered by at least this many tilts (-1 = disable culling)"
+type = "int"
+default = 2
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_batch_angles]
+name = "Orientations per batch"
+description = "Orientations evaluated at once on the GPU; memory scales linearly with this value"
+type = "int"
+default = 32
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_threshold]
+name = "Score threshold"
+description = "Keep picks whose normalized score (median 0, stddev 1) is at or above this value"
+type = "float"
+default = 3.0
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_max_picks]
+name = "Maximum particles"
+description = "Keep at most this many top-scoring picks per tomogram (0 = no limit)"
+type = "int"
+default = 0
+condition = { arg="method", value="warp" }
+
+[tabs.tomo_pick.warp_use_existing_scores]
+name = "Use existing scores, if available"
+description = "Re-threshold previous WarpTools correlation volumes instead of recomputing them"
+type = "bool"
+default = true
+condition = { arg="method", value="warp" }
 
 [tabs.tomo_ext]
 _name = "Particle extraction"
