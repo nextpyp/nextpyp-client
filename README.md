@@ -23,6 +23,15 @@ The client's version matches the NextPYP API version it speaks: client `2.2.x` w
 whose API is `2.2` or newer, up to the next major version. `Client.is_compatible()` checks a website for you.
 
 
+## Source code
+
+- GitHub: https://github.com/nextpyp/nextpyp-client
+- GitLab (where development happens): https://gitlab.cs.duke.edu/nextpyp/nextpyp-client
+
+Related: [nextpyp-mcp](https://github.com/nextpyp/nextpyp-mcp), an MCP server that lets AI assistants such
+as Cursor and Claude use this client to work with NextPYP.
+
+
 ## Documentation
 
 The newest version of the documentation is available online at:
